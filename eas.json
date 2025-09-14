@@ -18,6 +18,13 @@
       "developmentClient": true,
       "distribution": "internal",
       "android": {
+        "buildType": "apk"
+      }
+    },
+    "local": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleDebug"
       }
