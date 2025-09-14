@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Termix-Mobile",
-    "slug": "Termix-Mobile",
+    "slug": "termix",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -43,6 +43,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "cf86f530-ca4b-44bf-bb68-4d178b264910"
+      }
+    },
+    "owner": "termix"
   }
 }
