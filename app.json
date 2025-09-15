@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Termix-Mobile",
+    "name": "Termix",
     "slug": "termix",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "termixmobile",
+    "scheme": "termix",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
