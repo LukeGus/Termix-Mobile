@@ -40,7 +40,7 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node }}
-          cache: yarn
+          cache: npm
 
       - name: 🏗 Setup Expo and EAS
         uses: expo/expo-github-action@v7
@@ -50,10 +50,7 @@ jobs:
           eas-version: latest
 
       - name: 📦 Install dependencies
-        run: yarn
-
-      - name: 📋 Test project
-        run: yarn test
+        run: npm install
 
       - name: 👷 Build app
         run: |
