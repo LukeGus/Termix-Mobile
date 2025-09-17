@@ -4,12 +4,12 @@ on:
   workflow_dispatch:
 
 env:
-  EXPO_PUBLIC_API_URL: ${{secrets.EXPO_PUBLIC_API_URL}}
-  EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: ${{secrets.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID}}
+  EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
+  EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID }}
 
 jobs:
   build:
-    runs-on: macos-13
+    runs-on: macos-14
     defaults:
       run:
         shell: bash
@@ -17,8 +17,10 @@ jobs:
       - name: Setup repo
         uses: actions/checkout@v4
 
-      - name: Use Xcode 16.2
-        run: sudo xcode-select -s /Applications/Xcode_16.2.app
+      - name: Set up Xcode 16.2
+        uses: maxim-lobanov/setup-xcode-version@v1
+        with:
+          xcode-version: '16.2'
 
       - name: Setup node
         uses: actions/setup-node@v4.0.2
