@@ -36,14 +36,10 @@ jobs:
       - name: 🏗 Setup repo
         uses: actions/checkout@v2
 
-      - name: 🏗 Clear npm cache
-        run: npm cache clean --force
-
       - name: 🏗 Setup Node
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node }}
-          cache: `npm`
 
       - name: 🏗 Setup Expo and EAS
         uses: expo/expo-github-action@v7
