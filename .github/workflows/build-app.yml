@@ -31,7 +31,7 @@ jobs:
     runs-on: ${{ github.event.inputs.os }}
     strategy:
       matrix:
-        node: [18.x]
+        node: [20.x]
     steps:
       - name: 🏗 Setup repo
         uses: actions/checkout@v4
