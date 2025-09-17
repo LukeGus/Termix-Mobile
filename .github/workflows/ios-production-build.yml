@@ -9,18 +9,15 @@ env:
 
 jobs:
   build:
-    runs-on: macos-14
-    defaults:
-      run:
-        shell: bash
+    runs-on: macos-latest
     steps:
       - name: Setup repo
         uses: actions/checkout@v4
 
       - name: Set up Xcode 16.2
-        uses: maxim-lobanov/setup-xcode-version@v1
+        uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '16.2'
+          xcode-version: latest-stable
 
       - name: Setup node
         uses: actions/setup-node@v4.0.2
