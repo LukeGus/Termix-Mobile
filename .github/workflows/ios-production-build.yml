@@ -1,0 +1,40 @@
+name: iOS App Release Build
+
+on:
+  workflow_dispatch:
+
+env:
+  EXPO_PUBLIC_API_URL: ${{secrets.EXPO_PUBLIC_API_URL}}
+  EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: ${{secrets.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID}}
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Setup repo
+        uses: actions/checkout@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4.0.2
+        with:
+          node-version: 18.x
+          cache: 'npm'
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build iOS app
+        run: eas build --platform ios --local --non-interactive --output ${{ github.workspace }}/app-release.ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: ${{ github.workspace }}/app-release.ipa
