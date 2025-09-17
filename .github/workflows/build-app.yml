@@ -55,13 +55,6 @@ jobs:
       - name: 👷 Prebuild
         run: npx expo prebuild
 
-      - name: 📦 Verify CocoaPods (iOS only)
-        if: ${{ github.event.inputs.platform == 'ios' }}
-        run: |
-          cd ios
-          pod deintegrate
-          pod install --repo-update
-
       - name: 👷 Build app
         run: |
           eas build --local \
