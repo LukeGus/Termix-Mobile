@@ -10,9 +10,15 @@ env:
 jobs:
   build:
     runs-on: macos-13
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Setup repo
         uses: actions/checkout@v4
+
+      - name: Use Xcode 16.2
+        run: sudo xcode-select -s /Applications/Xcode_16.2.app
 
       - name: Setup node
         uses: actions/setup-node@v4.0.2
