@@ -52,6 +52,9 @@ jobs:
       - name: 📦 Install dependencies
         run: npm install
 
+      - name: 👷 Prebuild
+        run: npx expo prebuild
+
       - name: 👷 Build app
         run: |
           eas build --local \
