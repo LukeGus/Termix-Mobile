@@ -1,45 +1,68 @@
-name: iOS App Release Build
-
+name: Build App
 on:
   workflow_dispatch:
-
-env:
-  EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
-  EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: ${{ secrets.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID }}
-
+    inputs:
+      os:
+        type: choice
+        description: OS to build on. Ubuntu is faster, MacOS supports iOS builds
+        options:
+          - macos-latest
+          - ubuntu-latest
+      platform:
+        type: choice
+        description: Platform to build for
+        options:
+          - android
+          - ios
+      profile:
+        type: choice
+        description: Build profile to use
+        options:
+          - development
+          - preview
+          - production
+      should_submit:
+        type: boolean
+        description: Whether to perform the submit step
+        required: true
+        default: false
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ${{ github.event.inputs.os }}
+    strategy:
+      matrix:
+        node: [18.x]
     steps:
-      - name: Setup repo
-        uses: actions/checkout@v4
+      - name: 🏗 Setup repo
+        uses: actions/checkout@v2
 
-      - name: Set up Xcode 16.2
-        uses: maxim-lobanov/setup-xcode@v1
+      - name: 🏗 Setup Node
+        uses: actions/setup-node@v2
         with:
-          xcode-version: latest-stable
+          node-version: ${{ matrix.node }}
+          cache: yarn
 
-      - name: Setup node
-        uses: actions/setup-node@v4.0.2
+      - name: 🏗 Setup Expo and EAS
+        uses: expo/expo-github-action@v7
         with:
-          node-version: 20
-          cache: 'npm'
-
-      - name: Setup Expo
-        uses: expo/expo-github-action@v8
-        with:
+          token: ${{ secrets.EXPO_TOKEN }}
           expo-version: latest
           eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Install dependencies
-        run: npm ci
+      - name: 📦 Install dependencies
+        run: yarn
 
-      - name: Build iOS app
-        run: eas build --platform ios --local --non-interactive --output ${{ github.workspace }}/app-release.ipa
+      - name: 📋 Test project
+        run: yarn test
 
-      - name: Upload IPA artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release
-          path: ${{ github.workspace }}/app-release.ipa
+      - name: 👷 Build app
+        run: |
+          eas build --local \
+            --non-interactive \
+            --output=./app-build \
+            --platform=${{ github.event.inputs.platform }} \
+            --profile=${{ github.event.inputs.profile }}
+
+      - name: 🚢 Submit
+        if: ${{ github.event.inputs.should_submit }}
+        run: eas submit -p ${{ github.event.inputs.platform }} --profile ${{ github.event.inputs.profile }} --path app-build
