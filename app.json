@@ -6,29 +6,31 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "termix",
+    "githubUrl": "https://github.com/LukeGus/Termix-Mobile",
+    "backgroundColor": "#18181b",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.karmaa.termix",
+      "icon": "./assets/images/icon.png",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.karmaa.termix"
+      "package": "com.karmaa.termix",
+      "icon": "./assets/images/icon.png",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#18181b"
+      }
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png",
+      "favicon": "./assets/images/favicon.ico",
       "bundler": "metro"
     },
     "plugins": [
@@ -36,7 +38,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
@@ -52,7 +54,9 @@
       "reactCompiler": true
     },
     "extra": {
-      "router": {},
+      "router": {
+        "origin": false
+      },
       "eas": {
         "projectId": "cf86f530-ca4b-44bf-bb68-4d178b264910"
       }

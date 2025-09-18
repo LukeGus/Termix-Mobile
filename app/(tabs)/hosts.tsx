@@ -1,55 +1,107 @@
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { useAppContext } from '../AppContext';
+import { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+type Server = {
+  name: string;
+  ip: string;
+};
 
 export default function HostsScreen() {
-  const { setShowServerManager } = useAppContext();
+  const { setShowServerManager, setShowLoginForm, setSelectedServer, refreshServers } = useAppContext();
+  const [servers, setServers] = useState<Server[]>([]);
 
-  const handleOpenServerManager = () => {
+  const loadServers = async () => {
+    try {
+      const savedServers = await AsyncStorage.getItem('servers');
+      if (savedServers) {
+        setServers(JSON.parse(savedServers));
+      }
+    } catch (error) {
+      console.error('Error loading servers:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadServers();
+  }, [refreshServers]);
+
+  const handleOpenServerForm = () => {
     setShowServerManager(true);
   };
 
+  const handleServerPress = (server: Server) => {
+    setSelectedServer(server);
+    setShowLoginForm(true);
+  };
+
+  // If no servers saved, show server form
+  if (servers.length === 0) {
+    return (
+      <View className="flex-1 bg-dark-bg">
+        <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
+          <View className="p-6">
+            <Text className="text-3xl font-bold text-white mb-4">
+              Hosts
+            </Text>
+            <Text className="text-lg text-gray-300 mb-8">
+              Connect to your servers
+            </Text>
+            
+            <TouchableOpacity
+              onPress={handleOpenServerForm}
+              className="bg-blue-600 px-8 py-4 rounded-lg mb-6"
+            >
+              <Text className="text-white text-lg font-semibold text-center">
+                Connect to Server
+              </Text>
+            </TouchableOpacity>
+            
+            <View className="bg-dark-bg-panel rounded-lg p-6 border border-dark-border-panel">
+              <Text className="text-white text-center text-lg mb-2">Ready to connect</Text>
+              <Text className="text-gray-400 text-center">Enter your server details to get started</Text>
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  // If servers are saved, show the list
   return (
-    <View className="flex-1 bg-gray-50">
-      <ScrollView className="flex-1">
+    <View className="flex-1 bg-dark-bg">
+      <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
         <View className="p-6">
-          <Text className="text-3xl font-bold text-gray-800 mb-4">
+          <Text className="text-3xl font-bold text-white mb-4">
             Hosts
           </Text>
-          <Text className="text-lg text-gray-600 mb-8">
-            Manage your server connections
+          <Text className="text-lg text-gray-300 mb-8">
+            Select a server to connect
           </Text>
           
           <TouchableOpacity
-            onPress={handleOpenServerManager}
-            className="bg-blue-500 px-8 py-4 rounded-lg mb-6"
+            onPress={handleOpenServerForm}
+            className="bg-blue-600 px-8 py-4 rounded-lg mb-6"
           >
             <Text className="text-white text-lg font-semibold text-center">
-              Add New Host
+              Add New Server
             </Text>
           </TouchableOpacity>
           
           <View className="space-y-4">
-            <View className="bg-white rounded-lg p-4 shadow-sm">
-              <Text className="text-lg font-semibold text-gray-800 mb-2">
-                Local Development
-              </Text>
-              <Text className="text-gray-600 mb-2">localhost:3000</Text>
-              <View className="flex-row space-x-2">
-                <View className="w-3 h-3 bg-green-500 rounded-full"></View>
-                <Text className="text-green-600 text-sm">Connected</Text>
-              </View>
-            </View>
-            
-            <View className="bg-white rounded-lg p-4 shadow-sm">
-              <Text className="text-lg font-semibold text-gray-800 mb-2">
-                Production Server
-              </Text>
-              <Text className="text-gray-600 mb-2">prod.example.com</Text>
-              <View className="flex-row space-x-2">
-                <View className="w-3 h-3 bg-red-500 rounded-full"></View>
-                <Text className="text-red-600 text-sm">Disconnected</Text>
-              </View>
-            </View>
+            {servers.map((server, index) => (
+              <TouchableOpacity 
+                key={index} 
+                onPress={() => handleServerPress(server)}
+                className="bg-dark-bg-panel rounded-lg p-4 border border-dark-border-panel"
+              >
+                <Text className="text-lg font-semibold text-white mb-2">
+                  {server.name}
+                </Text>
+                <Text className="text-gray-300">{server.ip}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
       </ScrollView>
