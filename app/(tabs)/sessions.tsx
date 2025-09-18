@@ -1,57 +1,88 @@
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import TerminalWebView from '../components/TerminalWebView';
 
 export default function SessionsScreen() {
+  const [showTerminal, setShowTerminal] = useState(true);
+
+  const testHostConfig = {
+    id: 1,
+    name: 'RackNerd #1',
+    ip: '192.210.197.55',
+    port: 22,
+    username: 'bugattiguy527',
+    authType: 'password' as const,
+    password: 'bugatti$123',
+    key: undefined,
+    keyPassword: undefined,
+    keyType: undefined,
+    credentialId: undefined,
+  };
+
   return (
-    <ScrollView className="flex-1 bg-gray-50">
-      <View className="p-6">
-        <Text className="text-3xl font-bold text-gray-800 mb-4">
-          Sessions
-        </Text>
-        <Text className="text-lg text-gray-600 mb-8">
-          Active terminal sessions
-        </Text>
-        
-        <View className="space-y-4">
-          <View className="bg-white rounded-lg p-4 shadow-sm">
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-lg font-semibold text-gray-800">
-                Development Session
-              </Text>
-              <View className="w-3 h-3 bg-green-500 rounded-full"></View>
-            </View>
-            <Text className="text-gray-600 mb-2">localhost:3000</Text>
-            <Text className="text-sm text-gray-500">Started 2 hours ago</Text>
-          </View>
-          
-          <View className="bg-white rounded-lg p-4 shadow-sm">
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-lg font-semibold text-gray-800">
-                Database Session
-              </Text>
-              <View className="w-3 h-3 bg-yellow-500 rounded-full"></View>
-            </View>
-            <Text className="text-gray-600 mb-2">localhost:5432</Text>
-            <Text className="text-sm text-gray-500">Started 1 hour ago</Text>
-          </View>
-          
-          <View className="bg-white rounded-lg p-4 shadow-sm">
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="text-lg font-semibold text-gray-800">
-                Production Session
-              </Text>
-              <View className="w-3 h-3 bg-red-500 rounded-full"></View>
-            </View>
-            <Text className="text-gray-600 mb-2">prod.example.com</Text>
-            <Text className="text-sm text-gray-500">Disconnected</Text>
-          </View>
-        </View>
-        
-        <TouchableOpacity className="bg-gray-200 px-6 py-3 rounded-lg mt-6">
-          <Text className="text-gray-700 text-center font-semibold">
-            Start New Session
+    <View className="flex-1 bg-dark-bg">
+      <View className="bg-gray-800 p-4 border-b border-gray-700">
+        <View className="flex-row items-center justify-between">
+          <Text className="text-white text-lg font-semibold">
+            Terminal Sessions
           </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setShowTerminal(!showTerminal)}
+            className="bg-blue-600 px-4 py-2 rounded-lg"
+          >
+            <Text className="text-white font-medium">
+              {showTerminal ? 'Hide Terminal' : 'Show Terminal'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View className="mt-2">
+          <Text className="text-gray-300 text-sm">
+            Connected to: {testHostConfig.name} ({testHostConfig.ip}:{testHostConfig.port})
+          </Text>
+          <Text className="text-gray-400 text-xs">
+            User: {testHostConfig.username} | Auth: {testHostConfig.authType}
+          </Text>
+        </View>
       </View>
-    </ScrollView>
+
+      {showTerminal && (
+        <View className="flex-1">
+          <TerminalWebView
+            hostConfig={testHostConfig}
+            isVisible={showTerminal}
+            title="Test Terminal"
+          />
+        </View>
+      )}
+
+      {!showTerminal && (
+        <ScrollView className="flex-1">
+          <View className="p-6">
+            <Text className="text-white text-xl font-semibold mb-4">
+              Terminal Sessions
+            </Text>
+            <Text className="text-gray-300 mb-4">
+              This is where your terminal sessions will be displayed.
+            </Text>
+            <View className="bg-gray-800 p-4 rounded-lg">
+              <Text className="text-white font-medium mb-2">Test Connection</Text>
+              <Text className="text-gray-300 text-sm mb-1">
+                Host: {testHostConfig.name}
+              </Text>
+              <Text className="text-gray-300 text-sm mb-1">
+                IP: {testHostConfig.ip}:{testHostConfig.port}
+              </Text>
+              <Text className="text-gray-300 text-sm mb-1">
+                User: {testHostConfig.username}
+              </Text>
+              <Text className="text-gray-300 text-sm">
+                Auth: {testHostConfig.authType}
+              </Text>
+            </View>
+          </View>
+        </ScrollView>
+      )}
+    </View>
   );
 }

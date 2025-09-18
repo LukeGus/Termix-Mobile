@@ -1,51 +1,38 @@
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import {View, Text, ScrollView, TouchableOpacity} from 'react-native';
+import {clearAuth} from "@/app/main-axios";
+import {useAppContext} from "@/app/AppContext";
 
 export default function SettingsScreen() {
-  return (
-    <ScrollView className="flex-1 bg-gray-50">
-      <View className="p-6">
-        <Text className="text-2xl font-bold text-gray-800 mb-6">
-          Settings
-        </Text>
-        
-        <View className="space-y-4">
-          <View className="bg-white rounded-lg p-4 shadow-sm">
-            <Text className="text-lg font-semibold text-gray-800 mb-2">
-              Account
-            </Text>
-            <Text className="text-gray-600">
-              Manage your account settings
-            </Text>
-          </View>
-          
-          <View className="bg-white rounded-lg p-4 shadow-sm">
-            <Text className="text-lg font-semibold text-gray-800 mb-2">
-              Notifications
-            </Text>
-            <Text className="text-gray-600">
-              Configure notification preferences
-            </Text>
-          </View>
-          
-          <View className="bg-white rounded-lg p-4 shadow-sm">
-            <Text className="text-lg font-semibold text-gray-800 mb-2">
-              Appearance
-            </Text>
-            <Text className="text-gray-600">
-              Customize the app appearance
-            </Text>
-          </View>
-          
-          <View className="bg-white rounded-lg p-4 shadow-sm">
-            <Text className="text-lg font-semibold text-gray-800 mb-2">
-              About
-            </Text>
-            <Text className="text-gray-600">
-              App version and information
-            </Text>
-          </View>
-        </View>
-      </View>
-    </ScrollView>
-  );
+    const {setAuthenticated, setShowLoginForm, setShowServerManager, selectedServer} = useAppContext();
+
+
+    const handleLogout = async () => {
+        try {
+            console.log('Logging out...');
+            await clearAuth();
+            setAuthenticated(false);
+            setShowLoginForm(true);
+            setShowServerManager(false);
+            console.log('Logout complete, showing login form');
+        } catch (error) {
+            console.error('Error logging out:', error);
+        }
+    };
+
+    return (
+        <ScrollView className="flex-1 bg-dark-bg">
+            <View className="p-6">
+                <Text className="text-2xl font-bold text-white mb-6">
+                    Settings
+                </Text>
+
+                <TouchableOpacity
+                    onPress={handleLogout}
+                    className="bg-red-600 px-6 py-3 rounded-lg"
+                >
+                    <Text className="text-white font-semibold">Logout</Text>
+                </TouchableOpacity>
+            </View>
+        </ScrollView>
+    );
 }

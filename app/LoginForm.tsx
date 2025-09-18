@@ -1,6 +1,7 @@
 import {TextInput, View, TouchableOpacity, Text, Alert} from "react-native";
 import {useAppContext} from "./AppContext";
 import { useState } from "react";
+import { loginUser, setCookie } from "./main-axios";
 
 type LoginDetails = {
     username: string
@@ -8,11 +9,12 @@ type LoginDetails = {
 }
 
 export default function LoginForm() {
-    const { setShowLoginForm, selectedServer } = useAppContext();
+    const { setShowLoginForm, setAuthenticated, setShowServerManager, selectedServer } = useAppContext();
     const [formData, setFormData] = useState<LoginDetails>({
         username: '',
         password: ''
     });
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleInputChange = (field: keyof LoginDetails, value: string) => {
         setFormData(prev => ({
@@ -27,31 +29,48 @@ export default function LoginForm() {
             return;
         }
 
+        setIsLoading(true);
+
         try {
-            console.log('Login attempt:', {
-                server: selectedServer,
-                username: formData.username,
-                password: formData.password
-            });
+            const response = await loginUser(formData.username.trim(), formData.password.trim());
             
-            // Reset form and close - this will take user to main app (sessions)
-            setFormData({ username: '', password: '' });
-            setShowLoginForm(false);
-        } catch (error) {
+            if (response.token) {
+                await setCookie('jwt', response.token);
+                
+                setAuthenticated(true);
+                setFormData({ username: '', password: '' });
+                setShowLoginForm(false);
+            } else {
+                Alert.alert('Login Failed', 'Invalid response from server. Please try again.');
+            }
+        } catch (error: any) {
             console.error('Error connecting:', error);
-            Alert.alert('Error', 'Failed to connect. Please try again.');
+            const errorMessage = error?.message || 'Failed to connect. Please try again.';
+            Alert.alert('Login Failed', errorMessage);
+        } finally {
+            setIsLoading(false);
         }
     }
 
-    const handleClose = () => {
+    const handleBackToServerConfig = () => {
         setShowLoginForm(false);
+        setShowServerManager(true);
     };
 
     return (
         <View className="flex-1 bg-dark-bg">
             <View className="flex-1 justify-center px-6">
-                <View className="bg-dark-bg-panel rounded-lg p-6 border border-dark-border-panel">
-                    <Text className="text-white text-lg font-semibold mb-4">Login Details</Text>
+                <View className="">
+                    <View className="flex-row items-center justify-between mb-4">
+                        <View className="flex-1 items-center">
+                            <Text className="text-white text-lg font-semibold mb-2">Login Details</Text>
+                            {selectedServer && (
+                                <Text className="text-gray-400 text-sm mt-1">
+                                    {selectedServer.ip}
+                                </Text>
+                            )}
+                        </View>
+                    </View>
 
                     <View className="space-y-4">
                         <View>
@@ -81,9 +100,21 @@ export default function LoginForm() {
                     
                     <TouchableOpacity 
                         onPress={onLoginSubmit}
-                        className="bg-blue-600 px-6 py-4 rounded-lg mt-6"
+                        disabled={isLoading}
+                        className={`px-6 py-4 rounded-lg mt-6 ${isLoading ? 'bg-gray-600' : 'bg-dark-bg-button'}`}
                     >
-                        <Text className="text-white text-center font-semibold text-lg">Connect</Text>
+                        <Text className="text-white text-center font-semibold text-lg">
+                            {isLoading ? 'Logging in...' : 'Login'}
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={handleBackToServerConfig}
+                        className={`px-6 py-4 rounded-lg mt-6 bg-dark-bg-button`}
+                    >
+                        <Text className="text-white text-center font-semibold text-lg">
+                            Back
+                        </Text>
                     </TouchableOpacity>
                 </View>
             </View>

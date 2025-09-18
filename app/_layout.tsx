@@ -2,10 +2,20 @@ import { Stack } from "expo-router";
 import { AppProvider, useAppContext } from "./AppContext";
 import ServerForm from "./ServerForm";
 import LoginForm from "./LoginForm";
+import { View, Text, ActivityIndicator } from "react-native";
 import "../global.css";
 
 function RootLayoutContent() {
-  const { showServerManager, showLoginForm } = useAppContext();
+  const { showServerManager, showLoginForm, isAuthenticated, isLoading } = useAppContext();
+
+  if (isLoading) {
+    return (
+      <View className="flex-1 bg-dark-bg justify-center items-center">
+        <ActivityIndicator size="large" color="#3B82F6" />
+        <Text className="text-white text-lg mt-4">Initializing...</Text>
+      </View>
+    );
+  }
 
   if (showServerManager) {
     return <ServerForm />;
@@ -14,17 +24,21 @@ function RootLayoutContent() {
   if (showLoginForm) {
     return <LoginForm />;
   }
+s
+  if (isAuthenticated) {
+    return (
+      <Stack
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      </Stack>
+    );
+  }
 
-  return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-    </Stack>
-  );
+  return <LoginForm />;
 }
 
 export default function RootLayout() {
