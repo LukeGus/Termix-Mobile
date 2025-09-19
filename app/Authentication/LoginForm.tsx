@@ -1,7 +1,7 @@
 import {TextInput, View, TouchableOpacity, Text, Alert} from "react-native";
-import {useAppContext} from "./AppContext";
+import {useAppContext} from "../AppContext";
 import { useState } from "react";
-import { loginUser, setCookie } from "./main-axios";
+import { loginUser, setCookie } from "../main-axios";
 
 type LoginDetails = {
     username: string

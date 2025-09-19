@@ -1,7 +1,7 @@
 import {TextInput, View, TouchableOpacity, Text, Alert} from "react-native";
-import {useAppContext} from "./AppContext";
+import {useAppContext} from "../AppContext";
 import { useState, useEffect } from "react";
-import { saveServerConfig, testServerConnection, getCurrentServerUrl } from "./main-axios";
+import { saveServerConfig, testServerConnection, getCurrentServerUrl } from "../main-axios";
 
 type ServerDetails = {
     ip: string

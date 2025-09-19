@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useState } from 'react';
-import TerminalWebView from '../components/TerminalWebView';
+import TerminalWebView from '@/app/Terminal/TerminalWebView';
 
 export default function SessionsScreen() {
   const [showTerminal, setShowTerminal] = useState(true);

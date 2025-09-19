@@ -1,7 +1,7 @@
 import { Stack } from "expo-router";
 import { AppProvider, useAppContext } from "./AppContext";
-import ServerForm from "./ServerForm";
-import LoginForm from "./LoginForm";
+import ServerForm from "./Authentication/ServerForm";
+import LoginForm from "./Authentication/LoginForm";
 import { View, Text, ActivityIndicator } from "react-native";
 import "../global.css";
 
