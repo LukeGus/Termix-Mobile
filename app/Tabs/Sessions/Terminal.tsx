@@ -1,8 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { WebView } from 'react-native-webview';
-import { getCurrentServerUrl } from '../main-axios';
+import { getCurrentServerUrl } from '../../main-axios';
 
-interface TerminalWebViewProps {
+interface TerminalProps {
   hostConfig: {
     id: number;
     name: string;
@@ -20,7 +20,7 @@ interface TerminalWebViewProps {
   title?: string;
 }
 
-export const TerminalWebView: React.FC<TerminalWebViewProps> = ({
+export const Terminal: React.FC<TerminalProps> = ({
   hostConfig,
   isVisible,
   title = 'Terminal'
@@ -103,7 +103,6 @@ export const TerminalWebView: React.FC<TerminalWebViewProps> = ({
   <div id="terminal"></div>
   
   <script>
-    // Terminal configuration matching your old terminal
     const terminal = new Terminal({
       cursorBlink: false,
       cursorStyle: 'bar',
@@ -311,4 +310,4 @@ export const TerminalWebView: React.FC<TerminalWebViewProps> = ({
   );
 };
 
-export default TerminalWebView;
+export default Terminal;
