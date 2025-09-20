@@ -21,8 +21,8 @@ export default function Sessions() {
 
     return (
         <View className="flex-1 bg-dark-bg" style={{ paddingTop: insets.top }}>
-            {activeSession ? (
-                <View className="flex-1">
+            <View className="flex-1">
+                {activeSession ? (
                     <Terminal
                         hostConfig={{
                             id: activeSession.host.id,
@@ -40,26 +40,26 @@ export default function Sessions() {
                         isVisible={true}
                         title={activeSession.title}
                     />
-                </View>
-            ) : (
-                <View className="flex-1 justify-center items-center">
-                    <Text className="text-white text-lg">
-                        No active terminal sessions
-                    </Text>
-                    <Text className="text-white text-sm mt-2">
-                        Connect to a host from the Hosts tab to start a terminal session
-                    </Text>
-                </View>
-            )}
-            
-            <View style={{ paddingBottom: insets.bottom }}>
-                <TabBar
-                    sessions={sessions}
-                    activeSessionId={activeSessionId}
-                    onTabPress={handleTabPress}
-                    onTabClose={handleTabClose}
-                />
+                ) : (
+                    <View className="flex-1 justify-center items-center">
+                        <Text className="text-white text-lg">
+                            No active terminal sessions
+                        </Text>
+                        <Text className="text-white text-sm mt-2">
+                            Connect to a host from the Hosts tab to start a terminal session
+                        </Text>
+                    </View>
+                )}
             </View>
+            
+            <TabBar
+                sessions={sessions}
+                activeSessionId={activeSessionId}
+                onTabPress={handleTabPress}
+                onTabClose={handleTabClose}
+            />
+            
+            <View style={{ height: insets.bottom }} />
         </View>
     );
 }

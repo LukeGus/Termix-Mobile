@@ -21,6 +21,8 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
         backgroundColor: '#0e0e10',
         borderTopWidth: 1.5,
         borderTopColor: '#303032',
+        minHeight: 60,
+        maxHeight: 60,
       }}
     >
       <ScrollView
