@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { View } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { Dimensions } from 'react-native';
 import { getCurrentServerUrl } from '../../main-axios';
 
 interface TerminalProps {
@@ -28,16 +28,6 @@ export const Terminal: React.FC<TerminalProps> = ({
 }) => {
   const webViewRef = useRef<WebView>(null);
   const [webViewKey, setWebViewKey] = useState(0);
-  const [screenDimensions, setScreenDimensions] = useState(Dimensions.get('window'));
-
-  // Handle screen dimension changes for responsive design
-  useEffect(() => {
-    const subscription = Dimensions.addEventListener('change', ({ window }) => {
-      setScreenDimensions(window);
-    });
-
-    return () => subscription?.remove();
-  }, []);
 
   const getWebSocketUrl = () => {
     const serverUrl = getCurrentServerUrl();
@@ -55,7 +45,6 @@ export const Terminal: React.FC<TerminalProps> = ({
 
   const generateHTML = useCallback(() => {
     const wsUrl = getWebSocketUrl();
-    const { width, height } = screenDimensions;
     
     return `
 <!DOCTYPE html>
@@ -118,15 +107,11 @@ export const Terminal: React.FC<TerminalProps> = ({
   <div id="terminal"></div>
   
   <script>
-    // Calculate responsive font size based on screen width
-    const screenWidth = ${width};
-    const baseFontSize = Math.max(12, Math.min(16, screenWidth / 30));
-    
     const terminal = new Terminal({
       cursorBlink: false,
       cursorStyle: 'bar',
       scrollback: 10000,
-      fontSize: baseFontSize,
+      fontSize: 14,
       fontFamily: '"JetBrains Mono", "MesloLGS NF", "FiraCode Nerd Font", "Cascadia Code", "JetBrains Mono", Consolas, "Courier New", monospace',
       theme: { 
         background: '#09090b', 
@@ -294,41 +279,43 @@ export const Terminal: React.FC<TerminalProps> = ({
 </body>
 </html>
     `;
-  }, [hostConfig, screenDimensions]);
+  }, [hostConfig]);
 
-  // Force WebView refresh when hostConfig or screen dimensions change
+  // Force WebView refresh when hostConfig changes
   useEffect(() => {
     setWebViewKey(prev => prev + 1);
-  }, [hostConfig.id, screenDimensions]);
+  }, [hostConfig.id]);
 
   if (!isVisible) {
     return null;
   }
 
   return (
-    <WebView
-      key={webViewKey}
-      ref={webViewRef}
-      source={{ html: generateHTML() }}
-      style={{ 
-        flex: 1, 
-        backgroundColor: '#09090b'
-      }}
-      javaScriptEnabled={true}
-      domStorageEnabled={true}
-      startInLoadingState={false}
-      scalesPageToFit={false}
-      allowsInlineMediaPlayback={true}
-      mediaPlaybackRequiresUserAction={false}
-      onError={(syntheticEvent) => {
-        const { nativeEvent } = syntheticEvent;
-        console.error('WebView error:', nativeEvent);
-      }}
-      onHttpError={(syntheticEvent) => {
-        const { nativeEvent } = syntheticEvent;
-        console.error('WebView HTTP error:', nativeEvent);
-      }}
-    />
+    <View className="flex-1">
+      <WebView
+        key={webViewKey}
+        ref={webViewRef}
+        source={{ html: generateHTML() }}
+        style={{ 
+          flex: 1, 
+          backgroundColor: '#09090b'
+        }}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        startInLoadingState={false}
+        scalesPageToFit={false}
+        allowsInlineMediaPlayback={true}
+        mediaPlaybackRequiresUserAction={false}
+        onError={(syntheticEvent) => {
+          const { nativeEvent } = syntheticEvent;
+          console.error('WebView error:', nativeEvent);
+        }}
+        onHttpError={(syntheticEvent) => {
+          const { nativeEvent } = syntheticEvent;
+          console.error('WebView HTTP error:', nativeEvent);
+        }}
+      />
+    </View>
   );
 };
 

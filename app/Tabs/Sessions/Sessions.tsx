@@ -52,12 +52,14 @@ export default function Sessions() {
                 </View>
             )}
             
-            <TabBar
-                sessions={sessions}
-                activeSessionId={activeSessionId}
-                onTabPress={handleTabPress}
-                onTabClose={handleTabClose}
-            />
+            <View style={{ paddingBottom: insets.bottom }}>
+                <TabBar
+                    sessions={sessions}
+                    activeSessionId={activeSessionId}
+                    onTabPress={handleTabPress}
+                    onTabClose={handleTabClose}
+                />
+            </View>
         </View>
     );
 }

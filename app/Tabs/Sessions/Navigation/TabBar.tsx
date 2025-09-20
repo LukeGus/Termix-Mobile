@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import { TerminalSession } from '@/app/contexts/TerminalSessionsContext';
 
@@ -12,8 +11,6 @@ interface TabBarProps {
 }
 
 export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClose }: TabBarProps) {
-  const insets = useSafeAreaInsets();
-  
   if (sessions.length === 0) {
     return null;
   }
@@ -24,7 +21,6 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
         backgroundColor: '#0e0e10',
         borderTopWidth: 1.5,
         borderTopColor: '#303032',
-        paddingBottom: insets.bottom,
       }}
     >
       <ScrollView
@@ -44,7 +40,7 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
             <TouchableOpacity
               key={session.id}
               onPress={() => onTabPress(session.id)}
-              className={`flex-row items-center rounded-md border-2 border-dark-border mr-1 min-w-[140px] max-w-[200px] ${
+              className={`flex-row items-center rounded-md border-2 border-dark-border mr-1 ${
                 isActive 
                   ? 'bg-dark-bg-button' 
                   : 'bg-dark-bg-input'
