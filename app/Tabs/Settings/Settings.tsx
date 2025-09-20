@@ -1,9 +1,11 @@
 import {ScrollView, Text, TouchableOpacity, View} from "react-native";
+import {useSafeAreaInsets} from "react-native-safe-area-context";
 import {useAppContext} from "@/app/AppContext";
 import {clearAuth} from "@/app/main-axios";
 
 export default function Settings() {
     const {setAuthenticated, setShowLoginForm, setShowServerManager, selectedServer} = useAppContext();
+    const insets = useSafeAreaInsets();
 
 
     const handleLogout = async () => {
@@ -21,7 +23,7 @@ export default function Settings() {
 
     return (
         <ScrollView className="flex-1 bg-dark-bg">
-            <View className="p-6 mt-5">
+            <View className="p-6" style={{ paddingTop: insets.top + 20 }}>
                 <Text className="text-2xl font-bold text-white mb-6">
                     Settings
                 </Text>

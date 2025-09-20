@@ -1,8 +1,10 @@
 import { Stack } from "expo-router";
 import { AppProvider, useAppContext } from "./AppContext";
+import { TerminalSessionsProvider } from "./contexts/TerminalSessionsContext";
 import ServerForm from "./Authentication/ServerForm";
 import LoginForm from "./Authentication/LoginForm";
 import { View, Text, ActivityIndicator } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
 
 function RootLayoutContent() {
@@ -46,8 +48,12 @@ function RootLayoutContent() {
 
 export default function RootLayout() {
   return (
-    <AppProvider>
-      <RootLayoutContent />
-    </AppProvider>
+    <SafeAreaProvider>
+      <AppProvider>
+        <TerminalSessionsProvider>
+          <RootLayoutContent />
+        </TerminalSessionsProvider>
+      </AppProvider>
+    </SafeAreaProvider>
   );
 }

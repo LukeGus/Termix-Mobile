@@ -346,13 +346,24 @@ export async function testServerConnection(
 // Initialize server config from AsyncStorage when needed
 export async function initializeServerConfig(): Promise<void> {
     try {
+        console.log('Initializing server config...');
         const configStr = await AsyncStorage.getItem('serverConfig');
+        console.log('Config string from storage:', configStr);
+        
         if (configStr) {
             const config = JSON.parse(configStr);
+            console.log('Parsed config:', config);
+            
             if (config?.serverUrl) {
+                console.log('Setting configuredServerUrl to:', config.serverUrl);
                 configuredServerUrl = config.serverUrl;
                 updateApiInstances();
+                console.log('Server config initialized successfully');
+            } else {
+                console.log('No serverUrl in config');
             }
+        } else {
+            console.log('No server config found in storage');
         }
     } catch (error) {
         console.error("Failed to load server config:", error);
@@ -388,10 +399,14 @@ export async function clearAuth(): Promise<void> {
 function getApiUrl(path: string, defaultPort: number): string {
     if (configuredServerUrl) {
         const baseUrl = configuredServerUrl.replace(/\/$/, "");
-        return `${baseUrl}${path}`;
+        const fullUrl = `${baseUrl}${path}`;
+        console.log(`API URL for ${path}: ${fullUrl}`);
+        return fullUrl;
     }
     // Fallback to localhost if no server configured
-    return `http://localhost:${defaultPort}${path}`;
+    const fallbackUrl = `http://localhost:${defaultPort}${path}`;
+    console.log(`Fallback API URL for ${path}: ${fallbackUrl}`);
+    return fallbackUrl;
 }
 
 // Initialize API instances

@@ -20,10 +20,8 @@ export default function ServerForm() {
             try {
                 const currentUrl = getCurrentServerUrl();
                 if (currentUrl) {
-                    // Extract IP/port from URL for display
-                    const url = new URL(currentUrl);
-                    const displayUrl = url.port ? `${url.hostname}:${url.port}` : url.hostname;
-                    setFormData({ ip: displayUrl });
+                    // Preserve the full URL including protocol for display
+                    setFormData({ ip: currentUrl });
                 } else if (selectedServer?.ip) {
                     // Use selected server IP if available
                     setFormData({ ip: selectedServer.ip });
@@ -49,9 +47,9 @@ export default function ServerForm() {
         // Remove trailing slash if present
         url = url.replace(/\/$/, '');
         
-        // Add protocol if not present
+        // Add protocol if not present (default to https for security)
         if (!url.startsWith('http://') && !url.startsWith('https://')) {
-            url = `http://${url}`;
+            url = `https://${url}`;
         }
         
         return url;
