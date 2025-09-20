@@ -51,7 +51,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 <html>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Terminal</title>
   <script src="https://unpkg.com/xterm@5.3.0/lib/xterm.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/xterm@5.3.0/css/xterm.css" />
@@ -100,6 +100,18 @@ export const Terminal: React.FC<TerminalProps> = ({
     .xterm .xterm-viewport {
       scrollbar-width: thin;
       scrollbar-color: rgba(180,180,180,0.7) transparent;
+    }
+    
+    input, textarea, select {
+      -webkit-appearance: none;
+      -webkit-user-select: text;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+      
+    html, body {
+      height: 100% !important;
+      overflow: hidden;
     }
   </style>
 </head>
@@ -155,6 +167,9 @@ export const Terminal: React.FC<TerminalProps> = ({
         ws.onopen = function() {
           console.log('WebSocket connected');
           reconnectAttempts = 0;
+          
+          // Clear terminal on reconnect
+          terminal.clear();
           
           // Send initial connection message
           const connectMessage = {
@@ -281,24 +296,25 @@ export const Terminal: React.FC<TerminalProps> = ({
     `;
   }, [hostConfig]);
 
-  // Force WebView refresh when hostConfig changes
+  // Only refresh WebView when hostConfig actually changes (not when switching tabs)
   useEffect(() => {
     setWebViewKey(prev => prev + 1);
-  }, [hostConfig.id]);
-
-  if (!isVisible) {
-    return null;
-  }
+  }, [hostConfig.id, hostConfig.name, hostConfig.ip, hostConfig.port, hostConfig.username]);
 
   return (
-    <View className="flex-1">
+    <View style={{ 
+      flex: 1, 
+      height: '100%',
+      display: isVisible ? 'flex' : 'none'
+    }}>
       <WebView
         key={webViewKey}
         ref={webViewRef}
         source={{ html: generateHTML() }}
         style={{ 
           flex: 1, 
-          backgroundColor: '#09090b'
+          backgroundColor: '#09090b',
+          height: '100%'
         }}
         javaScriptEnabled={true}
         domStorageEnabled={true}

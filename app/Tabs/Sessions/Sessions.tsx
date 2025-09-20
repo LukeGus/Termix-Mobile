@@ -1,6 +1,7 @@
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Keyboard } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTerminalSessions } from '@/app/contexts/TerminalSessionsContext';
 import Terminal from '@/app/Tabs/Sessions/Terminal';
 import TabBar from '@/app/Tabs/Sessions/Navigation/TabBar';
@@ -8,6 +9,19 @@ import TabBar from '@/app/Tabs/Sessions/Navigation/TabBar';
 export default function Sessions() {
     const insets = useSafeAreaInsets();
     const { sessions, activeSessionId, setActiveSession, removeSession } = useTerminalSessions();
+
+    // Force keyboard to stay open when in sessions tab
+    useFocusEffect(
+        React.useCallback(() => {
+            // Keep keyboard open for terminal input
+            // The WebView will handle keyboard input automatically
+            
+            return () => {
+                // Hide keyboard when leaving sessions tab
+                Keyboard.dismiss();
+            };
+        }, [])
+    );
 
     const handleTabPress = (sessionId: string) => {
         setActiveSession(sessionId);
@@ -22,25 +36,28 @@ export default function Sessions() {
     return (
         <View className="flex-1 bg-dark-bg" style={{ paddingTop: insets.top }}>
             <View className="flex-1">
-                {activeSession ? (
+                {sessions.map((session) => (
                     <Terminal
+                        key={session.id}
                         hostConfig={{
-                            id: activeSession.host.id,
-                            name: activeSession.host.name,
-                            ip: activeSession.host.ip,
-                            port: activeSession.host.port,
-                            username: activeSession.host.username,
-                            authType: activeSession.host.authType,
-                            password: activeSession.host.password,
-                            key: activeSession.host.key,
-                            keyPassword: activeSession.host.keyPassword,
-                            keyType: activeSession.host.keyType,
-                            credentialId: activeSession.host.credentialId,
+                            id: session.host.id,
+                            name: session.host.name,
+                            ip: session.host.ip,
+                            port: session.host.port,
+                            username: session.host.username,
+                            authType: session.host.authType,
+                            password: session.host.password,
+                            key: session.host.key,
+                            keyPassword: session.host.keyPassword,
+                            keyType: session.host.keyType,
+                            credentialId: session.host.credentialId,
                         }}
-                        isVisible={true}
-                        title={activeSession.title}
+                        isVisible={session.id === activeSessionId}
+                        title={session.title}
                     />
-                ) : (
+                ))}
+                
+                {sessions.length === 0 && (
                     <View className="flex-1 justify-center items-center">
                         <Text className="text-white text-lg">
                             No active terminal sessions
@@ -58,8 +75,6 @@ export default function Sessions() {
                 onTabPress={handleTabPress}
                 onTabClose={handleTabClose}
             />
-            
-            <View style={{ height: insets.bottom }} />
         </View>
     );
 }
