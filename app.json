@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "termix",
+    "scheme": "termix-mobile",
     "githubUrl": "https://github.com/LukeGus/Termix-Mobile",
     "backgroundColor": "#18181b",
     "userInterfaceStyle": "automatic",

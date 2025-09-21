@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { loginUser, setCookie, getOIDCConfig, getRegistrationAllowed, verifyTOTPLogin } from "../main-axios";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { User, Lock, ArrowLeft, Shield, UserPlus, ExternalLink } from "lucide-react-native";
+import * as AuthSession from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
 
 type LoginDetails = {
     username: string
@@ -159,12 +161,103 @@ export default function LoginForm() {
         }
     };
 
-    const handleOIDCLogin = () => {
-        if (oidcConfig?.auth_url) {
-            // In a real app, you'd open the OIDC URL in a web browser
-            Alert.alert('OIDC Login', 'OIDC login would open in your browser. This feature requires additional setup.');
-        } else {
+    /**
+     * Handles OIDC login flow:
+     * 1. Opens the OIDC provider's authorization URL in the device browser
+     * 2. User authenticates with the OIDC provider
+     * 3. OIDC provider redirects back to our app with an authorization code
+     * 4. We exchange the authorization code for a JWT token via our server
+     * 5. User is logged in with the JWT token
+     */
+    const handleOIDCLogin = async () => {
+        if (!oidcConfig?.auth_url) {
             Alert.alert('OIDC Not Available', 'OIDC login is not configured on this server.');
+            return;
+        }
+
+        setIsLoading(true);
+
+        try {
+            // Configure the OAuth request
+            const redirectUri = AuthSession.makeRedirectUri({
+                scheme: 'termix-mobile',
+                path: 'auth'
+            });
+
+            console.log('OIDC Redirect URI:', redirectUri);
+
+            // Create the OAuth request
+            const request = new AuthSession.AuthRequest({
+                clientId: oidcConfig.client_id || 'termix-mobile',
+                scopes: oidcConfig.scopes || ['openid', 'profile', 'email'],
+                redirectUri,
+                responseType: AuthSession.ResponseType.Code,
+                extraParams: oidcConfig.extra_params || {},
+            });
+
+            // Get the authorization URL
+            const authUrl = oidcConfig.auth_url;
+            
+            console.log('Starting OIDC flow with URL:', authUrl);
+            console.log('Redirect URI:', redirectUri);
+
+            // Open the browser for OAuth
+            const result = await WebBrowser.openAuthSessionAsync(
+                authUrl,
+                redirectUri
+            );
+
+            console.log('OIDC result:', result);
+
+            if (result.type === 'success' && result.url) {
+                // Parse the authorization code from the URL
+                const url = new URL(result.url);
+                const code = url.searchParams.get('code');
+                
+                if (code) {
+                    // Exchange the authorization code for tokens
+                    await handleOIDCCallback(code, redirectUri);
+                } else {
+                    Alert.alert('OIDC Login Failed', 'No authorization code received');
+                }
+            } else if (result.type === 'cancel') {
+                console.log('OIDC cancelled by user');
+            } else {
+                console.error('OIDC error:', result);
+                Alert.alert('OIDC Login Failed', 'Authentication failed');
+            }
+        } catch (error: any) {
+            console.error('OIDC login error:', error);
+            Alert.alert('OIDC Login Failed', error?.message || 'Failed to start OIDC login');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleOIDCCallback = async (code: string, redirectUri: string) => {
+        try {
+            console.log('Handling OIDC callback with code:', code);
+            
+            // Call the server's OIDC callback endpoint
+            const { authApi } = await import('../main-axios');
+            const response = await authApi.post('/users/oidc/callback', {
+                code,
+                redirect_uri: redirectUri
+            });
+
+            console.log('OIDC callback response:', response.data);
+
+            if (response.data.token) {
+                await setCookie('jwt', response.data.token);
+                setAuthenticated(true);
+                setFormData({ username: '', password: '', totpCode: '' });
+                setShowLoginForm(false);
+            } else {
+                Alert.alert('OIDC Login Failed', 'No token received from server');
+            }
+        } catch (error: any) {
+            console.error('OIDC callback error:', error);
+            Alert.alert('OIDC Login Failed', error?.message || 'Failed to complete OIDC login');
         }
     };
 
@@ -176,36 +269,36 @@ export default function LoginForm() {
     const renderAuthForm = () => {
         switch (authMode) {
             case 'login':
-                return (
+    return (
                     <>
-                        <View className="space-y-4">
-                            <View>
+                    <View className="space-y-4">
+                        <View>
                                 <Text className="text-gray-300 text-sm font-medium mb-3">Username</Text>
                                 <View className="relative">
-                                    <TextInput
+                            <TextInput
                                         className="bg-dark-bg-input p-4 pl-12 rounded-xl text-white text-base border-2 border-dark-border"
-                                        placeholder="Enter username..."
-                                        placeholderTextColor="#9CA3AF"
-                                        value={formData.username}
-                                        onChangeText={(value) => handleInputChange('username', value)}
-                                        autoCapitalize="none"
+                                placeholder="Enter username..."
+                                placeholderTextColor="#9CA3AF"
+                                value={formData.username}
+                                onChangeText={(value) => handleInputChange('username', value)}
+                                autoCapitalize="none"
                                         autoComplete="username"
-                                    />
+                            />
                                     <View className="absolute left-4 top-1/2 -translate-y-1/2">
                                         <User size={20} color="#9CA3AF" />
                                     </View>
                                 </View>
-                            </View>
+                        </View>
 
-                            <View>
+                        <View>
                                 <Text className="text-gray-300 text-sm font-medium mb-3">Password</Text>
                                 <View className="relative">
-                                    <TextInput
+                            <TextInput
                                         className="bg-dark-bg-input p-4 pl-12 pr-12 rounded-xl text-white text-base border-2 border-dark-border"
-                                        placeholder="Enter password..."
-                                        placeholderTextColor="#9CA3AF"
-                                        value={formData.password}
-                                        onChangeText={(value) => handleInputChange('password', value)}
+                                placeholder="Enter password..."
+                                placeholderTextColor="#9CA3AF"
+                                value={formData.password}
+                                onChangeText={(value) => handleInputChange('password', value)}
                                         secureTextEntry={!showPassword}
                                         autoComplete="current-password"
                                     />
@@ -222,19 +315,19 @@ export default function LoginForm() {
                                     </TouchableOpacity>
                                 </View>
                             </View>
-                        </View>
-
-                        <TouchableOpacity 
-                            onPress={onLoginSubmit}
-                            disabled={isLoading}
+                    </View>
+                    
+                    <TouchableOpacity 
+                        onPress={onLoginSubmit}
+                        disabled={isLoading}
                             className={`px-6 py-4 rounded-xl mt-6 ${
                                 isLoading ? 'bg-gray-600' : 'bg-blue-600'
                             }`}
-                        >
-                            <Text className="text-white text-center font-semibold text-lg">
-                                {isLoading ? 'Logging in...' : 'Login'}
-                            </Text>
-                        </TouchableOpacity>
+                    >
+                        <Text className="text-white text-center font-semibold text-lg">
+                            {isLoading ? 'Logging in...' : 'Login'}
+                        </Text>
+                    </TouchableOpacity>
                     </>
                 );
 
@@ -391,11 +484,14 @@ export default function LoginForm() {
                             {oidcConfig && (
                                 <TouchableOpacity
                                     onPress={handleOIDCLogin}
-                                    className="flex-row items-center justify-center px-6 py-4 rounded-xl bg-dark-bg-button border border-dark-border"
+                                    disabled={isLoading}
+                                    className={`flex-row items-center justify-center px-6 py-4 rounded-xl border border-dark-border ${
+                                        isLoading ? 'bg-gray-600' : 'bg-dark-bg-button'
+                                    }`}
                                 >
                                     <ExternalLink size={20} color="#ffffff" className="mr-2" />
                                     <Text className="text-white font-semibold text-lg">
-                                        Login with OIDC
+                                        {isLoading ? 'Opening Browser...' : 'Login with OIDC'}
                                     </Text>
                                 </TouchableOpacity>
                             )}
