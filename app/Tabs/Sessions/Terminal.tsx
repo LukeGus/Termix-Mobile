@@ -1,7 +1,8 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { View } from 'react-native';
+import { View, Text, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { getCurrentServerUrl } from '../../main-axios';
+import { showToast } from '../../utils/toast';
 
 interface TerminalProps {
   hostConfig: {
@@ -19,15 +20,21 @@ interface TerminalProps {
   };
   isVisible: boolean;
   title?: string;
+  onClose?: () => void;
 }
 
 export const Terminal: React.FC<TerminalProps> = ({
   hostConfig,
   isVisible,
-  title = 'Terminal'
+  title = 'Terminal',
+  onClose
 }) => {
   const webViewRef = useRef<WebView>(null);
   const [webViewKey, setWebViewKey] = useState(0);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const previousHostConfigRef = useRef(hostConfig);
 
   const getWebSocketUrl = () => {
     const serverUrl = getCurrentServerUrl();
@@ -54,6 +61,7 @@ export const Terminal: React.FC<TerminalProps> = ({
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Terminal</title>
   <script src="https://unpkg.com/xterm@5.3.0/lib/xterm.js"></script>
+  <script src="https://unpkg.com/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/xterm@5.3.0/css/xterm.css" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
@@ -66,19 +74,28 @@ export const Terminal: React.FC<TerminalProps> = ({
       overflow: hidden;
       width: 100vw;
       height: 100vh;
+      box-sizing: border-box;
     }
     
     #terminal {
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
       min-height: 100vh;
+      box-sizing: border-box;
     }
     
     .xterm {
+      width: 100% !important;
+      height: 100% !important;
       font-feature-settings: "liga" 1, "calt" 1;
       text-rendering: optimizeLegibility;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
+    }
+    
+    .xterm-viewport {
+      width: 100% !important;
+      height: 100% !important;
     }
     
     .xterm .xterm-screen {
@@ -144,29 +161,53 @@ export const Terminal: React.FC<TerminalProps> = ({
       cursorInactiveStyle: 'bar'
     });
 
+    // Load fit addon
+    const { FitAddon } = xtermAddonFit;
+    const fitAddon = new FitAddon();
+    terminal.loadAddon(fitAddon);
+
     // Open terminal
     terminal.open(document.getElementById('terminal'));
+    
+    // Fit terminal to container
+    fitAddon.fit();
     
     // Host configuration from React Native
     const hostConfig = ${JSON.stringify(hostConfig)};
     const wsUrl = '${wsUrl}';
     
-    console.log('Connecting to WebSocket:', wsUrl);
-    console.log('Host config:', hostConfig);
-    
     let ws = null;
     let reconnectAttempts = 0;
-    const maxReconnectAttempts = 5;
+    const maxReconnectAttempts = 3;
     let reconnectTimeout = null;
+    let inputHandler = null;
+    let isConnected = false;
     
     // WebSocket connection function
     function connectWebSocket() {
       try {
+        // Clean up existing connection
+        if (ws) {
+          ws.close();
+        }
+        
+        // Remove existing input handler to prevent duplication
+        if (inputHandler) {
+          terminal.offData(inputHandler);
+          inputHandler = null;
+        }
+        
+        // Notify React Native that we're connecting
+        window.ReactNativeWebView?.postMessage(JSON.stringify({
+          type: 'connecting',
+          data: { hostName: hostConfig.name, retryCount: reconnectAttempts }
+        }));
+        
         ws = new WebSocket(wsUrl);
         
         ws.onopen = function() {
-          console.log('WebSocket connected');
           reconnectAttempts = 0;
+          isConnected = true;
           
           // Clear terminal on reconnect
           terminal.clear();
@@ -183,15 +224,27 @@ export const Terminal: React.FC<TerminalProps> = ({
           
           ws.send(JSON.stringify(connectMessage));
           
-          // Set up terminal input handler
-          terminal.onData(function(data) {
+          // Set up terminal input handler (only once)
+          inputHandler = function(data) {
             if (ws && ws.readyState === WebSocket.OPEN) {
               ws.send(JSON.stringify({ type: 'input', data: data }));
             }
-          });
+          };
+          terminal.onData(inputHandler);
           
           // Start ping interval
           startPingInterval();
+          
+          // Notify React Native that connection is established
+          window.ReactNativeWebView?.postMessage(JSON.stringify({
+            type: 'connected',
+            data: { hostName: hostConfig.name }
+          }));
+          
+          // Fit terminal after connection
+          setTimeout(() => {
+            fitAddon.fit();
+          }, 100);
         };
         
         ws.onmessage = function(event) {
@@ -201,44 +254,83 @@ export const Terminal: React.FC<TerminalProps> = ({
             if (msg.type === 'data') {
               terminal.write(msg.data);
             } else if (msg.type === 'error') {
-              terminal.writeln('\\r\\n[ERROR] ' + msg.message);
+              // Notify React Native of error
+              window.ReactNativeWebView?.postMessage(JSON.stringify({
+                type: 'error',
+                data: { hostName: hostConfig.name, message: msg.message }
+              }));
             } else if (msg.type === 'connected') {
-              terminal.writeln('\\r\\n[CONNECTED] SSH connection established');
+              // SSH connection established - no toast for this
             } else if (msg.type === 'disconnected') {
-              terminal.writeln('\\r\\n[DISCONNECTED] ' + (msg.message || 'SSH connection closed'));
+              isConnected = false;
+              // Notify React Native of disconnection
+              window.ReactNativeWebView?.postMessage(JSON.stringify({
+                type: 'disconnected',
+                data: { hostName: hostConfig.name, message: msg.message }
+              }));
             }
           } catch (error) {
-            console.error('Error parsing WebSocket message:', error);
+            // Notify React Native of parsing error
+            window.ReactNativeWebView?.postMessage(JSON.stringify({
+              type: 'error',
+              data: { hostName: hostConfig.name, message: 'Error parsing message' }
+            }));
           }
         };
         
         ws.onclose = function(event) {
-          console.log('WebSocket closed:', event.code, event.reason);
-          terminal.writeln('\\r\\n[CONNECTION CLOSED] WebSocket connection lost');
+          isConnected = false;
           stopPingInterval();
+          
+          // Notify React Native of disconnection
+          window.ReactNativeWebView?.postMessage(JSON.stringify({
+            type: 'disconnected',
+            data: { hostName: hostConfig.name, message: 'WebSocket connection lost' }
+          }));
           
           // Attempt to reconnect
           if (reconnectAttempts < maxReconnectAttempts) {
             reconnectAttempts++;
             const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 10000);
-            console.log('Attempting to reconnect in', delay, 'ms (attempt', reconnectAttempts, '/', maxReconnectAttempts, ')');
+            
+            // Notify React Native of retry attempt
+            window.ReactNativeWebView?.postMessage(JSON.stringify({
+              type: 'retrying',
+              data: { 
+                hostName: hostConfig.name, 
+                retryCount: reconnectAttempts, 
+                maxRetries: maxReconnectAttempts,
+                delay: delay
+              }
+            }));
             
             reconnectTimeout = setTimeout(() => {
               connectWebSocket();
             }, delay);
           } else {
-            terminal.writeln('\\r\\n[RECONNECT FAILED] Maximum reconnection attempts reached');
+            // Notify React Native of max retries reached
+            window.ReactNativeWebView?.postMessage(JSON.stringify({
+              type: 'maxRetriesReached',
+              data: { hostName: hostConfig.name, maxRetries: maxReconnectAttempts }
+            }));
           }
         };
         
         ws.onerror = function(error) {
-          console.error('WebSocket error:', error);
-          terminal.writeln('\\r\\n[CONNECTION ERROR] WebSocket connection failed');
+          isConnected = false;
+          // Notify React Native of WebSocket error
+          window.ReactNativeWebView?.postMessage(JSON.stringify({
+            type: 'error',
+            data: { hostName: hostConfig.name, message: 'WebSocket connection failed' }
+          }));
         };
         
       } catch (error) {
-        console.error('Error creating WebSocket connection:', error);
-        terminal.writeln('\\r\\n[ERROR] Failed to create WebSocket connection: ' + error.message);
+        // Notify React Native of connection creation error
+        window.ReactNativeWebView?.postMessage(JSON.stringify({
+          type: 'error',
+          data: { hostName: hostConfig.name, message: 'Failed to create WebSocket connection' }
+        }));
       }
     }
     
@@ -263,6 +355,9 @@ export const Terminal: React.FC<TerminalProps> = ({
     
     // Handle terminal resize
     function handleResize() {
+      // Fit terminal to container first
+      fitAddon.fit();
+      
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({
           type: 'resize',
@@ -274,6 +369,11 @@ export const Terminal: React.FC<TerminalProps> = ({
     // Listen for resize events
     window.addEventListener('resize', handleResize);
     
+    // Also fit on orientation change
+    window.addEventListener('orientationchange', function() {
+      setTimeout(handleResize, 100);
+    });
+    
     // Initial connection
     connectWebSocket();
     
@@ -282,6 +382,10 @@ export const Terminal: React.FC<TerminalProps> = ({
       stopPingInterval();
       if (reconnectTimeout) {
         clearTimeout(reconnectTimeout);
+      }
+      if (inputHandler) {
+        terminal.offData(inputHandler);
+        inputHandler = null;
       }
       if (ws) {
         ws.close();
@@ -296,10 +400,85 @@ export const Terminal: React.FC<TerminalProps> = ({
     `;
   }, [hostConfig]);
 
+  // Handle messages from WebView
+  const handleWebViewMessage = useCallback((event: any) => {
+    try {
+      const message = JSON.parse(event.nativeEvent.data);
+      
+      switch (message.type) {
+        case 'connecting':
+          setIsConnecting(true);
+          setRetryCount(message.data.retryCount);
+          showToast.info(`Connecting to ${message.data.hostName}...`);
+          break;
+          
+        case 'connected':
+          setIsConnecting(false);
+          setRetryCount(0);
+          // No toast for successful connection as requested
+          break;
+          
+        case 'disconnected':
+          setIsConnecting(true);
+          showToast.warning(`Disconnected from ${message.data.hostName}`);
+          // Close the tab after a short delay
+          setTimeout(() => {
+            if (onClose) {
+              onClose();
+            }
+          }, 2000);
+          break;
+          
+        case 'retrying':
+          setIsConnecting(true);
+          setRetryCount(message.data.retryCount);
+          showToast.warning(`Retrying connection to ${message.data.hostName} (${message.data.retryCount}/${message.data.maxRetries})`);
+          break;
+          
+        case 'maxRetriesReached':
+          setIsConnecting(false);
+          showToast.error(`Failed to connect to ${message.data.hostName} after ${message.data.maxRetries} attempts`);
+          // Close the tab after a short delay
+          setTimeout(() => {
+            if (onClose) {
+              onClose();
+            }
+          }, 3000);
+          break;
+          
+        case 'error':
+          setIsConnecting(false);
+          showToast.error(`${message.data.hostName}: ${message.data.message}`);
+          break;
+      }
+    } catch (error) {
+      console.error('Error parsing WebView message:', error);
+    }
+  }, []);
+
   // Only refresh WebView when hostConfig actually changes (not when switching tabs)
   useEffect(() => {
-    setWebViewKey(prev => prev + 1);
-  }, [hostConfig.id, hostConfig.name, hostConfig.ip, hostConfig.port, hostConfig.username]);
+    const currentConfig = hostConfig;
+    const previousConfig = previousHostConfigRef.current;
+    
+    // Check if host configuration has actually changed
+    const hasConfigChanged = 
+      currentConfig.id !== previousConfig.id ||
+      currentConfig.name !== previousConfig.name ||
+      currentConfig.ip !== previousConfig.ip ||
+      currentConfig.port !== previousConfig.port ||
+      currentConfig.username !== previousConfig.username ||
+      currentConfig.authType !== previousConfig.authType;
+    
+    if (hasConfigChanged && isInitialized) {
+      setWebViewKey(prev => prev + 1);
+      previousHostConfigRef.current = currentConfig;
+    } else if (!isInitialized) {
+      // First time initialization
+      setIsInitialized(true);
+      previousHostConfigRef.current = currentConfig;
+    }
+  }, [hostConfig, isInitialized]);
 
   return (
     <View style={{ 
@@ -307,30 +486,61 @@ export const Terminal: React.FC<TerminalProps> = ({
       height: '100%',
       display: isVisible ? 'flex' : 'none'
     }}>
-      <WebView
-        key={webViewKey}
-        ref={webViewRef}
-        source={{ html: generateHTML() }}
-        style={{ 
-          flex: 1, 
+      {isConnecting ? (
+        <View style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
           backgroundColor: '#09090b',
-          height: '100%'
-        }}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        startInLoadingState={false}
-        scalesPageToFit={false}
-        allowsInlineMediaPlayback={true}
-        mediaPlaybackRequiresUserAction={false}
-        onError={(syntheticEvent) => {
-          const { nativeEvent } = syntheticEvent;
-          console.error('WebView error:', nativeEvent);
-        }}
-        onHttpError={(syntheticEvent) => {
-          const { nativeEvent } = syntheticEvent;
-          console.error('WebView HTTP error:', nativeEvent);
-        }}
-      />
+          padding: 20
+        }}>
+          <ActivityIndicator size="large" color="#ffffff" />
+          <Text style={{
+            color: '#ffffff',
+            fontSize: 16,
+            marginTop: 16,
+            textAlign: 'center'
+          }}>
+            Connecting to {hostConfig.name}...
+          </Text>
+          {retryCount > 0 && (
+            <Text style={{
+              color: '#9CA3AF',
+              fontSize: 14,
+              marginTop: 8,
+              textAlign: 'center'
+            }}>
+              Retry {retryCount}/3
+            </Text>
+          )}
+        </View>
+      ) : (
+        <WebView
+          key={`terminal-${hostConfig.id}-${webViewKey}`}
+          ref={webViewRef}
+          source={{ html: generateHTML() }}
+          style={{ 
+            flex: 1, 
+            backgroundColor: '#09090b',
+            height: '100%'
+          }}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          startInLoadingState={false}
+          scalesPageToFit={false}
+          allowsInlineMediaPlayback={true}
+          mediaPlaybackRequiresUserAction={false}
+          onMessage={handleWebViewMessage}
+          onError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            showToast.error(`WebView error: ${nativeEvent.description}`);
+          }}
+          onHttpError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            showToast.error(`WebView HTTP error: ${nativeEvent.statusCode}`);
+          }}
+        />
+      )}
     </View>
   );
 };

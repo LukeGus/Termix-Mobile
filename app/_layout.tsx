@@ -5,6 +5,7 @@ import ServerForm from "./Authentication/ServerForm";
 import LoginForm from "./Authentication/LoginForm";
 import { View, Text, ActivityIndicator } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { Toaster } from "sonner-native";
 import "../global.css";
 
 function RootLayoutContent() {
@@ -13,7 +14,7 @@ function RootLayoutContent() {
   if (isLoading) {
     return (
       <View className="flex-1 bg-dark-bg justify-center items-center">
-        <ActivityIndicator size="large" color="#3B82F6" />
+        <ActivityIndicator size="large" color="#ffffff" />
         <Text className="text-white text-lg mt-4">Initializing...</Text>
       </View>
     );
@@ -52,6 +53,20 @@ export default function RootLayout() {
       <AppProvider>
         <TerminalSessionsProvider>
           <RootLayoutContent />
+          <Toaster 
+            theme="dark"
+            position="top-center"
+            toastOptions={{
+              style: {
+                backgroundColor: '#18181b',
+                borderWidth: 1,
+                borderColor: '#27272a',
+              },
+            }}
+            richColors={false}
+            closeButton={true}
+            duration={4000}
+          />
         </TerminalSessionsProvider>
       </AppProvider>
     </SafeAreaProvider>

@@ -38,16 +38,30 @@ export const TerminalSessionsProvider: React.FC<TerminalSessionsProviderProps> =
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 
   const addSession = useCallback((host: SSHHost): string => {
-    const sessionId = `${host.id}-${Date.now()}`;
-    const newSession: TerminalSession = {
-      id: sessionId,
-      host,
-      title: host.name,
-      isActive: true,
-      createdAt: new Date(),
-    };
-
     setSessions(prev => {
+      // Check if a session for this host already exists
+      const existingSession = prev.find(session => session.host.id === host.id);
+      
+      if (existingSession) {
+        // If session exists, just activate it
+        const updatedSessions = prev.map(session => ({
+          ...session,
+          isActive: session.id === existingSession.id,
+        }));
+        setActiveSessionId(existingSession.id);
+        return updatedSessions;
+      }
+      
+      // Create new session
+      const sessionId = `${host.id}-${Date.now()}`;
+      const newSession: TerminalSession = {
+        id: sessionId,
+        host,
+        title: host.name,
+        isActive: true,
+        createdAt: new Date(),
+      };
+
       // Deactivate all other sessions
       const updatedSessions = prev.map(session => ({
         ...session,
@@ -55,11 +69,11 @@ export const TerminalSessionsProvider: React.FC<TerminalSessionsProviderProps> =
       }));
       
       // Add new session
+      setActiveSessionId(sessionId);
       return [...updatedSessions, newSession];
     });
 
-    setActiveSessionId(sessionId);
-    return sessionId;
+    return '';
   }, []);
 
   const removeSession = useCallback((sessionId: string) => {
