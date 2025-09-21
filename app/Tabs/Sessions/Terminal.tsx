@@ -48,13 +48,7 @@ export const Terminal: React.FC<TerminalProps> = ({
     const wsHost = serverUrl.replace(/^https?:\/\//, '');
 
     const cleanHost = wsHost.replace(/\/$/, '');
-    // Extract host and port from the server URL
-    const url = new URL(serverUrl);
-    const host = url.hostname;
-    const port = url.port || (url.protocol === 'https:' ? '443' : '80');
-    
-    // Use port 8082 for WebSocket (as defined in terminal.ts)
-    return `${wsProtocol}${host}:8082`;
+    return `${wsProtocol}${cleanHost}/ssh/websocket/`;
   };
 
   const generateHTML = useCallback(() => {
@@ -284,7 +278,6 @@ export const Terminal: React.FC<TerminalProps> = ({
                 data: { hostName: hostConfig.name, message: msg.message }
               }));
             } else if (msg.type === 'connected') {
-              // SSH connection established - no toast for this
             } else if (msg.type === 'disconnected') {
               isConnected = false;
               // Notify React Native of disconnection
