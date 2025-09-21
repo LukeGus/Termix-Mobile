@@ -37,7 +37,7 @@ export default function Sessions() {
         if (sessions.length > 0 && !isKeyboardVisible) {
             const timeoutId = setTimeout(() => {
                 hiddenInputRef.current?.focus();
-            }, 200);
+            }, 1000); // Increased delay to allow tab interactions
             return () => clearTimeout(timeoutId);
         }
     }, [isKeyboardVisible, sessions.length]);
@@ -107,6 +107,7 @@ export default function Sessions() {
                     left: 0,
                     right: 0,
                     height: 60,
+                    zIndex: 1000, // Ensure tab bar is above everything
                 }}
             >
                 <TabBar
@@ -146,12 +147,12 @@ export default function Sessions() {
                         // Keep focus when focused
                     }}
                     onBlur={() => {
-                        // Refocus after a delay to allow tab interactions
+                        // Refocus after a longer delay to allow tab interactions
                         setTimeout(() => {
                             if (sessions.length > 0) {
                                 hiddenInputRef.current?.focus();
                             }
-                        }, 500);
+                        }, 2000); // Increased delay for tab interactions
                     }}
                     onSubmitEditing={() => {
                         // Refocus to maintain keyboard

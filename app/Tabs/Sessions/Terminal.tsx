@@ -41,13 +41,15 @@ export const Terminal: React.FC<TerminalProps> = ({
     const serverUrl = getCurrentServerUrl();
     
     if (!serverUrl) {
+      showToast.error('No server URL found - please configure a server first');
       return null;
     }
 
     const wsProtocol = serverUrl.startsWith('https://') ? 'wss://' : 'ws://';
     const wsHost = serverUrl.replace(/^https?:\/\//, '');
     const cleanHost = wsHost.replace(/\/$/, '');
-    return `${wsProtocol}${cleanHost}/ssh/websocket/`;
+    const wsUrl = `${wsProtocol}${cleanHost}/ssh/websocket/`;
+    return wsUrl;
   };
 
   // Initialize terminal when component mounts
@@ -301,6 +303,9 @@ export const Terminal: React.FC<TerminalProps> = ({
             }
           }, 10000);
           
+          // Store timeout reference for cleanup
+          window.connectionTimeout = connectionTimeout;
+          
           // Fit terminal after connection with multiple attempts
           setTimeout(() => {
             fitAddon.fit();
@@ -325,8 +330,9 @@ export const Terminal: React.FC<TerminalProps> = ({
             } else if (msg.type === 'connected') {
               isConnected = true;
               // Clear connection timeout
-              if (connectionTimeout) {
-                clearTimeout(connectionTimeout);
+              if (window.connectionTimeout) {
+                clearTimeout(window.connectionTimeout);
+                window.connectionTimeout = null;
               }
               // Notify React Native of successful connection
               window.ReactNativeWebView?.postMessage(JSON.stringify({
@@ -506,7 +512,7 @@ export const Terminal: React.FC<TerminalProps> = ({
             clearTimeout(connectionTimeoutRef.current);
             connectionTimeoutRef.current = null;
           }
-          // No toast for successful connection as requested
+          showToast.success(`Connected to ${message.data.hostName}`);
           break;
           
         case 'disconnected':
@@ -544,6 +550,10 @@ export const Terminal: React.FC<TerminalProps> = ({
         case 'error':
           setIsConnecting(false);
           showToast.error(`${message.data.hostName}: ${message.data.message}`);
+          // Show alert for connection errors
+          if (message.data.message.includes('timeout') || message.data.message.includes('failed')) {
+            showToast.error(`Connection failed: ${message.data.message}`);
+          }
           break;
       }
     } catch (error) {
@@ -655,6 +665,11 @@ export const Terminal: React.FC<TerminalProps> = ({
             const { nativeEvent } = syntheticEvent;
             showToast.error(`WebView HTTP error: ${nativeEvent.statusCode}`);
           }}
+          scrollEnabled={false}
+          bounces={false}
+          showsHorizontalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled={false}
         />
       )}
     </View>
