@@ -108,6 +108,11 @@ export default function Sessions() {
                     right: 0,
                     height: 60,
                 }}
+                onStartShouldSetResponder={() => true}
+                onResponderGrant={() => {
+                    // Prevent the hidden TextInput from losing focus when clicking tab bar
+                    return true;
+                }}
             >
                 <TabBar
                     sessions={sessions}
@@ -141,14 +146,15 @@ export default function Sessions() {
                     autoCapitalize="none"
                     spellCheck={false}
                     textContentType="none"
+                    pointerEvents="box-none"
                     onFocus={() => {
                         // Keep focus when focused
                     }}
                     onBlur={() => {
-                        // Don't aggressively refocus to allow tab interactions
+                        // Don't refocus - let the responder handle it
                     }}
                     onSubmitEditing={() => {
-                        // Don't aggressively refocus to allow tab interactions
+                        // Don't refocus - let the responder handle it
                     }}
                 />
             )}

@@ -174,9 +174,20 @@ export default function LoginForm() {
      */
     const handleOIDCLogin = async () => {
         console.log('OIDC Config:', oidcConfig);
+        console.log('OIDC Config keys:', Object.keys(oidcConfig || {}));
         
-        if (!oidcConfig || (!oidcConfig.auth_url && !oidcConfig.authorization_url)) {
-            Alert.alert('OIDC Not Available', 'OIDC login is not configured on this server.');
+        if (!oidcConfig) {
+            Alert.alert('OIDC Not Available', 'OIDC configuration not loaded from server.');
+            return;
+        }
+        
+        if (!oidcConfig.auth_url && !oidcConfig.authorization_url) {
+            Alert.alert('OIDC Not Available', 'OIDC authorization URL not configured on server.');
+            return;
+        }
+        
+        if (!oidcConfig.client_id) {
+            Alert.alert('OIDC Not Available', 'OIDC client ID not configured on server.');
             return;
         }
 
@@ -200,15 +211,30 @@ export default function LoginForm() {
                 extraParams: oidcConfig.extra_params || {},
             });
 
-            // Get the authorization URL
-            const authUrl = oidcConfig.auth_url || oidcConfig.authorization_url;
+            // Build the authorization URL with proper parameters
+            const baseUrl = oidcConfig.auth_url || oidcConfig.authorization_url;
+            const authUrl = new URL(baseUrl);
             
-            console.log('Starting OIDC flow with URL:', authUrl);
+            // Add required OIDC parameters
+            authUrl.searchParams.set('client_id', oidcConfig.client_id || 'termix-mobile');
+            authUrl.searchParams.set('redirect_uri', redirectUri);
+            authUrl.searchParams.set('response_type', 'code');
+            authUrl.searchParams.set('scope', (oidcConfig.scopes || ['openid', 'profile', 'email']).join(' '));
+            authUrl.searchParams.set('state', Math.random().toString(36).substring(7)); // Random state for security
+            
+            // Add any extra parameters from config
+            if (oidcConfig.extra_params) {
+                Object.entries(oidcConfig.extra_params).forEach(([key, value]) => {
+                    authUrl.searchParams.set(key, value as string);
+                });
+            }
+            
+            console.log('Starting OIDC flow with URL:', authUrl.toString());
             console.log('Redirect URI:', redirectUri);
 
             // Open the browser for OAuth
             const result = await WebBrowser.openAuthSessionAsync(
-                authUrl,
+                authUrl.toString(),
                 redirectUri
             );
 

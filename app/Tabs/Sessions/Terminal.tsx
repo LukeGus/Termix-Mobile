@@ -278,6 +278,11 @@ export const Terminal: React.FC<TerminalProps> = ({
                 data: { hostName: hostConfig.name, message: msg.message }
               }));
             } else if (msg.type === 'connected') {
+              // Notify React Native of successful connection (no toast)
+              window.ReactNativeWebView?.postMessage(JSON.stringify({
+                type: 'connected',
+                data: { hostName: hostConfig.name }
+              }));
             } else if (msg.type === 'disconnected') {
               isConnected = false;
               // Notify React Native of disconnection
