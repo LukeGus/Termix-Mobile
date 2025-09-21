@@ -49,9 +49,10 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
             shadowOpacity: 0.1,
             shadowRadius: 4,
             elevation: 2,
+            marginLeft: 4, // Add left margin
           }}
         >
-          <ArrowLeft size={16} color="#ffffff" />
+          <ArrowLeft size={16} color="#ffffff" style={{ marginLeft: 8 }} />
           <Text className="text-white text-sm font-medium px-3 py-3">
             Back
           </Text>

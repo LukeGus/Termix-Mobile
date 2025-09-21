@@ -134,9 +134,13 @@ export default function Sessions() {
                     autoFocus={false}
                     showSoftInputOnFocus={true}
                     keyboardType="default"
-                    returnKeyType="done"
+                    returnKeyType="default"
                     blurOnSubmit={false}
                     editable={true}
+                    autoCorrect={false}
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    textContentType="none"
                     onFocus={() => {
                         // Keep focus when focused
                     }}
@@ -146,7 +150,7 @@ export default function Sessions() {
                             if (sessions.length > 0) {
                                 hiddenInputRef.current?.focus();
                             }
-                        }, 200);
+                        }, 100);
                     }}
                     onSubmitEditing={() => {
                         // Refocus when submitted to prevent keyboard dismissal
@@ -154,7 +158,7 @@ export default function Sessions() {
                             if (sessions.length > 0) {
                                 hiddenInputRef.current?.focus();
                             }
-                        }, 200);
+                        }, 100);
                     }}
                 />
             )}

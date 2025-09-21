@@ -35,6 +35,7 @@ export const Terminal: React.FC<TerminalProps> = ({
   const [isConnecting, setIsConnecting] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
   const previousHostConfigRef = useRef(hostConfig);
+  const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const getWebSocketUrl = () => {
     const serverUrl = getCurrentServerUrl();
@@ -52,6 +53,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 
   const generateHTML = useCallback(() => {
     const wsUrl = getWebSocketUrl();
+
     
     return `
 <!DOCTYPE html>
@@ -191,6 +193,15 @@ export const Terminal: React.FC<TerminalProps> = ({
     // WebSocket connection function
     function connectWebSocket() {
       try {
+        // Check if WebSocket URL is available
+        if (!wsUrl) {
+          window.ReactNativeWebView?.postMessage(JSON.stringify({
+            type: 'error',
+            data: { hostName: hostConfig.name, message: 'No server configured' }
+          }));
+          return;
+        }
+        
         // Clean up existing connection
         if (ws) {
           ws.close();
@@ -203,7 +214,6 @@ export const Terminal: React.FC<TerminalProps> = ({
         }
         
         // Notify React Native that we're connecting
-        console.log('Sending connecting message for:', hostConfig.name);
         window.ReactNativeWebView?.postMessage(JSON.stringify({
           type: 'connecting',
           data: { hostName: hostConfig.name, retryCount: reconnectAttempts }
@@ -212,7 +222,6 @@ export const Terminal: React.FC<TerminalProps> = ({
         ws = new WebSocket(wsUrl);
         
         ws.onopen = function() {
-          console.log('WebSocket opened for:', hostConfig.name);
           reconnectAttempts = 0;
           isConnected = true;
           
@@ -229,7 +238,6 @@ export const Terminal: React.FC<TerminalProps> = ({
             }
           };
           
-          console.log('Sending connectToHost message:', connectMessage);
           ws.send(JSON.stringify(connectMessage));
           
           // Set up terminal input handler (only once)
@@ -244,7 +252,6 @@ export const Terminal: React.FC<TerminalProps> = ({
           startPingInterval();
           
           // Notify React Native that connection is established
-          console.log('Sending connected message for:', hostConfig.name);
           window.ReactNativeWebView?.postMessage(JSON.stringify({
             type: 'connected',
             data: { hostName: hostConfig.name }
@@ -291,7 +298,6 @@ export const Terminal: React.FC<TerminalProps> = ({
         };
         
         ws.onclose = function(event) {
-          console.log('WebSocket closed for:', hostConfig.name, 'Code:', event.code, 'Reason:', event.reason);
           isConnected = false;
           stopPingInterval();
           
@@ -330,7 +336,6 @@ export const Terminal: React.FC<TerminalProps> = ({
         };
         
         ws.onerror = function(error) {
-          console.log('WebSocket error for:', hostConfig.name, error);
           isConnected = false;
           // Notify React Native of WebSocket error
           window.ReactNativeWebView?.postMessage(JSON.stringify({
@@ -426,18 +431,31 @@ export const Terminal: React.FC<TerminalProps> = ({
   const handleWebViewMessage = useCallback((event: any) => {
     try {
       const message = JSON.parse(event.nativeEvent.data);
-      console.log('Terminal received message:', message.type, message.data);
       
       switch (message.type) {
         case 'connecting':
           setIsConnecting(true);
           setRetryCount(message.data.retryCount);
           showToast.info(`Connecting to ${message.data.hostName}...`);
+          
+          // Set a timeout to prevent infinite connecting state
+          if (connectionTimeoutRef.current) {
+            clearTimeout(connectionTimeoutRef.current);
+          }
+          connectionTimeoutRef.current = setTimeout(() => {
+            setIsConnecting(false);
+            showToast.error(`Connection timeout to ${message.data.hostName}`);
+          }, 10000); // 10 second timeout
           break;
           
         case 'connected':
           setIsConnecting(false);
           setRetryCount(0);
+          // Clear connection timeout
+          if (connectionTimeoutRef.current) {
+            clearTimeout(connectionTimeoutRef.current);
+            connectionTimeoutRef.current = null;
+          }
           // No toast for successful connection as requested
           break;
           
@@ -502,6 +520,15 @@ export const Terminal: React.FC<TerminalProps> = ({
       previousHostConfigRef.current = currentConfig;
     }
   }, [hostConfig, isInitialized]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (!isVisible) {
     return null;
