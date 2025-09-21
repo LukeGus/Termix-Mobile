@@ -213,28 +213,29 @@ export default function LoginForm() {
 
             // Build the authorization URL with proper parameters
             const baseUrl = oidcConfig.auth_url || oidcConfig.authorization_url;
-            const authUrl = new URL(baseUrl);
             
-            // Add required OIDC parameters
-            authUrl.searchParams.set('client_id', oidcConfig.client_id || 'termix-mobile');
-            authUrl.searchParams.set('redirect_uri', redirectUri);
-            authUrl.searchParams.set('response_type', 'code');
-            authUrl.searchParams.set('scope', (oidcConfig.scopes || ['openid', 'profile', 'email']).join(' '));
-            authUrl.searchParams.set('state', Math.random().toString(36).substring(7)); // Random state for security
+            // Build query parameters manually
+            const params = new URLSearchParams();
+            params.set('client_id', oidcConfig.client_id || 'termix-mobile');
+            params.set('redirect_uri', redirectUri);
+            params.set('response_type', 'code');
+            params.set('scope', (oidcConfig.scopes || ['openid', 'profile', 'email']).join(' '));
+            params.set('state', Math.random().toString(36).substring(7)); // Random state for security
             
             // Add any extra parameters from config
             if (oidcConfig.extra_params) {
                 Object.entries(oidcConfig.extra_params).forEach(([key, value]) => {
-                    authUrl.searchParams.set(key, value as string);
+                    params.set(key, value as string);
                 });
             }
             
-            console.log('Starting OIDC flow with URL:', authUrl.toString());
+            const authUrl = `${baseUrl}?${params.toString()}`;
+            console.log('Starting OIDC flow with URL:', authUrl);
             console.log('Redirect URI:', redirectUri);
 
             // Open the browser for OAuth
             const result = await WebBrowser.openAuthSessionAsync(
-                authUrl.toString(),
+                authUrl,
                 redirectUri
             );
 
@@ -242,8 +243,8 @@ export default function LoginForm() {
 
             if (result.type === 'success' && result.url) {
                 // Parse the authorization code from the URL
-                const url = new URL(result.url);
-                const code = url.searchParams.get('code');
+                const urlParams = new URLSearchParams(result.url.split('?')[1] || '');
+                const code = urlParams.get('code');
                 
                 if (code) {
                     // Exchange the authorization code for tokens

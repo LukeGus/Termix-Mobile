@@ -70,17 +70,17 @@ export default function Sessions() {
                     <Terminal
                         key={session.id}
                         hostConfig={{
-                            id: session.host.id,
+                            id: parseInt(session.host.id.toString()),
                             name: session.host.name,
                             ip: session.host.ip,
-                            port: session.host.port,
+                            port: parseInt(session.host.port.toString()),
                             username: session.host.username,
                             authType: session.host.authType,
                             password: session.host.password,
                             key: session.host.key,
                             keyPassword: session.host.keyPassword,
                             keyType: session.host.keyType,
-                            credentialId: session.host.credentialId,
+                            credentialId: session.host.credentialId ? parseInt(session.host.credentialId.toString()) : undefined,
                         }}
                         isVisible={session.id === activeSessionId}
                         title={session.title}
@@ -107,11 +107,6 @@ export default function Sessions() {
                     left: 0,
                     right: 0,
                     height: 60,
-                }}
-                onStartShouldSetResponder={() => true}
-                onResponderGrant={() => {
-                    // Prevent the hidden TextInput from losing focus when clicking tab bar
-                    return true;
                 }}
             >
                 <TabBar

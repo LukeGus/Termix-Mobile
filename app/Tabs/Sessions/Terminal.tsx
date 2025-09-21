@@ -39,8 +39,10 @@ export const Terminal: React.FC<TerminalProps> = ({
 
   const getWebSocketUrl = () => {
     const serverUrl = getCurrentServerUrl();
+    console.log('Terminal getWebSocketUrl - serverUrl:', serverUrl);
 
     if (!serverUrl) {
+      console.log('Terminal getWebSocketUrl - No server URL found');
       return;
     }
 
@@ -48,7 +50,9 @@ export const Terminal: React.FC<TerminalProps> = ({
     const wsHost = serverUrl.replace(/^https?:\/\//, '');
 
     const cleanHost = wsHost.replace(/\/$/, '');
-    return `${wsProtocol}${cleanHost}/ssh/websocket/`;
+    const wsUrl = `${wsProtocol}${cleanHost}/ssh/websocket/`;
+    console.log('Terminal getWebSocketUrl - Generated WS URL:', wsUrl);
+    return wsUrl;
   };
 
   const generateHTML = useCallback(() => {
