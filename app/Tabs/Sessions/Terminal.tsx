@@ -48,12 +48,17 @@ export const Terminal: React.FC<TerminalProps> = ({
     const wsHost = serverUrl.replace(/^https?:\/\//, '');
 
     const cleanHost = wsHost.replace(/\/$/, '');
-    return `${wsProtocol}${cleanHost}/ssh/websocket/`;
+    // Extract host and port from the server URL
+    const url = new URL(serverUrl);
+    const host = url.hostname;
+    const port = url.port || (url.protocol === 'https:' ? '443' : '80');
+    
+    // Use port 8082 for WebSocket (as defined in terminal.ts)
+    return `${wsProtocol}${host}:8082`;
   };
 
   const generateHTML = useCallback(() => {
     const wsUrl = getWebSocketUrl();
-
     
     return `
 <!DOCTYPE html>
@@ -438,14 +443,11 @@ export const Terminal: React.FC<TerminalProps> = ({
           setRetryCount(message.data.retryCount);
           showToast.info(`Connecting to ${message.data.hostName}...`);
           
-          // Set a timeout to prevent infinite connecting state
+          // Clear any existing timeout
           if (connectionTimeoutRef.current) {
             clearTimeout(connectionTimeoutRef.current);
+            connectionTimeoutRef.current = null;
           }
-          connectionTimeoutRef.current = setTimeout(() => {
-            setIsConnecting(false);
-            showToast.error(`Connection timeout to ${message.data.hostName}`);
-          }, 10000); // 10 second timeout
           break;
           
         case 'connected':

@@ -178,6 +178,10 @@ export default function ServerForm() {
                                                 ? 'border-red-500' 
                                                 : 'border-dark-border'
                                         }`}
+                                        style={{
+                                            textAlignVertical: 'center',
+                                            includeFontPadding: false,
+                                        }}
                                         placeholder="192.168.1.1:8080 or https://server.com"
                                         placeholderTextColor="#9CA3AF"
                                         value={formData.ip}

@@ -145,20 +145,10 @@ export default function Sessions() {
                         // Keep focus when focused
                     }}
                     onBlur={() => {
-                        // Refocus when blurred to prevent keyboard dismissal
-                        setTimeout(() => {
-                            if (sessions.length > 0) {
-                                hiddenInputRef.current?.focus();
-                            }
-                        }, 100);
+                        // Don't aggressively refocus to allow tab interactions
                     }}
                     onSubmitEditing={() => {
-                        // Refocus when submitted to prevent keyboard dismissal
-                        setTimeout(() => {
-                            if (sessions.length > 0) {
-                                hiddenInputRef.current?.focus();
-                            }
-                        }, 100);
+                        // Don't aggressively refocus to allow tab interactions
                     }}
                 />
             )}

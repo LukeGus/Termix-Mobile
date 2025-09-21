@@ -24,6 +24,7 @@ export default function LoginForm() {
         totpCode: ''
     });
     const [isLoading, setIsLoading] = useState(false);
+    const [isOIDCLoading, setIsOIDCLoading] = useState(false);
     const [authMode, setAuthMode] = useState<AuthMode>('login');
     const [tempToken, setTempToken] = useState<string>('');
     const [oidcConfig, setOidcConfig] = useState<any>(null);
@@ -38,6 +39,8 @@ export default function LoginForm() {
                     getOIDCConfig(),
                     getRegistrationAllowed()
                 ]);
+                console.log('Loaded OIDC config:', oidc);
+                console.log('Loaded registration status:', registration);
                 setOidcConfig(oidc);
                 setRegistrationAllowed(registration.allowed);
             } catch (error) {
@@ -170,12 +173,14 @@ export default function LoginForm() {
      * 5. User is logged in with the JWT token
      */
     const handleOIDCLogin = async () => {
-        if (!oidcConfig?.auth_url) {
+        console.log('OIDC Config:', oidcConfig);
+        
+        if (!oidcConfig || (!oidcConfig.auth_url && !oidcConfig.authorization_url)) {
             Alert.alert('OIDC Not Available', 'OIDC login is not configured on this server.');
             return;
         }
 
-        setIsLoading(true);
+        setIsOIDCLoading(true);
 
         try {
             // Configure the OAuth request
@@ -196,7 +201,7 @@ export default function LoginForm() {
             });
 
             // Get the authorization URL
-            const authUrl = oidcConfig.auth_url;
+            const authUrl = oidcConfig.auth_url || oidcConfig.authorization_url;
             
             console.log('Starting OIDC flow with URL:', authUrl);
             console.log('Redirect URI:', redirectUri);
@@ -230,7 +235,7 @@ export default function LoginForm() {
             console.error('OIDC login error:', error);
             Alert.alert('OIDC Login Failed', error?.message || 'Failed to start OIDC login');
         } finally {
-            setIsLoading(false);
+            setIsOIDCLoading(false);
         }
     };
 
@@ -273,10 +278,15 @@ export default function LoginForm() {
                     <>
                     <View className="space-y-4">
                         <View>
-                                <Text className="text-gray-300 text-sm font-medium mb-3">Username</Text>
+                                <Text className="text-gray-300 text-sm font-medium mb-1">Username</Text>
                                 <View className="relative">
                             <TextInput
                                         className="bg-dark-bg-input p-4 pl-12 rounded-xl text-white text-base border-2 border-dark-border"
+                                        style={{
+                                            height: 56,
+                                            textAlignVertical: 'center',
+                                            includeFontPadding: false,
+                                        }}
                                 placeholder="Enter username..."
                                 placeholderTextColor="#9CA3AF"
                                 value={formData.username}
@@ -290,11 +300,16 @@ export default function LoginForm() {
                                 </View>
                         </View>
 
-                        <View>
-                                <Text className="text-gray-300 text-sm font-medium mb-3">Password</Text>
+                            <View style={{ marginTop: 8 }}>
+                                <Text className="text-gray-300 text-sm font-medium mb-1">Password</Text>
                                 <View className="relative">
                             <TextInput
                                         className="bg-dark-bg-input p-4 pl-12 pr-12 rounded-xl text-white text-base border-2 border-dark-border"
+                                        style={{
+                                            height: 56,
+                                            textAlignVertical: 'center',
+                                            includeFontPadding: false,
+                                        }}
                                 placeholder="Enter password..."
                                 placeholderTextColor="#9CA3AF"
                                 value={formData.password}
@@ -336,10 +351,15 @@ export default function LoginForm() {
                     <>
                         <View className="space-y-4">
                             <View>
-                                <Text className="text-gray-300 text-sm font-medium mb-3">Username</Text>
+                                <Text className="text-gray-300 text-sm font-medium mb-1">Username</Text>
                                 <View className="relative">
                                     <TextInput
                                         className="bg-dark-bg-input p-4 pl-12 rounded-xl text-white text-base border-2 border-dark-border"
+                                        style={{
+                                            height: 56,
+                                            textAlignVertical: 'center',
+                                            includeFontPadding: false,
+                                        }}
                                         placeholder="Choose a username..."
                                         placeholderTextColor="#9CA3AF"
                                         value={formData.username}
@@ -353,11 +373,16 @@ export default function LoginForm() {
                                 </View>
                             </View>
 
-                            <View>
-                                <Text className="text-gray-300 text-sm font-medium mb-3">Password</Text>
+                            <View style={{ marginTop: 8 }}>
+                                <Text className="text-gray-300 text-sm font-medium mb-1">Password</Text>
                                 <View className="relative">
                                     <TextInput
                                         className="bg-dark-bg-input p-4 pl-12 pr-12 rounded-xl text-white text-base border-2 border-dark-border"
+                                        style={{
+                                            height: 56,
+                                            textAlignVertical: 'center',
+                                            includeFontPadding: false,
+                                        }}
                                         placeholder="Choose a password..."
                                         placeholderTextColor="#9CA3AF"
                                         value={formData.password}
@@ -415,6 +440,11 @@ export default function LoginForm() {
                                 <Text className="text-gray-300 text-sm font-medium mb-3">2FA Code</Text>
                                 <TextInput
                                     className="bg-dark-bg-input p-4 rounded-xl text-white text-base border-2 border-dark-border text-center text-2xl tracking-widest"
+                                    style={{
+                                        height: 56,
+                                        textAlignVertical: 'center',
+                                        includeFontPadding: false,
+                                    }}
                                     placeholder="000000"
                                     placeholderTextColor="#9CA3AF"
                                     value={formData.totpCode}
@@ -480,18 +510,18 @@ export default function LoginForm() {
 
                     {/* Alternative Auth Methods */}
                     {authMode === 'login' && (
-                        <View className="mt-6 space-y-3">
+                        <View className="mt-6" style={{ gap: 12 }}>
                             {oidcConfig && (
                                 <TouchableOpacity
                                     onPress={handleOIDCLogin}
-                                    disabled={isLoading}
+                                    disabled={isOIDCLoading}
                                     className={`flex-row items-center justify-center px-6 py-4 rounded-xl border border-dark-border ${
-                                        isLoading ? 'bg-gray-600' : 'bg-dark-bg-button'
+                                        isOIDCLoading ? 'bg-gray-600' : 'bg-dark-bg-button'
                                     }`}
                                 >
-                                    <ExternalLink size={20} color="#ffffff" className="mr-2" />
+                                    <ExternalLink size={20} color="#ffffff" style={{ marginRight: 8 }} />
                                     <Text className="text-white font-semibold text-lg">
-                                        {isLoading ? 'Opening Browser...' : 'Login with OIDC'}
+                                        {isOIDCLoading ? 'Opening Browser...' : 'Login with OIDC'}
                                     </Text>
                                 </TouchableOpacity>
                             )}
@@ -501,7 +531,7 @@ export default function LoginForm() {
                                     onPress={() => setAuthMode('register')}
                                     className="flex-row items-center justify-center px-6 py-4 rounded-xl bg-dark-bg-button border border-dark-border"
                                 >
-                                    <UserPlus size={20} color="#ffffff" className="mr-2" />
+                                    <UserPlus size={20} color="#ffffff" style={{ marginRight: 8 }} />
                                     <Text className="text-white font-semibold text-lg">
                                         Create Account
                                     </Text>
@@ -515,7 +545,7 @@ export default function LoginForm() {
                         onPress={authMode === 'login' ? handleBackToServerConfig : () => setAuthMode('login')}
                         className="flex-row items-center justify-center px-6 py-4 rounded-xl bg-dark-bg-button border border-dark-border mt-6"
                     >
-                        <ArrowLeft size={20} color="#ffffff" className="mr-2" />
+                        <ArrowLeft size={20} color="#ffffff" style={{ marginRight: 8 }} />
                         <Text className="text-white font-semibold text-lg">
                             {authMode === 'login' ? 'Back to Server' : 'Back to Login'}
                         </Text>
