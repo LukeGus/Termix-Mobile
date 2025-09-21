@@ -2,13 +2,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Keyboard, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { useTerminalSessions } from '@/app/contexts/TerminalSessionsContext';
 import { useKeyboard } from '@/app/contexts/KeyboardContext';
 import Terminal from '@/app/Tabs/Sessions/Terminal';
 import TabBar from '@/app/Tabs/Sessions/Navigation/TabBar';
+import { ArrowLeft } from 'lucide-react-native';
 
 export default function Sessions() {
     const insets = useSafeAreaInsets();
+    const router = useRouter();
     const { sessions, activeSessionId, setActiveSession, removeSession } = useTerminalSessions();
     const { keyboardHeight, isKeyboardVisible } = useKeyboard();
     const hiddenInputRef = useRef<TextInput>(null);
@@ -20,7 +23,7 @@ export default function Sessions() {
             if (sessions.length > 0) {
                 setTimeout(() => {
                     hiddenInputRef.current?.focus();
-                }, 100);
+                }, 500);
             }
             
             return () => {
@@ -29,12 +32,12 @@ export default function Sessions() {
         }, [sessions.length])
     );
 
-    // Keep focus on hidden input when keyboard is dismissed (only if there are sessions)
+    // Keep keyboard open by refocusing when it gets dismissed
     useEffect(() => {
-        if (!isKeyboardVisible && sessions.length > 0) {
+        if (sessions.length > 0 && !isKeyboardVisible) {
             const timeoutId = setTimeout(() => {
                 hiddenInputRef.current?.focus();
-            }, 200);
+            }, 100);
             return () => clearTimeout(timeoutId);
         }
     }, [isKeyboardVisible, sessions.length]);
@@ -56,6 +59,18 @@ export default function Sessions() {
                 paddingTop: insets.top,
             }}
         >
+            {/* Header with back button */}
+            <View className="flex-row items-center justify-between px-4 py-3 border-b border-dark-border">
+                <TouchableOpacity
+                    onPress={() => router.navigate('/hosts' as any)}
+                    className="flex-row items-center"
+                    activeOpacity={0.7}
+                >
+                    <ArrowLeft size={20} color="#ffffff" />
+                    <Text className="text-white text-lg ml-2">Back to Hosts</Text>
+                </TouchableOpacity>
+            </View>
+
             <View 
                 style={{
                     flex: 1,
@@ -99,7 +114,7 @@ export default function Sessions() {
             <View
                 style={{
                     position: 'absolute',
-                    bottom: keyboardHeight > 0 ? keyboardHeight : 0,
+                    bottom: 0,
                     left: 0,
                     right: 0,
                     height: 60,
@@ -132,21 +147,25 @@ export default function Sessions() {
                     keyboardType="default"
                     returnKeyType="done"
                     blurOnSubmit={false}
-                    onSubmitEditing={() => {
-                        // Refocus immediately to prevent keyboard dismissal
-                        setTimeout(() => {
-                            if (sessions.length > 0) {
-                                hiddenInputRef.current?.focus();
-                            }
-                        }, 50);
+                    editable={true}
+                    onFocus={() => {
+                        // Keep focus when focused
                     }}
                     onBlur={() => {
-                        // Refocus immediately when blurred to prevent keyboard dismissal
+                        // Refocus when blurred to prevent keyboard dismissal
                         setTimeout(() => {
                             if (sessions.length > 0) {
                                 hiddenInputRef.current?.focus();
                             }
-                        }, 50);
+                        }, 200);
+                    }}
+                    onSubmitEditing={() => {
+                        // Refocus when submitted to prevent keyboard dismissal
+                        setTimeout(() => {
+                            if (sessions.length > 0) {
+                                hiddenInputRef.current?.focus();
+                            }
+                        }, 200);
                     }}
                 />
             )}

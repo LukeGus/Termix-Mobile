@@ -32,7 +32,7 @@ export const Terminal: React.FC<TerminalProps> = ({
   const webViewRef = useRef<WebView>(null);
   const [webViewKey, setWebViewKey] = useState(0);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
   const previousHostConfigRef = useRef(hostConfig);
 
@@ -198,6 +198,7 @@ export const Terminal: React.FC<TerminalProps> = ({
         }
         
         // Notify React Native that we're connecting
+        console.log('Sending connecting message for:', hostConfig.name);
         window.ReactNativeWebView?.postMessage(JSON.stringify({
           type: 'connecting',
           data: { hostName: hostConfig.name, retryCount: reconnectAttempts }
@@ -236,6 +237,7 @@ export const Terminal: React.FC<TerminalProps> = ({
           startPingInterval();
           
           // Notify React Native that connection is established
+          console.log('Sending connected message for:', hostConfig.name);
           window.ReactNativeWebView?.postMessage(JSON.stringify({
             type: 'connected',
             data: { hostName: hostConfig.name }
@@ -404,6 +406,7 @@ export const Terminal: React.FC<TerminalProps> = ({
   const handleWebViewMessage = useCallback((event: any) => {
     try {
       const message = JSON.parse(event.nativeEvent.data);
+      console.log('Terminal received message:', message.type, message.data);
       
       switch (message.type) {
         case 'connecting':
