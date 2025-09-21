@@ -3,54 +3,39 @@ import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Keyboard, Keyboar
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTerminalSessions } from '@/app/contexts/TerminalSessionsContext';
+import { useKeyboard } from '@/app/contexts/KeyboardContext';
 import Terminal from '@/app/Tabs/Sessions/Terminal';
 import TabBar from '@/app/Tabs/Sessions/Navigation/TabBar';
 
 export default function Sessions() {
     const insets = useSafeAreaInsets();
     const { sessions, activeSessionId, setActiveSession, removeSession } = useTerminalSessions();
-    const [keyboardHeight, setKeyboardHeight] = useState(0);
-    const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+    const { keyboardHeight, isKeyboardVisible } = useKeyboard();
     const hiddenInputRef = useRef<TextInput>(null);
 
-    // Keyboard event listeners
-    useEffect(() => {
-        const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (e) => {
-            setKeyboardHeight(e.endCoordinates.height);
-            setIsKeyboardVisible(true);
-        });
-
-        const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
-            setKeyboardHeight(0);
-            setIsKeyboardVisible(false);
-        });
-
-        return () => {
-            keyboardDidShowListener?.remove();
-            keyboardDidHideListener?.remove();
-        };
-    }, []);
-
-    // Force keyboard to stay open when in sessions tab
+    // Force keyboard to stay open when in sessions tab (only if there are sessions)
     useFocusEffect(
         React.useCallback(() => {
-            // Focus the hidden input to keep keyboard open
-            setTimeout(() => {
-                hiddenInputRef.current?.focus();
-            }, 100);
+            // Only show keyboard if there are active sessions
+            if (sessions.length > 0) {
+                setTimeout(() => {
+                    hiddenInputRef.current?.focus();
+                }, 100);
+            }
             
             return () => {
                 // Don't blur the input when leaving - keep keyboard persistent
             };
-        }, [])
+        }, [sessions.length])
     );
 
-    // Keep focus on hidden input when keyboard is dismissed
+    // Keep focus on hidden input when keyboard is dismissed (only if there are sessions)
     useEffect(() => {
         if (!isKeyboardVisible && sessions.length > 0) {
-            setTimeout(() => {
+            const timeoutId = setTimeout(() => {
                 hiddenInputRef.current?.focus();
-            }, 100);
+            }, 200);
+            return () => clearTimeout(timeoutId);
         }
     }, [isKeyboardVisible, sessions.length]);
 
@@ -65,19 +50,16 @@ export default function Sessions() {
     const activeSession = sessions.find(session => session.id === activeSessionId);
 
     return (
-        <KeyboardAvoidingView 
+        <View 
             className="flex-1 bg-dark-bg" 
             style={{ 
                 paddingTop: insets.top,
-                paddingBottom: keyboardHeight > 0 ? 0 : insets.bottom
             }}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
         >
             <View 
-                className="flex-1"
                 style={{
-                    marginBottom: keyboardHeight > 0 ? keyboardHeight : 0
+                    flex: 1,
+                    marginBottom: 60, // Space for sessions tab bar
                 }}
             >
                 {sessions.map((session) => (
@@ -114,44 +96,60 @@ export default function Sessions() {
                 )}
             </View>
             
-            <TabBar
-                sessions={sessions}
-                activeSessionId={activeSessionId}
-                onTabPress={handleTabPress}
-                onTabClose={handleTabClose}
-            />
-            
-            {/* Hidden TextInput to maintain keyboard focus */}
-            <TextInput
-                ref={hiddenInputRef}
+            <View
                 style={{
                     position: 'absolute',
-                    top: -1000,
-                    left: -1000,
-                    width: 1,
-                    height: 1,
-                    opacity: 0,
-                    color: 'transparent',
-                    backgroundColor: 'transparent',
+                    bottom: keyboardHeight > 0 ? keyboardHeight : 0,
+                    left: 0,
+                    right: 0,
+                    height: 60,
                 }}
-                autoFocus={true}
-                showSoftInputOnFocus={true}
-                keyboardType="default"
-                returnKeyType="done"
-                blurOnSubmit={false}
-                onSubmitEditing={() => {
-                    // Refocus immediately to prevent keyboard dismissal
-                    setTimeout(() => {
-                        hiddenInputRef.current?.focus();
-                    }, 10);
-                }}
-                onBlur={() => {
-                    // Refocus immediately when blurred to prevent keyboard dismissal
-                    setTimeout(() => {
-                        hiddenInputRef.current?.focus();
-                    }, 10);
-                }}
-            />
-        </KeyboardAvoidingView>
+            >
+                <TabBar
+                    sessions={sessions}
+                    activeSessionId={activeSessionId}
+                    onTabPress={handleTabPress}
+                    onTabClose={handleTabClose}
+                />
+            </View>
+            
+            {/* Hidden TextInput to maintain keyboard focus - only when there are sessions */}
+            {sessions.length > 0 && (
+                <TextInput
+                    ref={hiddenInputRef}
+                    style={{
+                        position: 'absolute',
+                        top: -1000,
+                        left: -1000,
+                        width: 1,
+                        height: 1,
+                        opacity: 0,
+                        color: 'transparent',
+                        backgroundColor: 'transparent',
+                    }}
+                    autoFocus={false}
+                    showSoftInputOnFocus={true}
+                    keyboardType="default"
+                    returnKeyType="done"
+                    blurOnSubmit={false}
+                    onSubmitEditing={() => {
+                        // Refocus immediately to prevent keyboard dismissal
+                        setTimeout(() => {
+                            if (sessions.length > 0) {
+                                hiddenInputRef.current?.focus();
+                            }
+                        }, 50);
+                    }}
+                    onBlur={() => {
+                        // Refocus immediately when blurred to prevent keyboard dismissal
+                        setTimeout(() => {
+                            if (sessions.length > 0) {
+                                hiddenInputRef.current?.focus();
+                            }
+                        }, 50);
+                    }}
+                />
+            )}
+        </View>
     );
 }

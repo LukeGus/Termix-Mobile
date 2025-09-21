@@ -480,15 +480,21 @@ export const Terminal: React.FC<TerminalProps> = ({
     }
   }, [hostConfig, isInitialized]);
 
+  if (!isVisible) {
+    return null;
+  }
+
   return (
     <View style={{ 
-      flex: 1, 
+      flex: 1,
+      width: '100%',
       height: '100%',
-      display: isVisible ? 'flex' : 'none'
     }}>
       {isConnecting ? (
         <View style={{
           flex: 1,
+          width: '100%',
+          height: '100%',
           justifyContent: 'center',
           alignItems: 'center',
           backgroundColor: '#09090b',
@@ -520,9 +526,10 @@ export const Terminal: React.FC<TerminalProps> = ({
           ref={webViewRef}
           source={{ html: generateHTML() }}
           style={{ 
-            flex: 1, 
+            flex: 1,
+            width: '100%',
+            height: '100%',
             backgroundColor: '#09090b',
-            height: '100%'
           }}
           javaScriptEnabled={true}
           domStorageEnabled={true}
