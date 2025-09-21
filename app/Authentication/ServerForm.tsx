@@ -171,7 +171,7 @@ export default function ServerForm() {
                                 <Text className="text-gray-300 text-sm font-medium mb-3">Server Address</Text>
                                 <View className="relative">
                                     <TextInput
-                                        className={`bg-dark-bg-input p-4 rounded-xl text-white text-base border-2 ${
+                                        className={`bg-dark-bg-input rounded-xl text-white text-base border-2 ${
                                             connectionStatus === 'success' 
                                                 ? 'border-green-500' 
                                                 : connectionStatus === 'error' 
@@ -179,8 +179,11 @@ export default function ServerForm() {
                                                 : 'border-dark-border'
                                         }`}
                                         style={{
+                                            height: 56,
                                             textAlignVertical: 'center',
                                             includeFontPadding: false,
+                                            paddingVertical: 16,
+                                            paddingHorizontal: 16,
                                         }}
                                         placeholder="192.168.1.1:8080 or https://server.com"
                                         placeholderTextColor="#9CA3AF"

@@ -201,13 +201,16 @@ export default function LoginForm() {
 
             console.log('Starting OIDC flow with URL:', authUrl);
 
-            // Configure the redirect URI - use the same format as your web version
+            // Configure the redirect URI - try different formats
             const redirectUri = AuthSession.makeRedirectUri({
                 scheme: 'termix-mobile'
             });
 
             console.log('OIDC Redirect URI:', redirectUri);
-            console.log('Make sure this redirect URI is configured in your OIDC provider:', redirectUri);
+            console.log('Alternative redirect URI (without proxy):', AuthSession.makeRedirectUri({
+                scheme: 'termix-mobile'
+            }));
+            console.log('Make sure one of these redirect URIs is configured in your OIDC provider');
 
             // Open the browser for OAuth
             const result = await WebBrowser.openAuthSessionAsync(
@@ -285,20 +288,21 @@ export default function LoginForm() {
                         <View>
                                 <Text className="text-gray-300 text-sm font-medium mb-1">Username</Text>
                                 <View className="relative">
-                            <TextInput
-                                        className="bg-dark-bg-input p-4 pl-12 rounded-xl text-white text-base border-2 border-dark-border"
+                                    <TextInput
+                                        className="bg-dark-bg-input pl-12 pr-4 rounded-xl text-white text-base border-2 border-dark-border"
                                         style={{
                                             height: 56,
                                             textAlignVertical: 'center',
                                             includeFontPadding: false,
+                                            paddingVertical: 16,
                                         }}
-                                placeholder="Enter username..."
-                                placeholderTextColor="#9CA3AF"
-                                value={formData.username}
-                                onChangeText={(value) => handleInputChange('username', value)}
-                                autoCapitalize="none"
+                                        placeholder="Enter username..."
+                                        placeholderTextColor="#9CA3AF"
+                                        value={formData.username}
+                                        onChangeText={(value) => handleInputChange('username', value)}
+                                        autoCapitalize="none"
                                         autoComplete="username"
-                            />
+                                    />
                                     <View className="absolute left-4 top-1/2 -translate-y-1/2">
                                         <User size={20} color="#9CA3AF" />
                                     </View>
@@ -308,17 +312,18 @@ export default function LoginForm() {
                             <View style={{ marginTop: 8 }}>
                                 <Text className="text-gray-300 text-sm font-medium mb-1">Password</Text>
                                 <View className="relative">
-                            <TextInput
-                                        className="bg-dark-bg-input p-4 pl-12 pr-12 rounded-xl text-white text-base border-2 border-dark-border"
+                                    <TextInput
+                                        className="bg-dark-bg-input pl-12 pr-12 rounded-xl text-white text-base border-2 border-dark-border"
                                         style={{
                                             height: 56,
                                             textAlignVertical: 'center',
                                             includeFontPadding: false,
+                                            paddingVertical: 16,
                                         }}
-                                placeholder="Enter password..."
-                                placeholderTextColor="#9CA3AF"
-                                value={formData.password}
-                                onChangeText={(value) => handleInputChange('password', value)}
+                                        placeholder="Enter password..."
+                                        placeholderTextColor="#9CA3AF"
+                                        value={formData.password}
+                                        onChangeText={(value) => handleInputChange('password', value)}
                                         secureTextEntry={!showPassword}
                                         autoComplete="current-password"
                                     />
@@ -359,11 +364,12 @@ export default function LoginForm() {
                                 <Text className="text-gray-300 text-sm font-medium mb-1">Username</Text>
                                 <View className="relative">
                                     <TextInput
-                                        className="bg-dark-bg-input p-4 pl-12 rounded-xl text-white text-base border-2 border-dark-border"
+                                        className="bg-dark-bg-input pl-12 pr-4 rounded-xl text-white text-base border-2 border-dark-border"
                                         style={{
                                             height: 56,
                                             textAlignVertical: 'center',
                                             includeFontPadding: false,
+                                            paddingVertical: 16,
                                         }}
                                         placeholder="Choose a username..."
                                         placeholderTextColor="#9CA3AF"
@@ -382,11 +388,12 @@ export default function LoginForm() {
                                 <Text className="text-gray-300 text-sm font-medium mb-1">Password</Text>
                                 <View className="relative">
                                     <TextInput
-                                        className="bg-dark-bg-input p-4 pl-12 pr-12 rounded-xl text-white text-base border-2 border-dark-border"
+                                        className="bg-dark-bg-input pl-12 pr-12 rounded-xl text-white text-base border-2 border-dark-border"
                                         style={{
                                             height: 56,
                                             textAlignVertical: 'center',
                                             includeFontPadding: false,
+                                            paddingVertical: 16,
                                         }}
                                         placeholder="Choose a password..."
                                         placeholderTextColor="#9CA3AF"
@@ -444,11 +451,13 @@ export default function LoginForm() {
                             <View>
                                 <Text className="text-gray-300 text-sm font-medium mb-3">2FA Code</Text>
                                 <TextInput
-                                    className="bg-dark-bg-input p-4 rounded-xl text-white text-base border-2 border-dark-border text-center text-2xl tracking-widest"
+                                    className="bg-dark-bg-input rounded-xl text-white text-base border-2 border-dark-border text-center text-2xl tracking-widest"
                                     style={{
                                         height: 56,
                                         textAlignVertical: 'center',
                                         includeFontPadding: false,
+                                        paddingVertical: 16,
+                                        paddingHorizontal: 16,
                                     }}
                                     placeholder="000000"
                                     placeholderTextColor="#9CA3AF"

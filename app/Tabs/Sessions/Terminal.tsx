@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
+import { View, Text, ActivityIndicator, TouchableWithoutFeedback } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { getCurrentServerUrl } from '../../main-axios';
 import { showToast } from '../../utils/toast';
@@ -39,10 +39,10 @@ export const Terminal: React.FC<TerminalProps> = ({
 
   const getWebSocketUrl = () => {
     const serverUrl = getCurrentServerUrl();
-    console.log('Terminal getWebSocketUrl - serverUrl:', serverUrl);
+    showToast.info(`Debug: Server URL = ${serverUrl || 'NULL'}`);
 
     if (!serverUrl) {
-      console.log('Terminal getWebSocketUrl - No server URL found');
+      showToast.error('Debug: No server URL found');
       return;
     }
 
@@ -51,7 +51,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 
     const cleanHost = wsHost.replace(/\/$/, '');
     const wsUrl = `${wsProtocol}${cleanHost}/ssh/websocket/`;
-    console.log('Terminal getWebSocketUrl - Generated WS URL:', wsUrl);
+    showToast.info(`Debug: WebSocket URL = ${wsUrl}`);
     return wsUrl;
   };
 
@@ -259,9 +259,21 @@ export const Terminal: React.FC<TerminalProps> = ({
           data: { hostName: hostConfig.name, retryCount: reconnectAttempts }
         }));
         
+        // Debug: Log WebSocket creation
+        window.ReactNativeWebView?.postMessage(JSON.stringify({
+          type: 'debug',
+          data: { message: 'Creating WebSocket connection to: ' + wsUrl }
+        }));
+        
         ws = new WebSocket(wsUrl);
         
         ws.onopen = function() {
+          // Debug: WebSocket opened
+          window.ReactNativeWebView?.postMessage(JSON.stringify({
+            type: 'debug',
+            data: { message: 'WebSocket opened successfully' }
+          }));
+          
           reconnectAttempts = 0;
           isConnected = true;
           
@@ -277,6 +289,12 @@ export const Terminal: React.FC<TerminalProps> = ({
               hostConfig: hostConfig
             }
           };
+          
+          // Debug: Sending connect message
+          window.ReactNativeWebView?.postMessage(JSON.stringify({
+            type: 'debug',
+            data: { message: 'Sending connectToHost message: ' + JSON.stringify(connectMessage) }
+          }));
           
           ws.send(JSON.stringify(connectMessage));
           
@@ -304,15 +322,33 @@ export const Terminal: React.FC<TerminalProps> = ({
           try {
             const msg = JSON.parse(event.data);
             
+            // Debug: Log all received messages
+            window.ReactNativeWebView?.postMessage(JSON.stringify({
+              type: 'debug',
+              data: { message: 'Received message: ' + JSON.stringify(msg) }
+            }));
+            
             if (msg.type === 'data') {
               terminal.write(msg.data);
             } else if (msg.type === 'error') {
+              // Debug: Log error
+              window.ReactNativeWebView?.postMessage(JSON.stringify({
+                type: 'debug',
+                data: { message: 'Error received: ' + msg.message }
+              }));
+              
               // Notify React Native of error
               window.ReactNativeWebView?.postMessage(JSON.stringify({
                 type: 'error',
                 data: { hostName: hostConfig.name, message: msg.message }
               }));
             } else if (msg.type === 'connected') {
+              // Debug: Log connection success
+              window.ReactNativeWebView?.postMessage(JSON.stringify({
+                type: 'debug',
+                data: { message: 'Connected message received from server' }
+              }));
+              
               // Notify React Native of successful connection (no toast)
               window.ReactNativeWebView?.postMessage(JSON.stringify({
                 type: 'connected',
@@ -336,6 +372,12 @@ export const Terminal: React.FC<TerminalProps> = ({
         };
         
         ws.onclose = function(event) {
+          // Debug: Log WebSocket close
+          window.ReactNativeWebView?.postMessage(JSON.stringify({
+            type: 'debug',
+            data: { message: 'WebSocket closed. Code: ' + event.code + ', Reason: ' + event.reason }
+          }));
+          
           isConnected = false;
           stopPingInterval();
           
@@ -374,6 +416,12 @@ export const Terminal: React.FC<TerminalProps> = ({
         };
         
         ws.onerror = function(error) {
+          // Debug: Log WebSocket error
+          window.ReactNativeWebView?.postMessage(JSON.stringify({
+            type: 'debug',
+            data: { message: 'WebSocket error: ' + JSON.stringify(error) }
+          }));
+          
           isConnected = false;
           // Notify React Native of WebSocket error
           window.ReactNativeWebView?.postMessage(JSON.stringify({
@@ -522,6 +570,10 @@ export const Terminal: React.FC<TerminalProps> = ({
           }, 3000);
           break;
           
+        case 'debug':
+          showToast.info(`Debug: ${message.data.message}`);
+          break;
+          
         case 'error':
           setIsConnecting(false);
           showToast.error(`${message.data.hostName}: ${message.data.message}`);
@@ -606,32 +658,34 @@ export const Terminal: React.FC<TerminalProps> = ({
           )}
         </View>
       ) : (
-        <WebView
-          key={`terminal-${hostConfig.id}-${webViewKey}`}
-          ref={webViewRef}
-          source={{ html: generateHTML() }}
-          style={{ 
-            flex: 1,
-            width: '100%',
-            height: '100%',
-            backgroundColor: '#09090b',
-          }}
-          javaScriptEnabled={true}
-          domStorageEnabled={true}
-          startInLoadingState={false}
-          scalesPageToFit={false}
-          allowsInlineMediaPlayback={true}
-          mediaPlaybackRequiresUserAction={false}
-          onMessage={handleWebViewMessage}
-          onError={(syntheticEvent) => {
-            const { nativeEvent } = syntheticEvent;
-            showToast.error(`WebView error: ${nativeEvent.description}`);
-          }}
-          onHttpError={(syntheticEvent) => {
-            const { nativeEvent } = syntheticEvent;
-            showToast.error(`WebView HTTP error: ${nativeEvent.statusCode}`);
-          }}
-        />
+        <TouchableWithoutFeedback onPress={() => {}}>
+          <WebView
+            key={`terminal-${hostConfig.id}-${webViewKey}`}
+            ref={webViewRef}
+            source={{ html: generateHTML() }}
+            style={{ 
+              flex: 1,
+              width: '100%',
+              height: '100%',
+              backgroundColor: '#09090b',
+            }}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            startInLoadingState={false}
+            scalesPageToFit={false}
+            allowsInlineMediaPlayback={true}
+            mediaPlaybackRequiresUserAction={false}
+            onMessage={handleWebViewMessage}
+            onError={(syntheticEvent) => {
+              const { nativeEvent } = syntheticEvent;
+              showToast.error(`WebView error: ${nativeEvent.description}`);
+            }}
+            onHttpError={(syntheticEvent) => {
+              const { nativeEvent } = syntheticEvent;
+              showToast.error(`WebView HTTP error: ${nativeEvent.statusCode}`);
+            }}
+          />
+        </TouchableWithoutFeedback>
       )}
     </View>
   );
