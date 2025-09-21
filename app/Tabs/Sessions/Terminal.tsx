@@ -58,6 +58,43 @@ export const Terminal: React.FC<TerminalProps> = ({
   const generateHTML = useCallback(() => {
     const wsUrl = getWebSocketUrl();
     
+    if (!wsUrl) {
+      return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Terminal</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #09090b;
+      font-family: 'JetBrains Mono', 'MesloLGS NF', 'FiraCode Nerd Font', 'Cascadia Code', 'JetBrains Mono', Consolas, 'Courier New', monospace;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: #ffffff;
+    }
+    .error-message {
+      text-align: center;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="error-message">
+    <div>No server configured</div>
+    <div style="font-size: 14px; margin-top: 10px; color: #888;">Please configure a server first</div>
+  </div>
+</body>
+</html>
+      `;
+    }
+    
     return `
 <!DOCTYPE html>
 <html>
@@ -437,7 +474,7 @@ export const Terminal: React.FC<TerminalProps> = ({
         case 'connecting':
           setIsConnecting(true);
           setRetryCount(message.data.retryCount);
-          showToast.info(`Connecting to ${message.data.hostName}...`);
+          // Don't show toast for connecting - just show the connecting screen
           
           // Clear any existing timeout
           if (connectionTimeoutRef.current) {

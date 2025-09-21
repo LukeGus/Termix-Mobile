@@ -201,13 +201,13 @@ export default function LoginForm() {
 
             console.log('Starting OIDC flow with URL:', authUrl);
 
-            // Configure the redirect URI
+            // Configure the redirect URI - use the same format as your web version
             const redirectUri = AuthSession.makeRedirectUri({
-                scheme: 'termix-mobile',
-                path: 'auth'
+                scheme: 'termix-mobile'
             });
 
             console.log('OIDC Redirect URI:', redirectUri);
+            console.log('Make sure this redirect URI is configured in your OIDC provider:', redirectUri);
 
             // Open the browser for OAuth
             const result = await WebBrowser.openAuthSessionAsync(

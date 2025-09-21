@@ -37,7 +37,7 @@ export default function Sessions() {
         if (sessions.length > 0 && !isKeyboardVisible) {
             const timeoutId = setTimeout(() => {
                 hiddenInputRef.current?.focus();
-            }, 100);
+            }, 200);
             return () => clearTimeout(timeoutId);
         }
     }, [isKeyboardVisible, sessions.length]);
@@ -141,17 +141,16 @@ export default function Sessions() {
                     autoCapitalize="none"
                     spellCheck={false}
                     textContentType="none"
-                    pointerEvents="none"
                     onFocus={() => {
                         // Keep focus when focused
                     }}
                     onBlur={() => {
-                        // Refocus after a short delay to maintain keyboard
+                        // Refocus after a longer delay to allow tab interactions
                         setTimeout(() => {
                             if (sessions.length > 0) {
                                 hiddenInputRef.current?.focus();
                             }
-                        }, 50);
+                        }, 300);
                     }}
                     onSubmitEditing={() => {
                         // Refocus to maintain keyboard
@@ -159,7 +158,7 @@ export default function Sessions() {
                             if (sessions.length > 0) {
                                 hiddenInputRef.current?.focus();
                             }
-                        }, 50);
+                        }, 300);
                     }}
                 />
             )}

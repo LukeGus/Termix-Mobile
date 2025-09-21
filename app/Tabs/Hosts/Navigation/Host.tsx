@@ -1,4 +1,4 @@
-import {View, Text, TouchableOpacity, Modal, Pressable} from "react-native";
+import {View, Text, TouchableOpacity, Modal, TouchableWithoutFeedback} from "react-native";
 import {Terminal, Server, FolderOpen, Key, Lock, MoreVertical, X} from "lucide-react-native";
 import {SSHHost} from "@/types";
 import {useTerminalSessions} from "@/app/contexts/TerminalSessionsContext";
@@ -79,14 +79,10 @@ function Host({host, status, isLast = false}: HostProps) {
                 animationType="fade"
                 onRequestClose={handleCloseContextMenu}
             >
-                <Pressable
-                    className="flex-1 bg-black/50 justify-center items-center"
-                    onPress={handleCloseContextMenu}
-                >
-                    <Pressable
-                        className="bg-dark-bg-button rounded-lg border-2 border-dark-border p-4 min-w-[250px]"
-                        onPress={(e) => e.stopPropagation()}
-                    >
+                <TouchableWithoutFeedback onPress={handleCloseContextMenu}>
+                    <View className="flex-1 bg-black/50 justify-center items-center">
+                        <TouchableWithoutFeedback onPress={() => {}}>
+                            <View className="bg-dark-bg-button rounded-lg border-2 border-dark-border p-4 min-w-[250px]">
                         <Text className="text-white font-semibold text-lg mb-3 text-center">{host.name}</Text>
 
                         <View className="gap-2">
@@ -109,8 +105,10 @@ function Host({host, status, isLast = false}: HostProps) {
                                 <Text className="text-white font-medium">Close</Text>
                             </TouchableOpacity>
                         </View>
-                    </Pressable>
-                </Pressable>
+                            </View>
+                        </TouchableWithoutFeedback>
+                    </View>
+                </TouchableWithoutFeedback>
             </Modal>
         </>
     )
