@@ -254,12 +254,6 @@ export const Terminal: React.FC<TerminalProps> = ({
           // Start ping interval
           startPingInterval();
           
-          // Notify React Native that connection is established
-          window.ReactNativeWebView?.postMessage(JSON.stringify({
-            type: 'connected',
-            data: { hostName: hostConfig.name }
-          }));
-          
           // Fit terminal after connection with multiple attempts
           setTimeout(() => {
             fitAddon.fit();

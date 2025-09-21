@@ -141,18 +141,29 @@ export default function Sessions() {
                     autoCapitalize="none"
                     spellCheck={false}
                     textContentType="none"
-                    pointerEvents="box-none"
+                    pointerEvents="none"
                     onFocus={() => {
                         // Keep focus when focused
                     }}
                     onBlur={() => {
-                        // Don't refocus - let the responder handle it
+                        // Refocus after a short delay to maintain keyboard
+                        setTimeout(() => {
+                            if (sessions.length > 0) {
+                                hiddenInputRef.current?.focus();
+                            }
+                        }, 50);
                     }}
                     onSubmitEditing={() => {
-                        // Don't refocus - let the responder handle it
+                        // Refocus to maintain keyboard
+                        setTimeout(() => {
+                            if (sessions.length > 0) {
+                                hiddenInputRef.current?.focus();
+                            }
+                        }, 50);
                     }}
                 />
             )}
+            
         </View>
     );
 }

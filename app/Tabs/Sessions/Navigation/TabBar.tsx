@@ -27,11 +27,6 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
         minHeight: 60,
         maxHeight: 60,
       }}
-      onStartShouldSetResponder={() => true}
-      onResponderGrant={() => {
-        // Prevent TextInput from losing focus when clicking tab bar
-        return true;
-      }}
     >
       <ScrollView
         horizontal

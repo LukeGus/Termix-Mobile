@@ -41,10 +41,17 @@ export default function LoginForm() {
                 ]);
                 console.log('Loaded OIDC config:', oidc);
                 console.log('Loaded registration status:', registration);
-                setOidcConfig(oidc);
+                
+                // Set OIDC as configured if we get a response (like your web version)
+                if (oidc) {
+                    setOidcConfig(true); // Just set to true like your web version
+                } else {
+                    setOidcConfig(false);
+                }
                 setRegistrationAllowed(registration.allowed);
             } catch (error) {
                 console.warn('Failed to load auth config:', error);
+                setOidcConfig(false);
             }
         };
         loadAuthConfig();
@@ -174,64 +181,33 @@ export default function LoginForm() {
      */
     const handleOIDCLogin = async () => {
         console.log('OIDC Config:', oidcConfig);
-        console.log('OIDC Config keys:', Object.keys(oidcConfig || {}));
         
         if (!oidcConfig) {
             Alert.alert('OIDC Not Available', 'OIDC configuration not loaded from server.');
-            return;
-        }
-        
-        if (!oidcConfig.auth_url && !oidcConfig.authorization_url) {
-            Alert.alert('OIDC Not Available', 'OIDC authorization URL not configured on server.');
-            return;
-        }
-        
-        if (!oidcConfig.client_id) {
-            Alert.alert('OIDC Not Available', 'OIDC client ID not configured on server.');
             return;
         }
 
         setIsOIDCLoading(true);
 
         try {
-            // Configure the OAuth request
+            // Use the same approach as your web version - get the auth URL from server
+            const { getOIDCAuthorizeUrl } = await import('../main-axios');
+            const authResponse = await getOIDCAuthorizeUrl();
+            const { auth_url: authUrl } = authResponse;
+
+            if (!authUrl || authUrl === "undefined") {
+                throw new Error('Invalid authorization URL received from server');
+            }
+
+            console.log('Starting OIDC flow with URL:', authUrl);
+
+            // Configure the redirect URI
             const redirectUri = AuthSession.makeRedirectUri({
                 scheme: 'termix-mobile',
                 path: 'auth'
             });
 
             console.log('OIDC Redirect URI:', redirectUri);
-
-            // Create the OAuth request
-            const request = new AuthSession.AuthRequest({
-                clientId: oidcConfig.client_id || 'termix-mobile',
-                scopes: oidcConfig.scopes || ['openid', 'profile', 'email'],
-                redirectUri,
-                responseType: AuthSession.ResponseType.Code,
-                extraParams: oidcConfig.extra_params || {},
-            });
-
-            // Build the authorization URL with proper parameters
-            const baseUrl = oidcConfig.auth_url || oidcConfig.authorization_url;
-            
-            // Build query parameters manually
-            const params = new URLSearchParams();
-            params.set('client_id', oidcConfig.client_id || 'termix-mobile');
-            params.set('redirect_uri', redirectUri);
-            params.set('response_type', 'code');
-            params.set('scope', (oidcConfig.scopes || ['openid', 'profile', 'email']).join(' '));
-            params.set('state', Math.random().toString(36).substring(7)); // Random state for security
-            
-            // Add any extra parameters from config
-            if (oidcConfig.extra_params) {
-                Object.entries(oidcConfig.extra_params).forEach(([key, value]) => {
-                    params.set(key, value as string);
-                });
-            }
-            
-            const authUrl = `${baseUrl}?${params.toString()}`;
-            console.log('Starting OIDC flow with URL:', authUrl);
-            console.log('Redirect URI:', redirectUri);
 
             // Open the browser for OAuth
             const result = await WebBrowser.openAuthSessionAsync(
@@ -242,9 +218,11 @@ export default function LoginForm() {
             console.log('OIDC result:', result);
 
             if (result.type === 'success' && result.url) {
-                // Parse the authorization code from the URL
-                const urlParams = new URLSearchParams(result.url.split('?')[1] || '');
-                const code = urlParams.get('code');
+                // Parse the authorization code from the URL manually
+                const urlParts = result.url.split('?');
+                const queryString = urlParts[1] || '';
+                const codeMatch = queryString.match(/[?&]code=([^&]+)/);
+                const code = codeMatch ? decodeURIComponent(codeMatch[1]) : null;
                 
                 if (code) {
                     // Exchange the authorization code for tokens
@@ -538,7 +516,7 @@ export default function LoginForm() {
                     {/* Alternative Auth Methods */}
                     {authMode === 'login' && (
                         <View className="mt-6" style={{ gap: 12 }}>
-                            {oidcConfig && (
+                            {oidcConfig === true && (
                                 <TouchableOpacity
                                     onPress={handleOIDCLogin}
                                     disabled={isOIDCLoading}
