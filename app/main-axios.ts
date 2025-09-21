@@ -71,16 +71,12 @@ interface UserInfo {
     id: string;
     username: string;
     is_admin: boolean;
-    is_oidc: boolean;
 }
 
 interface UserCount {
     count: number;
 }
 
-interface OIDCAuthorize {
-    auth_url: string;
-}
 
 // ============================================================================
 // UTILITY FUNCTIONS
@@ -1226,18 +1222,6 @@ export async function getRegistrationAllowed(): Promise<{ allowed: boolean }> {
     }
 }
 
-export async function getOIDCConfig(): Promise<any> {
-    try {
-        const response = await authApi.get("/users/oidc-config");
-        return response.data;
-    } catch (error: any) {
-        console.warn(
-            "Failed to fetch OIDC config:",
-            error.response?.data?.error || error.message,
-        );
-        return null;
-    }
-}
 
 export async function getUserCount(): Promise<UserCount> {
     try {
@@ -1289,14 +1273,6 @@ export async function completePasswordReset(
     }
 }
 
-export async function getOIDCAuthorizeUrl(): Promise<OIDCAuthorize> {
-    try {
-        const response = await authApi.get("/users/oidc/authorize");
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "get OIDC authorize URL");
-    }
-}
 
 // ============================================================================
 // USER MANAGEMENT
@@ -1364,23 +1340,6 @@ export async function updateRegistrationAllowed(
     }
 }
 
-export async function updateOIDCConfig(config: any): Promise<any> {
-    try {
-        const response = await authApi.post("/users/oidc-config", config);
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "update OIDC config");
-    }
-}
-
-export async function disableOIDCConfig(): Promise<any> {
-    try {
-        const response = await authApi.delete("/users/oidc-config");
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "disable OIDC config");
-    }
-}
 
 // ============================================================================
 // ALERTS

@@ -182,8 +182,10 @@ export default function ServerForm() {
                                             height: 56,
                                             textAlignVertical: 'center',
                                             includeFontPadding: false,
-                                            paddingVertical: 16,
-                                            paddingHorizontal: 16,
+                                            paddingTop: 0,
+                                            paddingBottom: 0,
+                                            paddingLeft: 16,
+                                            paddingRight: 16,
                                         }}
                                         placeholder="192.168.1.1:8080 or https://server.com"
                                         placeholderTextColor="#9CA3AF"

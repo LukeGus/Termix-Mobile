@@ -65,30 +65,32 @@ export const AppProvider: React.FC<AppProviderProps> = ({children}) => {
                     const authStatus = await checkAuthStatus();
                     console.log('Authentication status:', authStatus);
                     
+                    // Load server info for display from either source
+                    let serverInfo = null;
+                    if (legacyServer) {
+                        serverInfo = JSON.parse(legacyServer);
+                    } else if (serverConfig) {
+                        const config = JSON.parse(serverConfig);
+                        serverInfo = {
+                            name: 'Server',
+                            ip: config.serverUrl
+                        };
+                    }
+                    
                     if (authStatus) {
                         // User is authenticated, go to main app
                         console.log('User authenticated, showing main app');
                         setAuthenticated(true);
                         setShowServerManager(false);
                         setShowLoginForm(false);
-                        
-                        // Load server info for display
-                        if (legacyServer) {
-                            const server = JSON.parse(legacyServer);
-                            setSelectedServer(server);
-                        }
+                        setSelectedServer(serverInfo);
                     } else {
                         // User not authenticated, show login
                         console.log('User not authenticated, showing login');
                         setAuthenticated(false);
                         setShowServerManager(false);
                         setShowLoginForm(true);
-                        
-                        // Load server info for display
-                        if (legacyServer) {
-                            const server = JSON.parse(legacyServer);
-                            setSelectedServer(server);
-                        }
+                        setSelectedServer(serverInfo);
                     }
                 } else {
                     // No server configured, show server manager
