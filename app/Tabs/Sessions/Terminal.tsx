@@ -169,8 +169,13 @@ export const Terminal: React.FC<TerminalProps> = ({
     // Open terminal
     terminal.open(document.getElementById('terminal'));
     
-    // Fit terminal to container
-    fitAddon.fit();
+    // Fit terminal to container with multiple attempts
+    setTimeout(() => {
+      fitAddon.fit();
+      setTimeout(() => {
+        fitAddon.fit();
+      }, 100);
+    }, 50);
     
     // Host configuration from React Native
     const hostConfig = ${JSON.stringify(hostConfig)};
@@ -207,6 +212,7 @@ export const Terminal: React.FC<TerminalProps> = ({
         ws = new WebSocket(wsUrl);
         
         ws.onopen = function() {
+          console.log('WebSocket opened for:', hostConfig.name);
           reconnectAttempts = 0;
           isConnected = true;
           
@@ -223,6 +229,7 @@ export const Terminal: React.FC<TerminalProps> = ({
             }
           };
           
+          console.log('Sending connectToHost message:', connectMessage);
           ws.send(JSON.stringify(connectMessage));
           
           // Set up terminal input handler (only once)
@@ -243,10 +250,13 @@ export const Terminal: React.FC<TerminalProps> = ({
             data: { hostName: hostConfig.name }
           }));
           
-          // Fit terminal after connection
+          // Fit terminal after connection with multiple attempts
           setTimeout(() => {
             fitAddon.fit();
-          }, 100);
+            setTimeout(() => {
+              fitAddon.fit();
+            }, 100);
+          }, 50);
         };
         
         ws.onmessage = function(event) {
@@ -281,6 +291,7 @@ export const Terminal: React.FC<TerminalProps> = ({
         };
         
         ws.onclose = function(event) {
+          console.log('WebSocket closed for:', hostConfig.name, 'Code:', event.code, 'Reason:', event.reason);
           isConnected = false;
           stopPingInterval();
           
@@ -319,6 +330,7 @@ export const Terminal: React.FC<TerminalProps> = ({
         };
         
         ws.onerror = function(error) {
+          console.log('WebSocket error for:', hostConfig.name, error);
           isConnected = false;
           // Notify React Native of WebSocket error
           window.ReactNativeWebView?.postMessage(JSON.stringify({
@@ -357,15 +369,23 @@ export const Terminal: React.FC<TerminalProps> = ({
     
     // Handle terminal resize
     function handleResize() {
-      // Fit terminal to container first
-      fitAddon.fit();
-      
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({
-          type: 'resize',
-          data: { cols: terminal.cols, rows: terminal.rows }
-        }));
-      }
+      // Force a small delay to ensure container is properly sized
+      setTimeout(() => {
+        // Fit terminal to container first
+        fitAddon.fit();
+        
+        // Force another fit after a brief delay
+        setTimeout(() => {
+          fitAddon.fit();
+        }, 50);
+        
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: 'resize',
+            data: { cols: terminal.cols, rows: terminal.rows }
+          }));
+        }
+      }, 10);
     }
     
     // Listen for resize events

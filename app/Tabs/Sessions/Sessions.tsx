@@ -59,22 +59,11 @@ export default function Sessions() {
                 paddingTop: insets.top,
             }}
         >
-            {/* Header with back button */}
-            <View className="flex-row items-center justify-between px-4 py-3 border-b border-dark-border">
-                <TouchableOpacity
-                    onPress={() => router.navigate('/hosts' as any)}
-                    className="flex-row items-center"
-                    activeOpacity={0.7}
-                >
-                    <ArrowLeft size={20} color="#ffffff" />
-                    <Text className="text-white text-lg ml-2">Back to Hosts</Text>
-                </TouchableOpacity>
-            </View>
 
             <View 
                 style={{
                     flex: 1,
-                    marginBottom: 60, // Space for sessions tab bar
+                    marginBottom: keyboardHeight > 0 ? keyboardHeight + 60 : 60, // Space for keyboard + tab bar
                 }}
             >
                 {sessions.map((session) => (
@@ -114,7 +103,7 @@ export default function Sessions() {
             <View
                 style={{
                     position: 'absolute',
-                    bottom: 0,
+                    bottom: keyboardHeight > 0 ? keyboardHeight : 0,
                     left: 0,
                     right: 0,
                     height: 60,

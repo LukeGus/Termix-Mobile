@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
-import { X } from 'lucide-react-native';
+import { X, ArrowLeft } from 'lucide-react-native';
 import { TerminalSession } from '@/app/contexts/TerminalSessionsContext';
+import { useRouter } from 'expo-router';
 
 interface TabBarProps {
   sessions: TerminalSession[];
@@ -11,6 +12,8 @@ interface TabBarProps {
 }
 
 export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClose }: TabBarProps) {
+  const router = useRouter();
+
   if (sessions.length === 0) {
     return null;
   }
@@ -35,6 +38,24 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
         }}
         className="flex-row"
       >
+        {/* Back button */}
+        <TouchableOpacity
+          onPress={() => router.navigate('/hosts' as any)}
+          className="flex-row items-center rounded-md border-2 border-dark-border bg-dark-bg-button mr-1"
+          activeOpacity={0.7}
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+            elevation: 2,
+          }}
+        >
+          <ArrowLeft size={16} color="#ffffff" />
+          <Text className="text-white text-sm font-medium px-3 py-3">
+            Back
+          </Text>
+        </TouchableOpacity>
         {sessions.map((session) => {
           const isActive = session.id === activeSessionId;
           

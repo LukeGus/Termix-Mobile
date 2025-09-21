@@ -2,21 +2,25 @@ import {Tabs, usePathname} from 'expo-router';
 import {Ionicons} from '@expo/vector-icons';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useKeyboard} from '../contexts/KeyboardContext';
+import {useTerminalSessions} from '../contexts/TerminalSessionsContext';
 
 export default function TabLayout() {
     const insets = useSafeAreaInsets();
     const { keyboardHeight, isKeyboardVisible } = useKeyboard();
+    const { sessions } = useTerminalSessions();
     const pathname = usePathname();
     
-    // Hide main tab bar when in sessions tab
+    // Hide main tab bar when in sessions tab AND there are active sessions
     const isSessionsTab = pathname === '/sessions';
+    const hasActiveSessions = sessions.length > 0;
+    const shouldHideMainTabBar = isSessionsTab && hasActiveSessions;
     
     return (
         <Tabs
             screenOptions={{
                 tabBarActiveTintColor: '#e6e6e6',
                 tabBarInactiveTintColor: '#5a5a5d',
-                tabBarStyle: isSessionsTab ? { display: 'none' } : {
+                tabBarStyle: shouldHideMainTabBar ? { display: 'none' } : {
                     backgroundColor: '#0e0e10',
                     borderTopWidth: 1.5,
                     borderTopColor: '#303032',

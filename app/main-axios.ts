@@ -61,7 +61,9 @@ export type ServerMetrics = {
 };
 
 interface AuthResponse {
-    token: string;
+    token?: string;
+    requires_totp?: boolean;
+    temp_token?: string;
 }
 
 interface UserInfo {
