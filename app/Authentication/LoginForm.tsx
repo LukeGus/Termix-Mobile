@@ -201,21 +201,30 @@ export default function LoginForm() {
 
             console.log('Starting OIDC flow with URL:', authUrl);
 
-            // Configure the redirect URI - try different formats
-            const redirectUri = AuthSession.makeRedirectUri({
-                scheme: 'termix-mobile'
-            });
-
-            console.log('OIDC Redirect URI:', redirectUri);
-            console.log('Alternative redirect URI (without proxy):', AuthSession.makeRedirectUri({
-                scheme: 'termix-mobile'
-            }));
-            console.log('Make sure one of these redirect URIs is configured in your OIDC provider');
+            // Try different redirect URI formats
+            const redirectUri1 = AuthSession.makeRedirectUri(); // Default format
+            const redirectUri2 = AuthSession.makeRedirectUri({ scheme: 'termix-mobile' }); // Custom scheme
+            const redirectUri3 = AuthSession.makeRedirectUri({ scheme: 'exp' }); // Expo scheme
+            
+            console.log('OIDC Redirect URI (default):', redirectUri1);
+            console.log('OIDC Redirect URI (termix-mobile):', redirectUri2);
+            console.log('OIDC Redirect URI (exp):', redirectUri3);
+            console.log('Try adding one of these to your OIDC provider:');
+            console.log('1. Default:', redirectUri1);
+            console.log('2. Custom:', redirectUri2);
+            console.log('3. Expo:', redirectUri3);
+            
+            // Use the default format first
+            const redirectUri = redirectUri1;
 
             // Open the browser for OAuth
             const result = await WebBrowser.openAuthSessionAsync(
                 authUrl,
-                redirectUri
+                redirectUri,
+                {
+                    showInRecents: true,
+                    preferEphemeralSession: false
+                }
             );
 
             console.log('OIDC result:', result);
@@ -237,7 +246,16 @@ export default function LoginForm() {
                 console.log('OIDC cancelled by user');
             } else {
                 console.error('OIDC error:', result);
-                Alert.alert('OIDC Login Failed', 'Authentication failed');
+                
+                // Show error with redirect URI options
+                console.log('OIDC failed, showing redirect URI options...');
+                Alert.alert(
+                    'Redirect URI Error', 
+                    `The redirect URI "${redirectUri}" is not configured in your OIDC provider.\n\nPlease add one of these URIs to your OIDC provider:\n\n1. ${redirectUri1}\n2. ${redirectUri2}\n3. ${redirectUri3}\n\nThen try again.`,
+                    [
+                        { text: 'OK', style: 'default' }
+                    ]
+                );
             }
         } catch (error: any) {
             console.error('OIDC login error:', error);
@@ -288,7 +306,7 @@ export default function LoginForm() {
                         <View>
                                 <Text className="text-gray-300 text-sm font-medium mb-1">Username</Text>
                                 <View className="relative">
-                                    <TextInput
+                            <TextInput
                                         className="bg-dark-bg-input pl-12 pr-4 rounded-xl text-white text-base border-2 border-dark-border"
                                         style={{
                                             height: 56,
@@ -296,13 +314,13 @@ export default function LoginForm() {
                                             includeFontPadding: false,
                                             paddingVertical: 16,
                                         }}
-                                        placeholder="Enter username..."
-                                        placeholderTextColor="#9CA3AF"
-                                        value={formData.username}
-                                        onChangeText={(value) => handleInputChange('username', value)}
-                                        autoCapitalize="none"
+                                placeholder="Enter username..."
+                                placeholderTextColor="#9CA3AF"
+                                value={formData.username}
+                                onChangeText={(value) => handleInputChange('username', value)}
+                                autoCapitalize="none"
                                         autoComplete="username"
-                                    />
+                            />
                                     <View className="absolute left-4 top-1/2 -translate-y-1/2">
                                         <User size={20} color="#9CA3AF" />
                                     </View>
@@ -312,7 +330,7 @@ export default function LoginForm() {
                             <View style={{ marginTop: 8 }}>
                                 <Text className="text-gray-300 text-sm font-medium mb-1">Password</Text>
                                 <View className="relative">
-                                    <TextInput
+                            <TextInput
                                         className="bg-dark-bg-input pl-12 pr-12 rounded-xl text-white text-base border-2 border-dark-border"
                                         style={{
                                             height: 56,
@@ -320,10 +338,10 @@ export default function LoginForm() {
                                             includeFontPadding: false,
                                             paddingVertical: 16,
                                         }}
-                                        placeholder="Enter password..."
-                                        placeholderTextColor="#9CA3AF"
-                                        value={formData.password}
-                                        onChangeText={(value) => handleInputChange('password', value)}
+                                placeholder="Enter password..."
+                                placeholderTextColor="#9CA3AF"
+                                value={formData.password}
+                                onChangeText={(value) => handleInputChange('password', value)}
                                         secureTextEntry={!showPassword}
                                         autoComplete="current-password"
                                     />
@@ -339,7 +357,7 @@ export default function LoginForm() {
                                         </Text>
                                     </TouchableOpacity>
                                 </View>
-                            </View>
+                        </View>
                     </View>
                     
                     <TouchableOpacity 

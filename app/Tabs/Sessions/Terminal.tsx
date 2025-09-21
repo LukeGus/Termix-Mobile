@@ -55,6 +55,11 @@ export const Terminal: React.FC<TerminalProps> = ({
     return wsUrl;
   };
 
+  // Debug: Log when terminal component mounts
+  useEffect(() => {
+    showToast.info(`Debug: Terminal component mounted for ${hostConfig.name}`);
+  }, [hostConfig.name]);
+
   const generateHTML = useCallback(() => {
     const wsUrl = getWebSocketUrl();
     
@@ -265,6 +270,12 @@ export const Terminal: React.FC<TerminalProps> = ({
           data: { message: 'Creating WebSocket connection to: ' + wsUrl }
         }));
         
+        // Test if the WebSocket URL is reachable first
+        window.ReactNativeWebView?.postMessage(JSON.stringify({
+          type: 'debug',
+          data: { message: 'Testing WebSocket URL reachability...' }
+        }));
+        
         ws = new WebSocket(wsUrl);
         
         ws.onopen = function() {
@@ -290,6 +301,12 @@ export const Terminal: React.FC<TerminalProps> = ({
             }
           };
           
+          // Debug: Log the exact hostConfig being sent
+          window.ReactNativeWebView?.postMessage(JSON.stringify({
+            type: 'debug',
+            data: { message: 'HostConfig being sent: ' + JSON.stringify(hostConfig, null, 2) }
+          }));
+          
           // Debug: Sending connect message
           window.ReactNativeWebView?.postMessage(JSON.stringify({
             type: 'debug',
@@ -308,6 +325,21 @@ export const Terminal: React.FC<TerminalProps> = ({
           
           // Start ping interval
           startPingInterval();
+          
+          // Set up connection timeout - if server doesn't respond within 10 seconds, show error
+          const connectionTimeout = setTimeout(() => {
+            if (!isConnected) {
+              window.ReactNativeWebView?.postMessage(JSON.stringify({
+                type: 'debug',
+                data: { message: 'Connection timeout - server did not respond to connectToHost message' }
+              }));
+              
+              window.ReactNativeWebView?.postMessage(JSON.stringify({
+                type: 'error',
+                data: { hostName: hostConfig.name, message: 'Connection timeout - server did not respond' }
+              }));
+            }
+          }, 10000);
           
           // Fit terminal after connection with multiple attempts
           setTimeout(() => {
@@ -426,7 +458,7 @@ export const Terminal: React.FC<TerminalProps> = ({
           // Notify React Native of WebSocket error
           window.ReactNativeWebView?.postMessage(JSON.stringify({
             type: 'error',
-            data: { hostName: hostConfig.name, message: 'WebSocket connection failed' }
+            data: { hostName: hostConfig.name, message: 'WebSocket connection failed - check if server is running and URL is correct' }
           }));
         };
         
@@ -616,6 +648,11 @@ export const Terminal: React.FC<TerminalProps> = ({
       }
     };
   }, []);
+
+  // Debug: Log visibility changes
+  useEffect(() => {
+    showToast.info(`Debug: Terminal visibility changed - isVisible: ${isVisible}, isConnecting: ${isConnecting}`);
+  }, [isVisible, isConnecting]);
 
   if (!isVisible) {
     return null;
