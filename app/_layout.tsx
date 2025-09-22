@@ -7,6 +7,7 @@ import LoginForm from "./Authentication/LoginForm";
 import { View, Text, ActivityIndicator } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Toaster } from "sonner-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "../global.css";
 
 function RootLayoutContent() {
@@ -50,28 +51,30 @@ function RootLayoutContent() {
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <AppProvider>
-        <TerminalSessionsProvider>
-          <KeyboardProvider>
-            <RootLayoutContent />
-            <Toaster 
-              theme="dark"
-              position="top-center"
-              toastOptions={{
-                style: {
-                  backgroundColor: '#18181b',
-                  borderWidth: 1,
-                  borderColor: '#27272a',
-                },
-              }}
-              richColors={false}
-              closeButton={true}
-              duration={4000}
-            />
-          </KeyboardProvider>
-        </TerminalSessionsProvider>
-      </AppProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <AppProvider>
+          <TerminalSessionsProvider>
+            <KeyboardProvider>
+              <RootLayoutContent />
+              <Toaster 
+                theme="dark"
+                position="top-center"
+                toastOptions={{
+                  style: {
+                    backgroundColor: '#18181b',
+                    borderWidth: 1,
+                    borderColor: '#27272a',
+                  },
+                }}
+                richColors={false}
+                closeButton={true}
+                duration={4000}
+              />
+            </KeyboardProvider>
+          </TerminalSessionsProvider>
+        </AppProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

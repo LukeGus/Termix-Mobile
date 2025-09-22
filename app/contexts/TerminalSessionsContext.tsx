@@ -39,17 +39,13 @@ export const TerminalSessionsProvider: React.FC<TerminalSessionsProviderProps> =
 
   const addSession = useCallback((host: SSHHost): string => {
     setSessions(prev => {
-      // Check if a session for this host already exists
-      const existingSession = prev.find(session => session.host.id === host.id);
+      // Find all existing sessions for this host
+      const existingSessions = prev.filter(session => session.host.id === host.id);
       
-      if (existingSession) {
-        // If session exists, just activate it
-        const updatedSessions = prev.map(session => ({
-          ...session,
-          isActive: session.id === existingSession.id,
-        }));
-        setActiveSessionId(existingSession.id);
-        return updatedSessions;
+      // Generate title with number suffix if needed
+      let title = host.name;
+      if (existingSessions.length > 0) {
+        title = `${host.name} (${existingSessions.length + 1})`;
       }
       
       // Create new session
@@ -57,7 +53,7 @@ export const TerminalSessionsProvider: React.FC<TerminalSessionsProviderProps> =
       const newSession: TerminalSession = {
         id: sessionId,
         host,
-        title: host.name,
+        title,
         isActive: true,
         createdAt: new Date(),
       };
@@ -78,7 +74,30 @@ export const TerminalSessionsProvider: React.FC<TerminalSessionsProviderProps> =
 
   const removeSession = useCallback((sessionId: string) => {
     setSessions(prev => {
+      const sessionToRemove = prev.find(session => session.id === sessionId);
+      if (!sessionToRemove) return prev;
+      
       const updatedSessions = prev.filter(session => session.id !== sessionId);
+      
+      // Renumber sessions for the same host
+      const hostId = sessionToRemove.host.id;
+      const sameHostSessions = updatedSessions.filter(session => session.host.id === hostId);
+      
+      if (sameHostSessions.length > 0) {
+        // Sort by creation time to maintain order
+        sameHostSessions.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+        
+        // Renumber the sessions
+        sameHostSessions.forEach((session, index) => {
+          const sessionIndex = updatedSessions.findIndex(s => s.id === session.id);
+          if (sessionIndex !== -1) {
+            updatedSessions[sessionIndex] = {
+              ...session,
+              title: index === 0 ? session.host.name : `${session.host.name} (${index + 1})`,
+            };
+          }
+        });
+      }
       
       // If we're removing the active session, set a new active one
       if (activeSessionId === sessionId) {
