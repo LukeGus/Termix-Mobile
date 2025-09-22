@@ -23,7 +23,7 @@ export default function Sessions() {
             if (sessions.length > 0) {
                 setTimeout(() => {
                     hiddenInputRef.current?.focus();
-                }, 500);
+                }, 1000);
             }
             
             return () => {
@@ -32,12 +32,12 @@ export default function Sessions() {
         }, [sessions.length])
     );
 
-    // Keep keyboard open by refocusing when it gets dismissed
+    // Keep keyboard open by refocusing when it gets dismissed - but with longer delays for tab interactions
     useEffect(() => {
         if (sessions.length > 0 && !isKeyboardVisible) {
             const timeoutId = setTimeout(() => {
                 hiddenInputRef.current?.focus();
-            }, 1000); // Increased delay to allow tab interactions
+            }, 3000); // Much longer delay to allow tab interactions
             return () => clearTimeout(timeoutId);
         }
     }, [isKeyboardVisible, sessions.length]);
@@ -147,12 +147,12 @@ export default function Sessions() {
                         // Keep focus when focused
                     }}
                     onBlur={() => {
-                        // Refocus after a longer delay to allow tab interactions
+                        // Refocus after a much longer delay to allow tab interactions
                         setTimeout(() => {
                             if (sessions.length > 0) {
                                 hiddenInputRef.current?.focus();
                             }
-                        }, 2000); // Increased delay for tab interactions
+                        }, 5000); // Much longer delay for tab interactions
                     }}
                     onSubmitEditing={() => {
                         // Refocus to maintain keyboard
@@ -160,7 +160,7 @@ export default function Sessions() {
                             if (sessions.length > 0) {
                                 hiddenInputRef.current?.focus();
                             }
-                        }, 500);
+                        }, 2000);
                     }}
                 />
             )}

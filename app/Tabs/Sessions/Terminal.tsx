@@ -40,6 +40,9 @@ export const Terminal: React.FC<TerminalProps> = ({
   const getWebSocketUrl = () => {
     const serverUrl = getCurrentServerUrl();
     
+    // Show immediate debug info
+    showToast.info(`Server URL: ${serverUrl || 'NULL'}`);
+    
     if (!serverUrl) {
       showToast.error('No server URL found - please configure a server first');
       return null;
@@ -49,6 +52,8 @@ export const Terminal: React.FC<TerminalProps> = ({
     const wsHost = serverUrl.replace(/^https?:\/\//, '');
     const cleanHost = wsHost.replace(/\/$/, '');
     const wsUrl = `${wsProtocol}${cleanHost}/ssh/websocket/`;
+    
+    showToast.info(`WebSocket URL: ${wsUrl}`);
     return wsUrl;
   };
 
@@ -264,6 +269,12 @@ export const Terminal: React.FC<TerminalProps> = ({
         ws = new WebSocket(wsUrl);
         
         ws.onopen = function() {
+          // Notify React Native that WebSocket opened
+          window.ReactNativeWebView?.postMessage(JSON.stringify({
+            type: 'debug',
+            data: { message: 'WebSocket opened successfully' }
+          }));
+          
           reconnectAttempts = 0;
           isConnected = false; // Will be set to true when we get 'connected' message
           
@@ -279,6 +290,12 @@ export const Terminal: React.FC<TerminalProps> = ({
               hostConfig: hostConfig
             }
           };
+          
+          // Notify React Native about sending message
+          window.ReactNativeWebView?.postMessage(JSON.stringify({
+            type: 'debug',
+            data: { message: 'Sending connectToHost message: ' + JSON.stringify(connectMessage) }
+          }));
           
           ws.send(JSON.stringify(connectMessage));
           
@@ -319,6 +336,12 @@ export const Terminal: React.FC<TerminalProps> = ({
           try {
             const msg = JSON.parse(event.data);
             
+            // Notify React Native about received message
+            window.ReactNativeWebView?.postMessage(JSON.stringify({
+              type: 'debug',
+              data: { message: 'Received message: ' + JSON.stringify(msg) }
+            }));
+            
             if (msg.type === 'data') {
               terminal.write(msg.data);
             } else if (msg.type === 'error') {
@@ -357,6 +380,12 @@ export const Terminal: React.FC<TerminalProps> = ({
         };
         
         ws.onclose = function(event) {
+          // Notify React Native about WebSocket close
+          window.ReactNativeWebView?.postMessage(JSON.stringify({
+            type: 'debug',
+            data: { message: 'WebSocket closed. Code: ' + event.code + ', Reason: ' + event.reason }
+          }));
+          
           isConnected = false;
           stopPingInterval();
           
@@ -395,6 +424,12 @@ export const Terminal: React.FC<TerminalProps> = ({
         };
         
         ws.onerror = function(error) {
+          // Notify React Native about WebSocket error
+          window.ReactNativeWebView?.postMessage(JSON.stringify({
+            type: 'debug',
+            data: { message: 'WebSocket error: ' + JSON.stringify(error) }
+          }));
+          
           isConnected = false;
           // Notify React Native of WebSocket error
           window.ReactNativeWebView?.postMessage(JSON.stringify({
@@ -544,7 +579,7 @@ export const Terminal: React.FC<TerminalProps> = ({
           break;
           
         case 'debug':
-          // Debug messages are handled silently
+          showToast.info(`Debug: ${message.data.message}`);
           break;
           
         case 'error':
