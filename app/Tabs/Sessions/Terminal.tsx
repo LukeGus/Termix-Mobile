@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Dimensions } from 'react-native';
@@ -24,12 +24,16 @@ interface TerminalProps {
   onClose?: () => void;
 }
 
-export const Terminal: React.FC<TerminalProps> = ({
+export type TerminalHandle = {
+  sendInput: (data: string) => void;
+};
+
+export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({ 
   hostConfig,
   isVisible,
   title = 'Terminal',
   onClose
-}) => {
+}, ref) => {
   const webViewRef = useRef<WebView>(null);
   const [webViewKey, setWebViewKey] = useState(0);
   const [screenDimensions, setScreenDimensions] = useState(Dimensions.get('window'));
@@ -52,12 +56,10 @@ export const Terminal: React.FC<TerminalProps> = ({
     showToast.error(errorMessage);
     setIsConnecting(false);
     setIsConnected(false);
-    // Close the tab after a short delay
-    setTimeout(() => {
-      if (onClose) {
-        onClose();
-      }
-    }, 2000);
+    // Close immediately on unrecoverable/failed connection
+    if (onClose) {
+      onClose();
+    }
   }, [onClose]);
 
   const getWebSocketUrl = () => {
@@ -154,6 +156,13 @@ export const Terminal: React.FC<TerminalProps> = ({
       scrollbar-width: thin;
       scrollbar-color: rgba(180,180,180,0.7) transparent;
     }
+    /* Disable text selection and callouts to avoid native dialogues */
+    * { -webkit-tap-highlight-color: transparent; }
+    html, body, #terminal, .xterm * {
+      user-select: none;
+      -webkit-user-select: none;
+      -ms-user-select: none;
+    }
   </style>
 </head>
 <body>
@@ -211,6 +220,8 @@ export const Terminal: React.FC<TerminalProps> = ({
     const maxReconnectAttempts = 3; // 3 retries max as requested
     let reconnectTimeout = null;
     let connectionTimeout = null;
+    let shouldNotReconnect = false;
+    let hasNotifiedFailure = false;
     
     // Notify React Native of connection state
     function notifyConnectionState(state, data = {}) {
@@ -221,7 +232,53 @@ export const Terminal: React.FC<TerminalProps> = ({
         }));
       }
     }
+
+    function notifyFailureOnce(message) {
+      if (hasNotifiedFailure) return;
+      hasNotifiedFailure = true;
+      notifyConnectionState('connectionFailed', { hostName: hostConfig.name, message });
+    }
+
+    function isUnrecoverableError(message) {
+      if (!message) return false;
+      const m = String(message).toLowerCase();
+      return m.includes('password') || m.includes('authentication') || m.includes('permission denied') || m.includes('invalid') || m.includes('incorrect') || m.includes('denied');
+    }
+
+    function scheduleReconnect() {
+      if (shouldNotReconnect) return;
+      if (reconnectAttempts >= maxReconnectAttempts) {
+        notifyFailureOnce('Maximum reconnection attempts reached');
+        return;
+      }
+      reconnectAttempts += 1;
+      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 5000);
+      notifyConnectionState('connecting', { retryCount: reconnectAttempts });
+      reconnectTimeout = setTimeout(() => {
+        connectWebSocket();
+      }, delay);
+    }
     
+    // Expose an input bridge for React Native to send keystrokes
+    window.nativeInput = function(data) {
+      try {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'input', data: data }));
+        } else {
+          terminal.write(data);
+        }
+      } catch (e) {}
+    }
+
+    // Prevent the webview content from stealing focus or opening dialogs
+    ['touchstart','touchend','touchmove','mousedown','mouseup','click','dblclick','contextmenu'].forEach(function(ev){
+      document.addEventListener(ev, function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }, { passive: false });
+    });
+
     // WebSocket connection function
     function connectWebSocket() {
       try {
@@ -232,17 +289,19 @@ export const Terminal: React.FC<TerminalProps> = ({
         // Set connection timeout
         connectionTimeout = setTimeout(() => {
           if (ws && ws.readyState === WebSocket.CONNECTING) {
-            ws.close();
-            notifyConnectionState('connectionFailed', { 
-              hostName: hostConfig.name, 
-              message: 'Connection timeout - server not responding' 
-            });
+            try { ws.close(); } catch (_) {}
+            if (!shouldNotReconnect) {
+              scheduleReconnect();
+            } else {
+              notifyFailureOnce('Connection timeout - server not responding');
+            }
           }
         }, 30000); // 30 second timeout
         
         ws.onopen = function() {
           clearTimeout(connectionTimeout);
           notifyConnectionState('connected', { hostName: hostConfig.name });
+          hasNotifiedFailure = false;
           
           // Send initial connection message with fitted dimensions
           const connectMessage = {
@@ -274,14 +333,11 @@ export const Terminal: React.FC<TerminalProps> = ({
             if (msg.type === 'data') {
               terminal.write(msg.data);
             } else if (msg.type === 'error') {
-              // Check for authentication errors
-              if (msg.message.toLowerCase().includes('password') || 
-                  msg.message.toLowerCase().includes('authentication') ||
-                  msg.message.toLowerCase().includes('permission denied')) {
-                notifyConnectionState('connectionFailed', { 
-                  hostName: hostConfig.name, 
-                  message: 'Authentication failed: ' + msg.message 
-                });
+              const message = msg.message || 'Unknown error';
+              if (isUnrecoverableError(message)) {
+                shouldNotReconnect = true;
+                notifyFailureOnce('Authentication failed: ' + message);
+                try { ws && ws.close(1000); } catch (_) {}
                 return;
               }
             } else if (msg.type === 'connected') {
@@ -301,47 +357,25 @@ export const Terminal: React.FC<TerminalProps> = ({
           clearTimeout(connectionTimeout);
           stopPingInterval();
           
-          // Handle different close codes
-          if (event.code === 1006) {
-            notifyConnectionState('connectionFailed', { 
-              hostName: hostConfig.name, 
-              message: 'WebSocket connection failed (1006) - server not responding or URL incorrect' 
-            });
+          if (shouldNotReconnect) {
+            notifyFailureOnce('Connection closed');
             return;
           }
-          
-          // Attempt to reconnect only for unexpected closures
-          if (event.code !== 1000 && event.code !== 1001 && reconnectAttempts < maxReconnectAttempts) {
-            reconnectAttempts++;
-            const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 5000);
-            
-            reconnectTimeout = setTimeout(() => {
-              connectWebSocket();
-            }, delay);
-          } else {
-            if (reconnectAttempts >= maxReconnectAttempts) {
-              notifyConnectionState('connectionFailed', { 
-                hostName: hostConfig.name, 
-                message: 'Maximum reconnection attempts reached' 
-              });
-            }
+          if (event.code === 1000 || event.code === 1001) {
+            notifyFailureOnce('Connection closed');
+            return;
           }
+          scheduleReconnect();
         };
         
         ws.onerror = function(error) {
           clearTimeout(connectionTimeout);
-          notifyConnectionState('connectionFailed', { 
-            hostName: hostConfig.name, 
-            message: 'WebSocket connection failed - server may not be running' 
-          });
+          // onclose will handle reconnection and failure notifications
         };
         
       } catch (error) {
         clearTimeout(connectionTimeout);
-        notifyConnectionState('connectionFailed', { 
-          hostName: hostConfig.name, 
-          message: 'Failed to create WebSocket connection: ' + error.message 
-        });
+        notifyFailureOnce('Failed to create WebSocket connection: ' + error.message);
       }
     }
     
@@ -404,7 +438,7 @@ export const Terminal: React.FC<TerminalProps> = ({
     });
     
     // Focus terminal
-    terminal.focus();
+    // Do not focus the terminal to avoid invoking native keyboards or dialogs
   </script>
 </body>
 </html>
@@ -448,6 +482,16 @@ export const Terminal: React.FC<TerminalProps> = ({
       console.error('Error parsing WebView message:', error);
     }
   }, [handleConnectionFailure, onClose]);
+
+  // Expose imperative handle to allow Sessions screen to send input
+  useImperativeHandle(ref, () => ({
+    sendInput: (data: string) => {
+      try {
+        const escaped = JSON.stringify(data);
+        webViewRef.current?.injectJavaScript(`window.nativeInput(${escaped}); true;`);
+      } catch (e) {}
+    }
+  }), []);
 
   // Only refresh WebView when hostConfig actually changes (not when switching tabs)
   useEffect(() => {
@@ -493,6 +537,8 @@ export const Terminal: React.FC<TerminalProps> = ({
         scalesPageToFit={false}
         allowsInlineMediaPlayback={true}
         mediaPlaybackRequiresUserAction={false}
+        keyboardDisplayRequiresUserAction={false}
+        onScroll={() => {}}
         onMessage={handleWebViewMessage}
         onError={(syntheticEvent) => {
           const { nativeEvent } = syntheticEvent;
@@ -545,6 +591,6 @@ export const Terminal: React.FC<TerminalProps> = ({
       )}
     </View>
   );
-};
+});
 
 export default Terminal;

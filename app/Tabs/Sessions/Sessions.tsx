@@ -5,7 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useTerminalSessions } from '@/app/contexts/TerminalSessionsContext';
 import { useKeyboard } from '@/app/contexts/KeyboardContext';
-import Terminal from '@/app/Tabs/Sessions/Terminal';
+import Terminal, { TerminalHandle } from '@/app/Tabs/Sessions/Terminal';
 import TabBar from '@/app/Tabs/Sessions/Navigation/TabBar';
 import { ArrowLeft } from 'lucide-react-native';
 
@@ -15,6 +15,24 @@ export default function Sessions() {
     const { sessions, activeSessionId, setActiveSession, removeSession } = useTerminalSessions();
     const { keyboardHeight, isKeyboardVisible } = useKeyboard();
     const hiddenInputRef = useRef<TextInput>(null);
+    const terminalRefs = useRef<Record<string, React.RefObject<TerminalHandle>>>({});
+
+    // Ensure we have a ref for each session
+    useEffect(() => {
+        const map: Record<string, React.RefObject<TerminalHandle>> = { ...terminalRefs.current };
+        sessions.forEach(s => {
+            if (!map[s.id]) {
+                map[s.id] = React.createRef<TerminalHandle>() as React.RefObject<TerminalHandle>;
+            }
+        });
+        // Clean up refs for removed sessions
+        Object.keys(map).forEach(id => {
+            if (!sessions.find(s => s.id === id)) {
+                delete map[id];
+            }
+        });
+        terminalRefs.current = map;
+    }, [sessions]);
 
     // Force keyboard to stay open when in sessions tab (only if there are sessions)
     useFocusEffect(
@@ -69,6 +87,7 @@ export default function Sessions() {
                 {sessions.map((session) => (
                     <Terminal
                         key={session.id}
+                        ref={terminalRefs.current[session.id]}
                         hostConfig={{
                             id: parseInt(session.host.id.toString()),
                             name: session.host.name,
@@ -143,6 +162,30 @@ export default function Sessions() {
                     autoCapitalize="none"
                     spellCheck={false}
                     textContentType="none"
+                    multiline
+                    onChangeText={(text) => {
+                        // Send only the last entered character(s) to active terminal
+                        const activeRef = activeSessionId ? terminalRefs.current[activeSessionId] : null;
+                        if (activeRef && activeRef.current) {
+                            // Diff approach: the TextInput may contain the full buffer; send increment
+                            // For simplicity, send the last character typed
+                            if (text && text.length > 0) {
+                                const lastChar = text[text.length - 1];
+                                activeRef.current.sendInput(lastChar);
+                            }
+                        }
+                    }}
+                    onKeyPress={({ nativeEvent }) => {
+                        const key = nativeEvent.key;
+                        const activeRef = activeSessionId ? terminalRefs.current[activeSessionId] : null;
+                        if (activeRef && activeRef.current) {
+                            if (key === 'Enter') {
+                                activeRef.current.sendInput('\n');
+                            } else if (key === 'Backspace') {
+                                activeRef.current.sendInput('\b');
+                            }
+                        }
+                    }}
                     onFocus={() => {
                         // Keep focus when focused
                     }}
@@ -152,7 +195,7 @@ export default function Sessions() {
                             if (sessions.length > 0) {
                                 hiddenInputRef.current?.focus();
                             }
-                        }, 5000); // Much longer delay for tab interactions
+                        }, 200); // Short delay so keyboard doesn't disappear long enough to allow taps
                     }}
                     onSubmitEditing={() => {
                         // Refocus to maintain keyboard
@@ -160,7 +203,7 @@ export default function Sessions() {
                             if (sessions.length > 0) {
                                 hiddenInputRef.current?.focus();
                             }
-                        }, 2000);
+                        }, 100);
                     }}
                 />
             )}
