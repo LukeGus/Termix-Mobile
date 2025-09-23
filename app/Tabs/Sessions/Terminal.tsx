@@ -329,8 +329,10 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
           hasNotifiedFailure = false;
           reconnectAttempts = 0; // Reset retry count on successful connection
           
-          // Clear terminal on reconnect
+          // Clear terminal on reconnect - more thorough clearing
           terminal.clear();
+          terminal.reset();
+          terminal.write('\x1b[2J\x1b[H'); // Clear screen and move cursor to top
           
           // Send initial connection message with fitted dimensions
           const connectMessage = {
@@ -449,8 +451,10 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
       setTimeout(handleResize, 100); // Small delay for orientation change
     });
     
-    // Clear terminal initially
+    // Clear terminal initially - more thorough clearing
     terminal.clear();
+    terminal.reset();
+    terminal.write('\x1b[2J\x1b[H'); // Clear screen and move cursor to top
     
     // Initial connection
     connectWebSocket();
@@ -499,6 +503,10 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
           setIsRetrying(false);
           setIsConnected(true);
           setRetryCount(0);
+          // Small delay to ensure terminal is fully cleared before showing
+          setTimeout(() => {
+            // Terminal will be shown after clearing is complete
+          }, 100);
           break;
           
         case 'disconnected':

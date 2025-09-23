@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Keyboard, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Keyboard, KeyboardAvoidingView, Platform, TextInput, TouchableWithoutFeedback } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
@@ -49,6 +49,22 @@ export default function Sessions() {
             };
         }, [sessions.length])
     );
+
+    // Prevent keyboard dismissal when tapping outside
+    useEffect(() => {
+        const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+            // Immediately refocus to prevent keyboard from staying hidden
+            if (sessions.length > 0) {
+                setTimeout(() => {
+                    hiddenInputRef.current?.focus();
+                }, 50);
+            }
+        });
+
+        return () => {
+            keyboardDidHideListener?.remove();
+        };
+    }, [sessions.length]);
 
     // Keep keyboard open by refocusing when it gets dismissed - but with longer delays for tab interactions
     useEffect(() => {
@@ -119,24 +135,31 @@ export default function Sessions() {
                 )}
             </View>
             
-            <View
-                style={{
-                    position: 'absolute',
-                    bottom: keyboardHeight > 0 ? keyboardHeight : 0,
-                    left: 0,
-                    right: 0,
-                    height: 60,
-                    zIndex: 1000, // Ensure tab bar is above everything
+            <TouchableWithoutFeedback
+                onPress={() => {
+                    // Prevent keyboard dismissal by maintaining focus
+                    hiddenInputRef.current?.focus();
                 }}
             >
-                <TabBar
-                    sessions={sessions}
-                    activeSessionId={activeSessionId}
-                    onTabPress={handleTabPress}
-                    onTabClose={handleTabClose}
-                    hiddenInputRef={hiddenInputRef}
-                />
-            </View>
+                <View
+                    style={{
+                        position: 'absolute',
+                        bottom: keyboardHeight > 0 ? keyboardHeight : 0,
+                        left: 0,
+                        right: 0,
+                        height: 60,
+                        zIndex: 1000, // Ensure tab bar is above everything
+                    }}
+                >
+                    <TabBar
+                        sessions={sessions}
+                        activeSessionId={activeSessionId}
+                        onTabPress={handleTabPress}
+                        onTabClose={handleTabClose}
+                        hiddenInputRef={hiddenInputRef}
+                    />
+                </View>
+            </TouchableWithoutFeedback>
             
             {/* Hidden TextInput to maintain keyboard focus - positioned to not interfere with tab bar */}
             {sessions.length > 0 && (
@@ -165,25 +188,19 @@ export default function Sessions() {
                     textContentType="none"
                     multiline
                     onChangeText={(text) => {
-                        // Send only the last entered character(s) to active terminal
-                        const activeRef = activeSessionId ? terminalRefs.current[activeSessionId] : null;
-                        if (activeRef && activeRef.current) {
-                            // Diff approach: the TextInput may contain the full buffer; send increment
-                            // For simplicity, send the last character typed
-                            if (text && text.length > 0) {
-                                const lastChar = text[text.length - 1];
-                                activeRef.current.sendInput(lastChar);
-                            }
-                        }
+                        // Don't send text changes - use onKeyPress instead
                     }}
                     onKeyPress={({ nativeEvent }) => {
                         const key = nativeEvent.key;
                         const activeRef = activeSessionId ? terminalRefs.current[activeSessionId] : null;
                         if (activeRef && activeRef.current) {
                             if (key === 'Enter') {
-                                activeRef.current.sendInput('\n');
+                                activeRef.current.sendInput('\r');
                             } else if (key === 'Backspace') {
                                 activeRef.current.sendInput('\b');
+                            } else if (key.length === 1) {
+                                // Single character
+                                activeRef.current.sendInput(key);
                             }
                         }
                     }}
