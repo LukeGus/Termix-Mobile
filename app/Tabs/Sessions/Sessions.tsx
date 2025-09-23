@@ -134,6 +134,7 @@ export default function Sessions() {
                     activeSessionId={activeSessionId}
                     onTabPress={handleTabPress}
                     onTabClose={handleTabClose}
+                    hiddenInputRef={hiddenInputRef}
                 />
             </View>
             
@@ -190,12 +191,12 @@ export default function Sessions() {
                         // Keep focus when focused
                     }}
                     onBlur={() => {
-                        // Refocus after a much longer delay to allow tab interactions
+                        // Refocus after a short delay to allow tab interactions
                         setTimeout(() => {
                             if (sessions.length > 0) {
                                 hiddenInputRef.current?.focus();
                             }
-                        }, 200); // Short delay so keyboard doesn't disappear long enough to allow taps
+                        }, 100); // Very short delay to allow tab interactions
                     }}
                     onSubmitEditing={() => {
                         // Refocus to maintain keyboard

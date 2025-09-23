@@ -38,6 +38,7 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
   const [webViewKey, setWebViewKey] = useState(0);
   const [screenDimensions, setScreenDimensions] = useState(Dimensions.get('window'));
   const [isConnecting, setIsConnecting] = useState(true);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
   const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -82,6 +83,23 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
   const generateHTML = useCallback(() => {
     const wsUrl = getWebSocketUrl();
     const { width, height } = screenDimensions;
+
+    if (!wsUrl) {
+      return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Terminal</title>
+</head>
+<body style="background-color: #09090b; color: #f7f7f7; font-family: monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;">
+  <div style="text-align: center;">
+    <h2>No Server Configured</h2>
+    <p>Please configure a server first</p>
+  </div>
+</body>
+</html>`;
+    }
 
     // Calculate proper terminal size based on screen dimensions
     const terminalWidth = Math.floor(width / 8); // Approximate character width
@@ -271,8 +289,10 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
     }
 
     // Prevent the webview content from stealing focus or opening dialogs
+    // Only prevent events on the terminal itself, not the entire document
+    const terminalElement = document.getElementById('terminal');
     ['touchstart','touchend','touchmove','mousedown','mouseup','click','dblclick','contextmenu'].forEach(function(ev){
-      document.addEventListener(ev, function(e){
+      terminalElement.addEventListener(ev, function(e){
         e.preventDefault();
         e.stopPropagation();
         return false;
@@ -282,6 +302,11 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
     // WebSocket connection function
     function connectWebSocket() {
       try {
+        if (!wsUrl) {
+          notifyFailureOnce('No WebSocket URL available - server not configured');
+          return;
+        }
+        
         notifyConnectionState('connecting', { retryCount: reconnectAttempts });
         
         ws = new WebSocket(wsUrl);
@@ -302,6 +327,10 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
           clearTimeout(connectionTimeout);
           notifyConnectionState('connected', { hostName: hostConfig.name });
           hasNotifiedFailure = false;
+          reconnectAttempts = 0; // Reset retry count on successful connection
+          
+          // Clear terminal on reconnect
+          terminal.clear();
           
           // Send initial connection message with fitted dimensions
           const connectMessage = {
@@ -420,6 +449,9 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
       setTimeout(handleResize, 100); // Small delay for orientation change
     });
     
+    // Clear terminal initially
+    terminal.clear();
+    
     // Initial connection
     connectWebSocket();
     
@@ -452,29 +484,37 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
       
       switch (message.type) {
         case 'connecting':
-          setIsConnecting(true);
+          if (message.data.retryCount > 0) {
+            setIsRetrying(true);
+            setIsConnecting(false);
+          } else {
+            setIsConnecting(true);
+            setIsRetrying(false);
+          }
           setRetryCount(message.data.retryCount);
           break;
           
         case 'connected':
           setIsConnecting(false);
+          setIsRetrying(false);
           setIsConnected(true);
           setRetryCount(0);
           break;
           
         case 'disconnected':
           setIsConnecting(false);
+          setIsRetrying(false);
           setIsConnected(false);
           showToast.warning(`Disconnected from ${message.data.hostName}`);
-          // Close the tab after a short delay
-          setTimeout(() => {
-            if (onClose) {
-              onClose();
-            }
-          }, 2000);
+          // Close immediately
+          if (onClose) {
+            onClose();
+          }
           break;
           
         case 'connectionFailed':
+          setIsConnecting(false);
+          setIsRetrying(false);
           handleConnectionFailure(`${message.data.hostName}: ${message.data.message}`);
           break;
       }
@@ -498,6 +538,7 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
     // Only recreate WebView if the host configuration has actually changed
     setWebViewKey(prev => prev + 1);
     setIsConnecting(true);
+    setIsRetrying(false);
     setIsConnected(false);
     setRetryCount(0);
   }, [hostConfig.id]);
@@ -530,6 +571,7 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
           width: '100%',
           height: '100%',
           backgroundColor: '#09090b',
+          opacity: (isRetrying || isConnecting) ? 0 : 1, // Hide during connecting/retrying
         }}
         javaScriptEnabled={true}
         domStorageEnabled={true}
@@ -555,8 +597,8 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
         nestedScrollEnabled={false}
       />
       
-      {/* Show connecting overlay when connecting */}
-      {isConnecting && !isConnected && (
+      {/* Show connecting/retrying overlay */}
+      {((isConnecting && !isConnected) || isRetrying) && (
         <View style={{
           position: 'absolute',
           top: 0,
@@ -575,7 +617,7 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
             marginTop: 16,
             textAlign: 'center'
           }}>
-            Connecting to {hostConfig.name}...
+            {isRetrying ? `Retrying connection to ${hostConfig.name}...` : `Connecting to ${hostConfig.name}...`}
           </Text>
           {retryCount > 0 && (
             <Text style={{

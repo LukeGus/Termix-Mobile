@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { X, ArrowLeft } from 'lucide-react-native';
 import { TerminalSession } from '@/app/contexts/TerminalSessionsContext';
 import { useRouter } from 'expo-router';
@@ -9,9 +9,10 @@ interface TabBarProps {
   activeSessionId: string | null;
   onTabPress: (sessionId: string) => void;
   onTabClose: (sessionId: string) => void;
+  hiddenInputRef: React.RefObject<TextInput | null>;
 }
 
-export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClose }: TabBarProps) {
+export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClose, hiddenInputRef }: TabBarProps) {
   const router = useRouter();
 
   if (sessions.length === 0) {
@@ -41,6 +42,10 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
         {/* Back button */}
         <TouchableOpacity
           onPress={() => router.navigate('/hosts' as any)}
+          onPressIn={() => {
+            // Maintain keyboard focus to prevent dismissal
+            hiddenInputRef.current?.focus();
+          }}
           className="flex-row items-center rounded-md border-2 border-dark-border bg-dark-bg-button mr-1"
           activeOpacity={0.7}
           style={{
@@ -64,6 +69,10 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
             <TouchableOpacity
               key={session.id}
               onPress={() => onTabPress(session.id)}
+              onPressIn={() => {
+                // Maintain keyboard focus to prevent dismissal
+                hiddenInputRef.current?.focus();
+              }}
               className={`flex-row items-center rounded-md border-2 border-dark-border mr-1 ${
                 isActive 
                   ? 'bg-dark-bg-button' 
@@ -92,6 +101,10 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
                   onPress={(e) => {
                     e.stopPropagation();
                     onTabClose(session.id);
+                  }}
+                  onPressIn={() => {
+                    // Maintain keyboard focus to prevent dismissal
+                    hiddenInputRef.current?.focus();
                   }}
                   className="px-3 py-3 h-full justify-center items-center"
                   activeOpacity={0.7}
