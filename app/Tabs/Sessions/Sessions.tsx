@@ -76,6 +76,29 @@ export default function Sessions() {
         }
     }, [isKeyboardVisible, sessions.length]);
 
+    // Whenever keyboard height changes or active session changes, ask terminal to refit
+    useEffect(() => {
+        const activeRef = activeSessionId ? terminalRefs.current[activeSessionId] : null;
+        if (activeRef && activeRef.current) {
+            setTimeout(() => {
+                activeRef.current?.fit();
+            }, 0);
+        }
+    }, [keyboardHeight, activeSessionId]);
+
+    // Ensure keyboard shows immediately when entering sessions and fit terminal
+    useFocusEffect(
+        React.useCallback(() => {
+            if (sessions.length > 0) {
+                setTimeout(() => {
+                    hiddenInputRef.current?.focus();
+                    const activeRef = activeSessionId ? terminalRefs.current[activeSessionId] : null;
+                    activeRef?.current?.fit();
+                }, 0);
+            }
+        }, [sessions.length, activeSessionId])
+    );
+
     const handleTabPress = (sessionId: string) => {
         setActiveSession(sessionId);
     };
@@ -135,31 +158,24 @@ export default function Sessions() {
                 )}
             </View>
             
-            <TouchableWithoutFeedback
-                onPress={() => {
-                    // Prevent keyboard dismissal by maintaining focus
-                    hiddenInputRef.current?.focus();
+            <View
+                style={{
+                    position: 'absolute',
+                    bottom: keyboardHeight > 0 ? keyboardHeight : 0,
+                    left: 0,
+                    right: 0,
+                    height: 60,
+                    zIndex: 1000, // Ensure tab bar is above everything
                 }}
             >
-                <View
-                    style={{
-                        position: 'absolute',
-                        bottom: keyboardHeight > 0 ? keyboardHeight : 0,
-                        left: 0,
-                        right: 0,
-                        height: 60,
-                        zIndex: 1000, // Ensure tab bar is above everything
-                    }}
-                >
-                    <TabBar
-                        sessions={sessions}
-                        activeSessionId={activeSessionId}
-                        onTabPress={handleTabPress}
-                        onTabClose={handleTabClose}
-                        hiddenInputRef={hiddenInputRef}
-                    />
-                </View>
-            </TouchableWithoutFeedback>
+                <TabBar
+                    sessions={sessions}
+                    activeSessionId={activeSessionId}
+                    onTabPress={handleTabPress}
+                    onTabClose={handleTabClose}
+                    hiddenInputRef={hiddenInputRef}
+                />
+            </View>
             
             {/* Hidden TextInput to maintain keyboard focus - positioned to not interfere with tab bar */}
             {sessions.length > 0 && (

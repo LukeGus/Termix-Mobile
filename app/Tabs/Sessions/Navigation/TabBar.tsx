@@ -31,6 +31,7 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
     >
       <ScrollView
         horizontal
+        keyboardShouldPersistTaps="always"
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{ 
           paddingHorizontal: 12, 

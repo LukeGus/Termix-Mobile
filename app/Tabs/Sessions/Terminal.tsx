@@ -26,6 +26,7 @@ interface TerminalProps {
 
 export type TerminalHandle = {
   sendInput: (data: string) => void;
+  fit: () => void;
 };
 
 export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({ 
@@ -442,6 +443,16 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
         }));
       }
     }
+
+    // Expose a fit method for React Native to call when layout changes (e.g., keyboard height)
+    window.nativeFit = function() {
+      try {
+        fitAddon.fit();
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'resize', data: { cols: terminal.cols, rows: terminal.rows } }));
+        }
+      } catch (e) {}
+    }
     
     // Listen for resize events
     window.addEventListener('resize', handleResize);
@@ -537,6 +548,11 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
       try {
         const escaped = JSON.stringify(data);
         webViewRef.current?.injectJavaScript(`window.nativeInput(${escaped}); true;`);
+      } catch (e) {}
+    },
+    fit: () => {
+      try {
+        webViewRef.current?.injectJavaScript(`window.nativeFit && window.nativeFit(); true;`);
       } catch (e) {}
     }
   }), []);
