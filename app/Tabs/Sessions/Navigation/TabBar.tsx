@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-native';
-import { X, ArrowLeft, Plus } from 'lucide-react-native';
+import { X, ArrowLeft, Plus, Minus } from 'lucide-react-native';
 import { TerminalSession } from '@/app/contexts/TerminalSessionsContext';
 import { useRouter } from 'expo-router';
 
@@ -10,10 +10,12 @@ interface TabBarProps {
   onTabPress: (sessionId: string) => void;
   onTabClose: (sessionId: string) => void;
   onAddSession?: () => void;
+  onToggleKeyboard?: () => void;
+  isCustomKeyboardVisible: boolean;
   hiddenInputRef: React.RefObject<TextInput | null>;
 }
 
-export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClose, onAddSession, hiddenInputRef }: TabBarProps) {
+export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClose, onAddSession, onToggleKeyboard, isCustomKeyboardVisible, hiddenInputRef }: TabBarProps) {
   const router = useRouter();
 
   if (sessions.length === 0) {
@@ -45,11 +47,14 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
           onPress={() => router.navigate('/hosts' as any)}
           onPressOut={() => hiddenInputRef.current?.focus()}
           focusable={false}
-          className="items-center justify-center rounded-md border-2 border-dark-border bg-dark-bg-button"
+          className="items-center justify-center rounded-md"
           activeOpacity={0.7}
           style={{
             width: 44,
             height: 44,
+            borderWidth: 2,
+            borderColor: '#303032',
+            backgroundColor: '#2a2a2a',
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.1,
@@ -89,13 +94,11 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
                 onPress={() => onTabPress(session.id)}
                 onPressOut={() => hiddenInputRef.current?.focus()}
                 focusable={false}
-                className={`flex-row items-center rounded-md border-2 border-dark-border ${
-                  isActive 
-                    ? 'bg-dark-bg-button' 
-                    : 'bg-dark-bg-input'
-                }`}
-                activeOpacity={0.7}
+                className="flex-row items-center rounded-md"
                 style={{
+                  borderWidth: 2,
+                  borderColor: '#303032',
+                  backgroundColor: isActive ? '#2a2a2a' : '#1a1a1a',
                   shadowColor: isActive ? '#000' : 'transparent',
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: isActive ? 0.1 : 0,
@@ -144,17 +147,20 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
           })}
         </ScrollView>
 
-        {/* Add button - anchored right */}
+        {/* Keyboard toggle button - anchored right */}
         <TouchableOpacity
           onPressIn={() => hiddenInputRef.current?.focus()}
-          onPress={() => onAddSession?.()}
+          onPress={() => onToggleKeyboard?.()}
           onPressOut={() => hiddenInputRef.current?.focus()}
           focusable={false}
-          className="items-center justify-center rounded-md border-2 border-dark-border bg-dark-bg-button"
+          className="items-center justify-center rounded-md"
           activeOpacity={0.7}
           style={{
             width: 44,
             height: 44,
+            borderWidth: 2,
+            borderColor: '#303032',
+            backgroundColor: '#2a2a2a',
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.1,
@@ -163,7 +169,11 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
             marginLeft: 8,
           }}
         >
-          <Plus size={20} color="#ffffff" />
+          {isCustomKeyboardVisible ? (
+            <Minus size={20} color="#ffffff" />
+          ) : (
+            <Plus size={20} color="#ffffff" />
+          )}
         </TouchableOpacity>
       </View>
     </View>

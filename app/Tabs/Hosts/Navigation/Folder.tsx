@@ -33,7 +33,7 @@ export default function Folder({name, hosts, getHostStatus}: FolderProps) {
 
     return (
         <View className={`mb-3 w-full h-auto border-2 border-dark-border rounded-md overflow-hidden`}>
-            <View className={`bg-dark-bg-header border-b-2 border-dark-border`}>
+            <View className={`bg-dark-bg-header ${isExpanded ? 'border-b-2 border-dark-border' : ''}`}>
                 <TouchableOpacity 
                     onPress={toggleExpanded} 
                     className="flex-row items-center justify-between p-3"

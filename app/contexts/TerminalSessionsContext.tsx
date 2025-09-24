@@ -17,6 +17,10 @@ interface TerminalSessionsContextType {
   removeSession: (sessionId: string) => void;
   setActiveSession: (sessionId: string) => void;
   navigateToSessions: (host?: SSHHost) => void;
+  isCustomKeyboardVisible: boolean;
+  toggleCustomKeyboard: () => void;
+  lastKeyboardHeight: number;
+  setLastKeyboardHeight: (height: number) => void;
 }
 
 const TerminalSessionsContext = createContext<TerminalSessionsContextType | undefined>(undefined);
@@ -36,6 +40,8 @@ interface TerminalSessionsProviderProps {
 export const TerminalSessionsProvider: React.FC<TerminalSessionsProviderProps> = ({ children }) => {
   const [sessions, setSessions] = useState<TerminalSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const [isCustomKeyboardVisible, setIsCustomKeyboardVisible] = useState(false);
+  const [lastKeyboardHeight, setLastKeyboardHeight] = useState(300);
 
   const addSession = useCallback((host: SSHHost): string => {
     setSessions(prev => {
@@ -135,6 +141,10 @@ export const TerminalSessionsProvider: React.FC<TerminalSessionsProviderProps> =
     router.push('/(tabs)/sessions');
   }, [addSession]);
 
+  const toggleCustomKeyboard = useCallback(() => {
+    setIsCustomKeyboardVisible(prev => !prev);
+  }, []);
+
   return (
     <TerminalSessionsContext.Provider
       value={{
@@ -144,6 +154,10 @@ export const TerminalSessionsProvider: React.FC<TerminalSessionsProviderProps> =
         removeSession,
         setActiveSession,
         navigateToSessions,
+        isCustomKeyboardVisible,
+        toggleCustomKeyboard,
+        lastKeyboardHeight,
+        setLastKeyboardHeight,
       }}
     >
       {children}
