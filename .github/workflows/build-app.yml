@@ -87,7 +87,7 @@ jobs:
 
       - name: 🚢 Submit to App Store
         if: ${{ github.event.inputs.action == 'submit' }}
-        run: eas submit -p ${{ github.event.inputs.platform }} --profile ${{ github.event.inputs.profile }} --path app-build
+        run: eas submit -p ${{ github.event.inputs.platform }} --profile ${{ github.event.inputs.profile }} --path .
 
       - name: 📤 Upload Build Artifacts
         if: ${{ github.event.inputs.action == 'file' }}
@@ -95,14 +95,9 @@ jobs:
         with:
           name: ${{ github.event.inputs.platform }}-${{ github.event.inputs.profile }}-build
           path: |
-            app-build/**/*.apk
-            app-build/**/*.aab
-            app-build/**/*.ipa
-            app-build/**/*.app
-            app-build/
-            android/app/build/outputs/**/*.apk
-            android/app/build/outputs/**/*.aab
-            ios/build/**/*.ipa
-            ios/build/**/*.app
+            build-*.apk
+            build-*.aab
+            build-*.ipa
+            build-*.app
           retention-days: 30
           if-no-files-found: warn
