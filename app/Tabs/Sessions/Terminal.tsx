@@ -634,25 +634,54 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
           backgroundColor: '#09090b',
           padding: 20
         }}>
-          <ActivityIndicator size="large" color="#ffffff" />
-          <Text style={{
-            color: '#ffffff',
-            fontSize: 16,
-            marginTop: 16,
-            textAlign: 'center'
+          <View style={{
+            backgroundColor: '#1a1a1a',
+            borderRadius: 12,
+            padding: 24,
+            alignItems: 'center',
+            borderWidth: 1,
+            borderColor: '#303032',
+            minWidth: 280,
           }}>
-            {isRetrying ? `Retrying connection to ${hostConfig.name}...` : `Connecting to ${hostConfig.name}...`}
-          </Text>
-          {retryCount > 0 && (
+            <ActivityIndicator size="large" color="#22C55E" />
+            <Text style={{
+              color: '#ffffff',
+              fontSize: 18,
+              fontWeight: '600',
+              marginTop: 16,
+              textAlign: 'center'
+            }}>
+              {isRetrying ? 'Reconnecting...' : 'Connecting...'}
+            </Text>
             <Text style={{
               color: '#9CA3AF',
               fontSize: 14,
               marginTop: 8,
               textAlign: 'center'
             }}>
-              Retry {retryCount}/3
+              {hostConfig.name} • {hostConfig.ip}
             </Text>
-          )}
+            {retryCount > 0 && (
+              <View style={{
+                backgroundColor: '#0f0f0f',
+                borderRadius: 8,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                marginTop: 12,
+                borderWidth: 1,
+                borderColor: '#303032',
+              }}>
+                <Text style={{
+                  color: '#EF4444',
+                  fontSize: 12,
+                  fontWeight: '500',
+                  textAlign: 'center'
+                }}>
+                  Retry {retryCount}/3
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
       )}
     </View>

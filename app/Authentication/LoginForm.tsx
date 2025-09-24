@@ -171,7 +171,7 @@ export default function LoginForm() {
                                 <Text className="text-gray-300 text-sm font-medium mb-1">Username</Text>
                                 <View className="relative">
                                     <TextInput
-                                        className="bg-dark-bg-input rounded-xl text-white text-base border-2 border-dark-border"
+                                        className="bg-dark-bg-input rounded-xl text-white border-2 border-dark-border"
                                         style={{
                                             height: 56,
                                             textAlignVertical: 'center',
@@ -198,7 +198,7 @@ export default function LoginForm() {
                                 <Text className="text-gray-300 text-sm font-medium mb-1">Password</Text>
                                 <View className="relative">
                                     <TextInput
-                                        className="bg-dark-bg-input rounded-xl text-white text-base border-2 border-dark-border"
+                                        className="bg-dark-bg-input rounded-xl text-white border-2 border-dark-border"
                                         style={{
                                             height: 56,
                                             textAlignVertical: 'center',
@@ -252,7 +252,7 @@ export default function LoginForm() {
                                 <Text className="text-gray-300 text-sm font-medium mb-1">Username</Text>
                                 <View className="relative">
                                     <TextInput
-                                        className="bg-dark-bg-input rounded-xl text-white text-base border-2 border-dark-border"
+                                        className="bg-dark-bg-input rounded-xl text-white border-2 border-dark-border"
                                         style={{
                                             height: 56,
                                             textAlignVertical: 'center',
@@ -279,7 +279,7 @@ export default function LoginForm() {
                                 <Text className="text-gray-300 text-sm font-medium mb-1">Password</Text>
                                 <View className="relative">
                                     <TextInput
-                                        className="bg-dark-bg-input rounded-xl text-white text-base border-2 border-dark-border"
+                                        className="bg-dark-bg-input rounded-xl text-white border-2 border-dark-border"
                                         style={{
                                             height: 56,
                                             textAlignVertical: 'center',
@@ -345,7 +345,7 @@ export default function LoginForm() {
                             <View>
                                 <Text className="text-gray-300 text-sm font-medium mb-3">2FA Code</Text>
                                 <TextInput
-                                    className="bg-dark-bg-input rounded-xl text-white text-base border-2 border-dark-border text-center text-2xl tracking-widest"
+                                    className="bg-dark-bg-input rounded-xl text-white border-2 border-dark-border text-center text-2xl tracking-widest"
                                     style={{
                                         height: 56,
                                         textAlignVertical: 'center',

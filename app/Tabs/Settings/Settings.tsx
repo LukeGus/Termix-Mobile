@@ -24,7 +24,7 @@ export default function Settings() {
     return (
         <ScrollView className="flex-1 bg-dark-bg">
             <View className="p-6" style={{ paddingTop: insets.top + 20 }}>
-                <Text className="text-2xl font-bold text-white mb-6">
+                <Text className="text-3xl font-bold text-white mb-6" style={{ lineHeight: 36, includeFontPadding: false }}>
                     Settings
                 </Text>
 

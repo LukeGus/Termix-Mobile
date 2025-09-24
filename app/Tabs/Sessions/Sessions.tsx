@@ -100,11 +100,25 @@ export default function Sessions() {
     );
 
     const handleTabPress = (sessionId: string) => {
-        setActiveSession(sessionId);
+        // Prevent transient blur by delaying the session change to the end of the frame
+        hiddenInputRef.current?.focus();
+        requestAnimationFrame(() => {
+            setActiveSession(sessionId);
+            setTimeout(() => hiddenInputRef.current?.focus(), 0);
+        });
     };
 
     const handleTabClose = (sessionId: string) => {
-        removeSession(sessionId);
+        hiddenInputRef.current?.focus();
+        requestAnimationFrame(() => {
+            removeSession(sessionId);
+            setTimeout(() => hiddenInputRef.current?.focus(), 0);
+        });
+    };
+
+    const handleAddSession = () => {
+        // For now, just navigate back to hosts to add a new session
+        router.navigate('/hosts' as any);
     };
 
     const activeSession = sessions.find(session => session.id === activeSessionId);
@@ -120,7 +134,7 @@ export default function Sessions() {
             <View 
                 style={{
                     flex: 1,
-                    marginBottom: keyboardHeight > 0 ? keyboardHeight + 60 : 60, // Space for keyboard + tab bar
+                    marginBottom: keyboardHeight > 0 ? keyboardHeight + 60 : 60,
                 }}
             >
                 {sessions.map((session) => (
@@ -158,6 +172,22 @@ export default function Sessions() {
                 )}
             </View>
             
+            {/* Bottom underlay matching TabBar background to cover space under it */}
+            {sessions.length > 0 && (
+                <View
+                    pointerEvents="none"
+                    style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        height: (keyboardHeight > 0 ? keyboardHeight : 0) + 60,
+                        backgroundColor: '#0e0e10',
+                        zIndex: 999,
+                    }}
+                />
+            )}
+
             <View
                 style={{
                     position: 'absolute',
@@ -173,25 +203,27 @@ export default function Sessions() {
                     activeSessionId={activeSessionId}
                     onTabPress={handleTabPress}
                     onTabClose={handleTabClose}
+                    onAddSession={handleAddSession}
                     hiddenInputRef={hiddenInputRef}
                 />
             </View>
             
-            {/* Hidden TextInput to maintain keyboard focus - positioned to not interfere with tab bar */}
+            {/* Hidden TextInput to maintain keyboard focus - small transparent input anchored at bottom */}
             {sessions.length > 0 && (
                 <TextInput
                     ref={hiddenInputRef}
                     style={{
                         position: 'absolute',
-                        top: -1000,
-                        left: -1000,
+                        bottom: keyboardHeight > 0 ? keyboardHeight : 0,
+                        left: 0,
                         width: 1,
                         height: 1,
                         opacity: 0,
                         color: 'transparent',
                         backgroundColor: 'transparent',
-                        zIndex: -1,
+                        zIndex: 1001,
                     }}
+                    pointerEvents="none"
                     autoFocus={false}
                     showSoftInputOnFocus={true}
                     keyboardType="default"
@@ -202,6 +234,9 @@ export default function Sessions() {
                     autoCapitalize="none"
                     spellCheck={false}
                     textContentType="none"
+                    caretHidden
+                    contextMenuHidden
+                    underlineColorAndroid="transparent"
                     multiline
                     onChangeText={(text) => {
                         // Don't send text changes - use onKeyPress instead

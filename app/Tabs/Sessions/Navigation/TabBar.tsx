@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-native';
-import { X, ArrowLeft } from 'lucide-react-native';
+import { X, ArrowLeft, Plus } from 'lucide-react-native';
 import { TerminalSession } from '@/app/contexts/TerminalSessionsContext';
 import { useRouter } from 'expo-router';
 
@@ -9,10 +9,11 @@ interface TabBarProps {
   activeSessionId: string | null;
   onTabPress: (sessionId: string) => void;
   onTabClose: (sessionId: string) => void;
+  onAddSession?: () => void;
   hiddenInputRef: React.RefObject<TextInput | null>;
 }
 
-export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClose, hiddenInputRef }: TabBarProps) {
+export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClose, onAddSession, hiddenInputRef }: TabBarProps) {
   const router = useRouter();
 
   if (sessions.length === 0) {
@@ -28,87 +29,142 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
         minHeight: 60,
         maxHeight: 60,
       }}
+      onStartShouldSetResponder={() => true}
+      onResponderGrant={() => {
+        // Ensure the hidden input keeps focus as soon as touch begins
+        hiddenInputRef.current?.focus();
+      }}
+      onResponderTerminationRequest={() => false}
+      onTouchEndCapture={() => hiddenInputRef.current?.focus()}
+      focusable={false}
     >
-      <ScrollView
-        horizontal
-        keyboardShouldPersistTaps="always"
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ 
-          paddingHorizontal: 12, 
-          paddingVertical: 8,
-          gap: 8
-        }}
-        className="flex-row"
-      >
-        {/* Back button */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', height: '100%', paddingHorizontal: 8 }}>
+        {/* Back button - anchored left */}
         <TouchableOpacity
+          onPressIn={() => hiddenInputRef.current?.focus()}
           onPress={() => router.navigate('/hosts' as any)}
-          className="flex-row items-center rounded-md border-2 border-dark-border bg-dark-bg-button mr-1"
+          onPressOut={() => hiddenInputRef.current?.focus()}
+          focusable={false}
+          className="items-center justify-center rounded-md border-2 border-dark-border bg-dark-bg-button"
           activeOpacity={0.7}
           style={{
+            width: 44,
+            height: 44,
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.1,
             shadowRadius: 4,
             elevation: 2,
-            marginLeft: 4, // Add left margin
+            marginRight: 8,
           }}
         >
-          <ArrowLeft size={16} color="#ffffff" style={{ marginLeft: 8 }} />
-          <Text className="text-white text-sm font-medium px-3 py-3">
-            Back
-          </Text>
+          <ArrowLeft size={20} color="#ffffff" />
         </TouchableOpacity>
-        {sessions.map((session) => {
-          const isActive = session.id === activeSessionId;
-          
-          return (
-            <TouchableOpacity
-              key={session.id}
-              onPress={() => onTabPress(session.id)}
-              className={`flex-row items-center rounded-md border-2 border-dark-border mr-1 ${
-                isActive 
-                  ? 'bg-dark-bg-button' 
-                  : 'bg-dark-bg-input'
-              }`}
-              activeOpacity={0.7}
-              style={{
-                shadowColor: isActive ? '#000' : 'transparent',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: isActive ? 0.1 : 0,
-                shadowRadius: 4,
-                elevation: isActive ? 2 : 0,
-              }}
-            >
-              <Text 
-                className={`text-sm font-medium flex-1 px-4 py-3 ${
-                  isActive ? 'text-white' : 'text-gray-400'
+
+        {/* Scrollable tabs in the middle */}
+        <ScrollView
+          horizontal
+          keyboardShouldPersistTaps="always"
+          showsHorizontalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}
+          focusable={false}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ 
+            paddingVertical: 8,
+            gap: 6,
+            alignItems: 'center'
+          }}
+          className="flex-row"
+          scrollEnabled={true}
+          directionalLockEnabled={true}
+        >
+          {sessions.map((session) => {
+            const isActive = session.id === activeSessionId;
+            
+            return (
+              <TouchableOpacity
+                key={session.id}
+                onPressIn={() => hiddenInputRef.current?.focus()}
+                onPress={() => onTabPress(session.id)}
+                onPressOut={() => hiddenInputRef.current?.focus()}
+                focusable={false}
+                className={`flex-row items-center rounded-md border-2 border-dark-border ${
+                  isActive 
+                    ? 'bg-dark-bg-button' 
+                    : 'bg-dark-bg-input'
                 }`}
-                numberOfLines={1}
+                activeOpacity={0.7}
+                style={{
+                  shadowColor: isActive ? '#000' : 'transparent',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: isActive ? 0.1 : 0,
+                  shadowRadius: 4,
+                  elevation: isActive ? 2 : 0,
+                  minWidth: 120,
+                  height: 44,
+                }}
               >
-                {session.title}
-              </Text>
-              
-              <View className="border-l-2 border-dark-border h-full">
+                <View className="flex-1 px-3 py-2">
+                  <Text 
+                    className={`text-sm font-medium ${
+                      isActive ? 'text-white' : 'text-gray-400'
+                    }`}
+                  >
+                    {session.title}
+                  </Text>
+                </View>
+                
+                {/* Close button */}
                 <TouchableOpacity
+                  onPressIn={() => hiddenInputRef.current?.focus()}
                   onPress={(e) => {
                     e.stopPropagation();
                     onTabClose(session.id);
                   }}
-                  className="px-3 py-3 h-full justify-center items-center"
+                  onPressOut={() => hiddenInputRef.current?.focus()}
+                  focusable={false}
+                  className="items-center justify-center"
                   activeOpacity={0.7}
+                  style={{
+                    width: 36,
+                    height: 44,
+                    borderLeftWidth: 1,
+                    borderLeftColor: '#303032',
+                  }}
                 >
                   <X 
-                    size={14} 
+                    size={16} 
                     color={isActive ? '#ffffff' : '#9CA3AF'} 
                     strokeWidth={2}
                   />
                 </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {/* Add button - anchored right */}
+        <TouchableOpacity
+          onPressIn={() => hiddenInputRef.current?.focus()}
+          onPress={() => onAddSession?.()}
+          onPressOut={() => hiddenInputRef.current?.focus()}
+          focusable={false}
+          className="items-center justify-center rounded-md border-2 border-dark-border bg-dark-bg-button"
+          activeOpacity={0.7}
+          style={{
+            width: 44,
+            height: 44,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+            elevation: 2,
+            marginLeft: 8,
+          }}
+        >
+          <Plus size={20} color="#ffffff" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }

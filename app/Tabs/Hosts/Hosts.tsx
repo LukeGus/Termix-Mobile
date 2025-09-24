@@ -46,11 +46,18 @@ export default function Hosts() {
                 return;
             }
             
-            // Fetch hosts and statuses first (these are required)
-            const [hosts, statuses] = await Promise.all([
+            // Fetch hosts (required) and statuses (optional)
+            const [hostsResult, statusesResult] = await Promise.allSettled([
                 getSSHHosts(),
                 getAllServerStatuses()
             ]);
+
+            if (hostsResult.status !== 'fulfilled') {
+                throw hostsResult.reason;
+            }
+
+            const hosts = hostsResult.value;
+            const statuses = statusesResult.status === 'fulfilled' ? statusesResult.value : {};
 
             // Try to fetch folders data, but don't fail if it doesn't exist
             let foldersData = null;
@@ -138,10 +145,10 @@ export default function Hosts() {
     }
 
     return (
-        <View className="flex-1 bg-dark-bg px-6" style={{ paddingTop: insets.top + 24 }}>
+        <View className="flex-1 bg-dark-bg px-6" style={{ paddingTop: insets.top + 20 }}>
             <View className="flex-1 gap-2">
                 <View className="flex-row items-center justify-between">
-                    <Text className="text-white font-bold text-3xl">Hosts</Text>
+                    <Text className="text-white font-bold text-3xl" style={{ lineHeight: 36, includeFontPadding: false }}>Hosts</Text>
                     <TouchableOpacity 
                         onPress={handleRefresh}
                         disabled={refreshing}
@@ -155,7 +162,7 @@ export default function Hosts() {
                     </TouchableOpacity>
                 </View>
                 <TextInput
-                    className="text-white w-full h-auto text-lg bg-dark-bg-input rounded-md border-2 border-dark-border px-3 py-2"
+                    className="text-white w-full h-autobg-dark-bg-input rounded-md border-2 border-dark-border px-3 py-2"
                     placeholder="Search hosts..."
                     placeholderTextColor="#9CA3AF"
                     value={searchQuery}

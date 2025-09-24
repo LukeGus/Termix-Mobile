@@ -292,6 +292,7 @@ export async function saveServerConfig(config: ServerConfig): Promise<boolean> {
         configuredServerUrl = config.serverUrl;
         console.log('Updated configuredServerUrl to:', configuredServerUrl);
         updateApiInstances();
+        await detectAndUpdateApiInstances();
         console.log('Server config saved successfully');
         return true;
     } catch (error) {
@@ -356,6 +357,7 @@ export async function initializeServerConfig(): Promise<void> {
                 console.log('Setting configuredServerUrl to:', config.serverUrl);
                 configuredServerUrl = config.serverUrl;
                 updateApiInstances();
+                await detectAndUpdateApiInstances();
                 console.log('Server config initialized successfully');
             } else {
                 console.log('No serverUrl in config');
@@ -407,6 +409,28 @@ function getApiUrl(path: string, defaultPort: number): string {
     return fallbackUrl;
 }
 
+// Build root base (without trailing /ssh) for a given default port
+function getRootBase(defaultPort: number): string {
+    if (configuredServerUrl) {
+        const trimmed = configuredServerUrl.replace(/\/$/, "");
+        const withoutSsh = trimmed.replace(/\/(ssh)(\/$)?$/, "");
+        return withoutSsh || trimmed;
+    }
+    return `http://localhost:${defaultPort}`;
+}
+
+// Build /ssh base (ensure exactly one /ssh suffix) for a given default port
+function getSshBase(defaultPort: number): string {
+    if (configuredServerUrl) {
+        const trimmed = configuredServerUrl.replace(/\/$/, "");
+        if (/\/(ssh)$/.test(trimmed)) {
+            return trimmed; // already ends with /ssh
+        }
+        return `${trimmed}/ssh`;
+    }
+    return `http://localhost:${defaultPort}/ssh`;
+}
+
 // Initialize API instances
 function initializeApiInstances() {
     // SSH Host Management API (port 8081)
@@ -422,10 +446,68 @@ function initializeApiInstances() {
     );
 
     // Server Statistics API (port 8085)
-    statsApi = createApiInstance(getApiUrl("", 8085), "STATS");
+    // Note: Some deployments mount stats at root, others under /ssh.
+    // We create the instance with /ssh by default and add runtime fallbacks in the call sites.
+    statsApi = createApiInstance(getApiUrl("/ssh", 8085), "STATS");
 
     // Authentication API (port 8081)
     authApi = createApiInstance(getApiUrl("", 8081), "AUTH");
+}
+
+// Try to detect correct bases for AUTH and STATS and update instances
+async function detectAndUpdateApiInstances(): Promise<void> {
+    try {
+        const [statsRootOk, statsSshOk, authRootOk, authSshOk] = await Promise.all([
+            // Stats root check
+            (async () => {
+                try {
+                    const base = getRootBase(8085).replace(/\/$/, "");
+                    const res = await fetch(`${base}/status`, { method: 'HEAD' });
+                    return res.ok;
+                } catch { return false; }
+            })(),
+            // Stats /ssh check
+            (async () => {
+                try {
+                    const base = getSshBase(8085).replace(/\/$/, "");
+                    const res = await fetch(`${base}/status`, { method: 'HEAD' });
+                    return res.ok;
+                } catch { return false; }
+            })(),
+            // Auth root check
+            (async () => {
+                try {
+                    const base = getRootBase(8081).replace(/\/$/, "");
+                    const res = await fetch(`${base}/users/registration-allowed`, { method: 'HEAD' });
+                    return res.ok;
+                } catch { return false; }
+            })(),
+            // Auth /ssh check
+            (async () => {
+                try {
+                    const base = getSshBase(8081).replace(/\/$/, "");
+                    const res = await fetch(`${base}/users/registration-allowed`, { method: 'HEAD' });
+                    return res.ok;
+                } catch { return false; }
+            })(),
+        ]);
+
+        // Choose stats base preference: root then /ssh, else keep existing
+        if (statsRootOk) {
+            statsApi = createApiInstance(getRootBase(8085), "STATS");
+        } else if (statsSshOk) {
+            statsApi = createApiInstance(getSshBase(8085), "STATS");
+        }
+
+        // Choose auth base preference: root then /ssh, else keep existing
+        if (authRootOk) {
+            authApi = createApiInstance(getRootBase(8081), "AUTH");
+        } else if (authSshOk) {
+            authApi = createApiInstance(getSshBase(8081), "AUTH");
+        }
+    } catch (e) {
+        // Non-fatal; default instances remain
+    }
 }
 
 // SSH Host Management API (port 8081)
@@ -1150,7 +1232,16 @@ export async function getAllServerStatuses(): Promise<
     try {
         const response = await statsApi.get("/status");
         return response.data || {};
-    } catch (error) {
+    } catch (error: any) {
+        if (error?.response?.status === 404) {
+            try {
+                const alt = axios.create({ baseURL: getRootBase(8085), headers: { "Content-Type": "application/json" } });
+                const response = await alt.get("/status");
+                return response.data || {};
+            } catch (e) {
+                handleApiError(e, "fetch server statuses");
+            }
+        }
         handleApiError(error, "fetch server statuses");
     }
 }
@@ -1159,7 +1250,16 @@ export async function getServerStatusById(id: number): Promise<ServerStatus> {
     try {
         const response = await statsApi.get(`/status/${id}`);
         return response.data;
-    } catch (error) {
+    } catch (error: any) {
+        if (error?.response?.status === 404) {
+            try {
+                const alt = axios.create({ baseURL: getRootBase(8085), headers: { "Content-Type": "application/json" } });
+                const response = await alt.get(`/status/${id}`);
+                return response.data;
+            } catch (e) {
+                handleApiError(e, "fetch server status");
+            }
+        }
         handleApiError(error, "fetch server status");
     }
 }
@@ -1168,7 +1268,16 @@ export async function getServerMetricsById(id: number): Promise<ServerMetrics> {
     try {
         const response = await statsApi.get(`/metrics/${id}`);
         return response.data;
-    } catch (error) {
+    } catch (error: any) {
+        if (error?.response?.status === 404) {
+            try {
+                const alt = axios.create({ baseURL: getRootBase(8085), headers: { "Content-Type": "application/json" } });
+                const response = await alt.get(`/metrics/${id}`);
+                return response.data;
+            } catch (e) {
+                handleApiError(e, "fetch server metrics");
+            }
+        }
         handleApiError(error, "fetch server metrics");
     }
 }
@@ -1187,7 +1296,16 @@ export async function registerUser(
             password,
         });
         return response.data;
-    } catch (error) {
+    } catch (error: any) {
+        if (error?.response?.status === 404) {
+            try {
+                const alt = axios.create({ baseURL: getSshBase(8081), headers: { "Content-Type": "application/json" } });
+                const response = await alt.post("/users/create", { username, password });
+                return response.data;
+            } catch (e) {
+                handleApiError(e, "register user");
+            }
+        }
         handleApiError(error, "register user");
     }
 }
@@ -1199,7 +1317,16 @@ export async function loginUser(
     try {
         const response = await authApi.post("/users/login", { username, password });
         return response.data;
-    } catch (error) {
+    } catch (error: any) {
+        if (error?.response?.status === 404) {
+            try {
+                const alt = axios.create({ baseURL: getSshBase(8081), headers: { "Content-Type": "application/json" } });
+                const response = await alt.post("/users/login", { username, password });
+                return response.data;
+            } catch (e) {
+                handleApiError(e, "login user");
+            }
+        }
         handleApiError(error, "login user");
     }
 }
@@ -1208,7 +1335,16 @@ export async function getUserInfo(): Promise<UserInfo> {
     try {
         const response = await authApi.get("/users/me");
         return response.data;
-    } catch (error) {
+    } catch (error: any) {
+        if (error?.response?.status === 404) {
+            try {
+                const alt = axios.create({ baseURL: getSshBase(8081), headers: { "Content-Type": "application/json" } });
+                const response = await alt.get("/users/me");
+                return response.data;
+            } catch (e) {
+                handleApiError(e, "fetch user info");
+            }
+        }
         handleApiError(error, "fetch user info");
     }
 }
@@ -1217,7 +1353,16 @@ export async function getRegistrationAllowed(): Promise<{ allowed: boolean }> {
     try {
         const response = await authApi.get("/users/registration-allowed");
         return response.data;
-    } catch (error) {
+    } catch (error: any) {
+        if (error?.response?.status === 404) {
+            try {
+                const alt = axios.create({ baseURL: getSshBase(8081), headers: { "Content-Type": "application/json" } });
+                const response = await alt.get("/users/registration-allowed");
+                return response.data;
+            } catch (e) {
+                handleApiError(e, "check registration status");
+            }
+        }
         handleApiError(error, "check registration status");
     }
 }
@@ -1666,10 +1811,35 @@ export function sendTerminalResize(ws: WebSocket, cols: number, rows: number): v
 
 export async function getFoldersWithStats(): Promise<any> {
     try {
-        const response = await authApi.get("/ssh/db/folders/with-stats");
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "fetch folders with statistics");
+        const token = await getCookie("jwt");
+
+        const tryFetch = async (base: string) => {
+            const cleanBase = base.replace(/\/$/, "");
+            const url = `${cleanBase}/db/folders/with-stats`;
+            const res = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'User-Agent': 'Termix-Mobile/1.0.0',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                },
+            });
+            if (res.ok) return await res.json();
+            if (res.status === 404) return null;
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        };
+
+        // Prefer /ssh base first, then root
+        const sshBase = getSshBase(8081);
+        let data = await tryFetch(sshBase);
+        if (data === null) {
+            const rootBase = getRootBase(8081);
+            data = await tryFetch(rootBase);
+        }
+        return data;
+    } catch {
+        // Treat as optional; return null quietly
+        return null;
     }
 }
 

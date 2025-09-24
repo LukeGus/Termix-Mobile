@@ -32,20 +32,18 @@ export default function Folder({name, hosts, getHostStatus}: FolderProps) {
     });
 
     return (
-        <View className={`mb-2 w-full h-auto border-2 border-dark-border ${isExpanded ? 'rounded-md' : 'rounded-md'}`}>
-            <View className={`bg-dark-bg-header ${isExpanded ? 'rounded-t-md border-b-2 border-dark-border' : 'rounded-md'}`}>
+        <View className={`mb-3 w-full h-auto border-2 border-dark-border rounded-md overflow-hidden`}>
+            <View className={`bg-dark-bg-header border-b-2 border-dark-border`}>
                 <TouchableOpacity 
                     onPress={toggleExpanded} 
-                    className="flex-row items-center justify-between p-2"
+                    className="flex-row items-center justify-between p-3"
                     activeOpacity={0.7}
                 >
                     <View className="flex-row items-center flex-1">
-                        <Text className="text-lg font-bold text-white">{name}</Text>
-                        <Text className="text-sm text-gray-400 ml-3">
-                            {hosts.length} host{hosts.length !== 1 ? 's' : ''}
-                        </Text>
+                        <Text className="text-lg font-bold text-white" numberOfLines={1}>{name}</Text>
+                        <Text className="text-sm text-gray-400 ml-3">{hosts.length} host{hosts.length !== 1 ? 's' : ''}</Text>
                     </View>
-                    <View className="bg-dark-bg-button rounded-md border-2 border-dark-border w-[28px] h-[28px] items-center justify-center ml-2">
+                    <View className="bg-dark-bg-button rounded-md border-2 border-dark-border w-[30px] h-[30px] items-center justify-center ml-2">
                         <Animated.View style={{ transform: [{ rotate }] }}>
                             <ChevronDown
                                 size={16}
@@ -56,19 +54,20 @@ export default function Folder({name, hosts, getHostStatus}: FolderProps) {
                 </TouchableOpacity>
             </View>
             {isExpanded && (
-                <View className="bg-dark-bg-darker rounded-b-md">
+                <View className="bg-dark-bg p-3">
                     {hosts.length === 0 ? (
                         <View className="py-4 px-4">
                             <Text className="text-white text-center">No hosts in this folder</Text>
                         </View>
                     ) : (
                         hosts.map((host, index) => (
-                            <Host
-                                key={host.id}
-                                host={host}
-                                status={getHostStatus(host.id)}
-                                isLast={index === hosts.length - 1}
-                            />
+                            <View key={host.id} className={`${index < hosts.length - 1 ? 'mb-2' : ''}`}>
+                                <Host
+                                    host={host}
+                                    status={getHostStatus(host.id)}
+                                    isLast={index === hosts.length - 1}
+                                />
+                            </View>
                         ))
                     )}
                 </View>

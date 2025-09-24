@@ -157,7 +157,7 @@ export default function ServerForm() {
                             <Server size={32} color="#ffffff" />
                         </View>
                         <Text className="text-white text-3xl font-bold mb-2">Termix</Text>
-                        <Text className="text-gray-400 text-base text-center">
+                        <Text className="text-gray-400 text-center">
                             Configure your Termix server connection
                         </Text>
                     </View>
@@ -171,7 +171,7 @@ export default function ServerForm() {
                                 <Text className="text-gray-300 text-sm font-medium mb-3">Server Address</Text>
                                 <View className="relative">
                                     <TextInput
-                                        className={`bg-dark-bg-input rounded-xl text-white text-base border-2 ${
+                                        className={`bg-dark-bg-input rounded-xl text-white border-2 ${
                                             connectionStatus === 'success' 
                                                 ? 'border-green-500' 
                                                 : connectionStatus === 'error' 
@@ -238,7 +238,7 @@ export default function ServerForm() {
                                 color="#ffffff" 
                                 className="mr-2"
                             />
-                            <Text className="text-white font-medium text-base">
+                            <Text className="text-white font-medium">
                                 {connectionStatus === 'testing' ? 'Testing...' : 'Test Connection'}
                             </Text>
                         </TouchableOpacity>
