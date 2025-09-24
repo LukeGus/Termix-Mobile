@@ -83,6 +83,11 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
           scrollEnabled={true}
           directionalLockEnabled={true}
           nestedScrollEnabled={false}
+          alwaysBounceVertical={false}
+          bounces={false}
+          bouncesZoom={false}
+          scrollEventThrottle={16}
+          removeClippedSubviews={false}
         >
           {sessions.map((session) => {
             const isActive = session.id === activeSessionId;

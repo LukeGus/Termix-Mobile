@@ -133,7 +133,7 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
       width: 100vw;
       height: 100vh;
       min-height: 100vh;
-      padding: 4px;
+      padding: 4px 4px 20px 4px;
       margin: 0;
       box-sizing: border-box;
     }

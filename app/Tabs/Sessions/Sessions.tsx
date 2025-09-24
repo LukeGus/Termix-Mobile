@@ -163,7 +163,7 @@ export default function Sessions() {
             <View 
                 style={{
                     flex: 1,
-                    marginBottom: isCustomKeyboardVisible ? lastKeyboardHeight + 110 : (hasRecordedKeyboardHeight ? lastKeyboardHeight + 110 : (keyboardHeight > 0 ? keyboardHeight + 110 : 110)),
+                    marginBottom: isCustomKeyboardVisible ? lastKeyboardHeight + 115 : (hasRecordedKeyboardHeight ? lastKeyboardHeight + 115 : (keyboardHeight > 0 ? keyboardHeight + 115 : 115)),
                 }}
             >
                 {sessions.map((session) => (
@@ -210,8 +210,8 @@ export default function Sessions() {
                         bottom: 0,
                         left: 0,
                         right: 0,
-                        height: isCustomKeyboardVisible ? lastKeyboardHeight + 110 : (hasRecordedKeyboardHeight ? lastKeyboardHeight + 110 : ((keyboardHeight > 0 ? keyboardHeight : 0) + 110)),
-                        backgroundColor: '#0e0e10',
+                        height: isCustomKeyboardVisible ? lastKeyboardHeight + 115 : (hasRecordedKeyboardHeight ? lastKeyboardHeight + 115 : ((keyboardHeight > 0 ? keyboardHeight : 0) + 115)),
+                        backgroundColor: '#09090b',
                         zIndex: 999,
                     }}
                 />
