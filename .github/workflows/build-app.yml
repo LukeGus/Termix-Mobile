@@ -29,7 +29,7 @@ on:
           - submit
           - file
         required: true
-        default: submit
+        default: none
 jobs:
   build:
     runs-on: ${{ github.event.inputs.os }}
