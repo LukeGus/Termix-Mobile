@@ -56,6 +56,13 @@ jobs:
       - name: 📦 Install dependencies
         run: npm install
 
+      - name: 🔍 Validate EAS configuration
+        run: |
+          echo "EAS configuration:"
+          cat eas.json
+          echo "Validating configuration..."
+          eas build:configure --platform ${{ github.event.inputs.platform }}
+
       - name: 👷 Prebuild
         run: npx expo prebuild
 
