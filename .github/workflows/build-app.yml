@@ -21,11 +21,15 @@ on:
           - development
           - preview
           - production
-      should_submit:
-        type: boolean
-        description: Whether to perform the submit step
+      action:
+        type: choice
+        description: What to do with the built app
+        options:
+          - none
+          - submit
+          - file
         required: true
-        default: false
+        default: submit
 jobs:
   build:
     runs-on: ${{ github.event.inputs.os }}
@@ -63,6 +67,14 @@ jobs:
             --platform=${{ github.event.inputs.platform }} \
             --profile=${{ github.event.inputs.profile }}
 
-      - name: 🚢 Submit
-        if: ${{ github.event.inputs.should_submit }}
+      - name: 🚢 Submit to App Store
+        if: ${{ github.event.inputs.action == 'submit' }}
         run: eas submit -p ${{ github.event.inputs.platform }} --profile ${{ github.event.inputs.profile }} --path app-build
+
+      - name: 📤 Upload Build Artifacts
+        if: ${{ github.event.inputs.action == 'file' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ github.event.inputs.platform }}-${{ github.event.inputs.profile }}-build
+          path: app-build/
+          retention-days: 30

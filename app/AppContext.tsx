@@ -1,6 +1,7 @@
 import React, {createContext, useContext, useState, ReactNode, useEffect} from 'react';
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { initializeServerConfig, isAuthenticated as checkAuthStatus } from "./main-axios";
+import {getVersionInfo, initializeServerConfig, isAuthenticated as checkAuthStatus} from "./main-axios";
+import Constants from 'expo-constants';
 
 interface Server {
     name: string;
@@ -16,6 +17,8 @@ interface AppContextType {
     setSelectedServer: (server: Server | null) => void;
     isAuthenticated: boolean;
     setAuthenticated: (auth: boolean) => void;
+    showUpdateScreen: boolean;
+    setShowUpdateScreen: (show: boolean) => void;
     isLoading: boolean;
     setIsLoading: (loading: boolean) => void;
 }
@@ -41,31 +44,52 @@ export const AppProvider: React.FC<AppProviderProps> = ({children}) => {
     const [isAuthenticated, setAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
+    const currentMobileAppVersion = "1.5.0";
+    const [showUpdateScreen, setShowUpdateScreen] = useState<boolean>(false);
+
+    const checkShouldShowUpdateScreen = async (serverVersion: string): Promise<boolean> => {
+        try {
+            // If mobile app version matches server version, don't show update screen
+            if (currentMobileAppVersion === serverVersion) {
+                return false;
+            }
+
+            // Check if user has dismissed this version before
+            const dismissedVersion = await AsyncStorage.getItem('dismissedUpdateVersion');
+            
+            // If user has dismissed this specific server version, don't show again
+            if (dismissedVersion === serverVersion) {
+                return false;
+            }
+
+            // Show update screen for version mismatch that hasn't been dismissed
+            return true;
+        } catch (error) {
+            console.error('Error checking update screen status:', error);
+            // Default to showing update screen if there's an error
+            return true;
+        }
+    };
+
     useEffect(() => {
         const initializeApp = async () => {
             try {
-                console.log('Initializing app...');
                 setIsLoading(true);
-                
-                // Initialize server configuration
-                console.log('Initializing server config...');
+
                 await initializeServerConfig();
-                
-                // Check if server is configured
-                console.log('Checking for server configuration...');
+
                 const serverConfig = await AsyncStorage.getItem('serverConfig');
                 const legacyServer = await AsyncStorage.getItem('server');
-                
-                console.log('Server config found:', !!serverConfig);
-                console.log('Legacy server found:', !!legacyServer);
+
+                const version = await getVersionInfo();
+
+                // Check if update screen should be shown
+                const shouldShowUpdateScreen = await checkShouldShowUpdateScreen(version.localVersion);
+                setShowUpdateScreen(shouldShowUpdateScreen);
                 
                 if (serverConfig || legacyServer) {
-                    // Server is configured, check authentication
-                    console.log('Server configured, checking authentication...');
                     const authStatus = await checkAuthStatus();
-                    console.log('Authentication status:', authStatus);
-                    
-                    // Load server info for display from either source
+
                     let serverInfo = null;
                     if (legacyServer) {
                         serverInfo = JSON.parse(legacyServer);
@@ -78,51 +102,32 @@ export const AppProvider: React.FC<AppProviderProps> = ({children}) => {
                     }
                     
                     if (authStatus) {
-                        // User is authenticated, go to main app
-                        console.log('User authenticated, showing main app');
                         setAuthenticated(true);
                         setShowServerManager(false);
                         setShowLoginForm(false);
                         setSelectedServer(serverInfo);
                     } else {
-                        // User not authenticated, show login
-                        console.log('User not authenticated, showing login');
                         setAuthenticated(false);
                         setShowServerManager(false);
                         setShowLoginForm(true);
                         setSelectedServer(serverInfo);
                     }
                 } else {
-                    // No server configured, show server manager
-                    console.log('No server configured, showing server manager');
                     setAuthenticated(false);
                     setShowServerManager(true);
                     setShowLoginForm(false);
                 }
             } catch (error) {
-                console.error('Error initializing app:', error);
-                // If error, show server manager
                 setAuthenticated(false);
                 setShowServerManager(true);
                 setShowLoginForm(false);
             } finally {
-                console.log('App initialization complete');
                 setIsLoading(false);
             }
         };
 
         initializeApp();
     }, []);
-
-
-    // Debug logging for state changes
-    console.log('AppContext state:', {
-        showServerManager,
-        showLoginForm,
-        isAuthenticated,
-        isLoading,
-        selectedServer: selectedServer?.name || 'none'
-    });
 
     return (
         <AppContext.Provider value={{
@@ -134,6 +139,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({children}) => {
             setSelectedServer,
             isAuthenticated,
             setAuthenticated,
+            showUpdateScreen,
+            setShowUpdateScreen,
             isLoading,
             setIsLoading
         }}>

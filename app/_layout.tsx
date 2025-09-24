@@ -9,9 +9,10 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Toaster } from "sonner-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "../global.css";
+import UpdateRequired from "@/app/Authentication/UpdateRequired";
 
 function RootLayoutContent() {
-  const { showServerManager, showLoginForm, isAuthenticated, isLoading } = useAppContext();
+  const { showServerManager, showLoginForm, isAuthenticated, showUpdateScreen, isLoading } = useAppContext();
 
   if (isLoading) {
     return (
@@ -20,6 +21,10 @@ function RootLayoutContent() {
         <Text className="text-white text-lg mt-4">Initializing...</Text>
       </View>
     );
+  }
+
+  if (showUpdateScreen) {
+      return <UpdateRequired />
   }
 
   if (showServerManager) {
