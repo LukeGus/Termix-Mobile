@@ -77,6 +77,7 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
           className="flex-row"
           scrollEnabled={true}
           directionalLockEnabled={true}
+          nestedScrollEnabled={false}
         >
           {sessions.map((session) => {
             const isActive = session.id === activeSessionId;
