@@ -12,7 +12,7 @@ export default function UpdateRequired() {
     const [versionInfo, setVersionInfo] = useState<{localVersion: string, serverVersion: string} | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    const currentMobileAppVersion = "1.5.0";
+    const currentMobileAppVersion = "1.6.0";
 
     useEffect(() => {
         const fetchVersionInfo = async () => {
