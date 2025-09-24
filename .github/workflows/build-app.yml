@@ -70,9 +70,20 @@ jobs:
         run: |
           eas build --local \
             --non-interactive \
-            --output=./app-build \
             --platform=${{ github.event.inputs.platform }} \
             --profile=${{ github.event.inputs.profile }}
+
+      - name: 📁 List build output
+        run: |
+          echo "Searching for build artifacts in common locations:"
+          echo "1. Checking ./app-build directory:"
+          ls -la ./app-build/ 2>/dev/null || echo "app-build directory not found"
+          echo "2. Checking android/app/build/outputs:"
+          find android/app/build/outputs -type f -name "*.apk" -o -name "*.aab" 2>/dev/null || echo "No Android build files found"
+          echo "3. Checking ios/build:"
+          find ios/build -type f -name "*.ipa" -o -name "*.app" 2>/dev/null || echo "No iOS build files found"
+          echo "4. Searching entire workspace for build artifacts:"
+          find . -type f \( -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.app" \) 2>/dev/null | head -10
 
       - name: 🚢 Submit to App Store
         if: ${{ github.event.inputs.action == 'submit' }}
@@ -83,5 +94,15 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.inputs.platform }}-${{ github.event.inputs.profile }}-build
-          path: app-build/
+          path: |
+            app-build/**/*.apk
+            app-build/**/*.aab
+            app-build/**/*.ipa
+            app-build/**/*.app
+            app-build/
+            android/app/build/outputs/**/*.apk
+            android/app/build/outputs/**/*.aab
+            ios/build/**/*.ipa
+            ios/build/**/*.app
           retention-days: 30
+          if-no-files-found: warn
