@@ -72,6 +72,8 @@ jobs:
             --non-interactive \
             --platform=${{ github.event.inputs.platform }} \
             --profile=${{ github.event.inputs.profile }}
+        env:
+          EAS_SKIP_AUTO_FINGERPRINT: 1
 
       - name: 📁 List build output
         run: |
@@ -94,10 +96,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.inputs.platform }}-${{ github.event.inputs.profile }}-build
-          path: |
-            build-*.apk
-            build-*.aab
-            build-*.ipa
-            build-*.app
+          path: "build-*.apk,build-*.aab,build-*.ipa,build-*.app"
           retention-days: 30
           if-no-files-found: warn
