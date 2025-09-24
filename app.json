@@ -2,7 +2,7 @@
   "expo": {
     "name": "Termix",
     "slug": "termix",
-    "version": "1.0.0",
+    "version": "1.6.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "termix-mobile",
@@ -13,14 +13,17 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.karmaa.termix",
-      "icon": "./assets/images/icon.png",
+      "icon": {
+        "dark": "./assets/images/ios-dark.png",
+        "light": "./assets/images/ios-light.png",
+        "tinted": "./assets/images/ios-tinted.png"
+      },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
       "package": "com.karmaa.termix",
       "icon": "./assets/images/icon.png",
       "adaptiveIcon": {
@@ -30,7 +33,6 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.ico",
       "bundler": "metro"
     },
     "plugins": [
@@ -38,12 +40,12 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/icon.png",
+          "backgroundColor": "#18181b",
+          "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
           "dark": {
-            "backgroundColor": "#000000"
+            "image": "./assets/images/splash-icon.png",
+            "backgroundColor": "#18181b"
           }
         }
       ],
