@@ -89,7 +89,21 @@ jobs:
 
       - name: 🚢 Submit to App Store
         if: ${{ github.event.inputs.action == 'submit' }}
-        run: eas submit -p ${{ github.event.inputs.platform }} --profile ${{ github.event.inputs.profile }} --path .
+        run: |
+          # Find the build file
+          if [ "${{ github.event.inputs.platform }}" = "android" ]; then
+            BUILD_FILE=$(find . -name "build-*.apk" -o -name "build-*.aab" | head -1)
+          else
+            BUILD_FILE=$(find . -name "build-*.ipa" -o -name "build-*.app" | head -1)
+          fi
+          
+          if [ -n "$BUILD_FILE" ]; then
+            echo "Submitting file: $BUILD_FILE"
+            eas submit -p ${{ github.event.inputs.platform }} --profile ${{ github.event.inputs.profile }} --path "$BUILD_FILE"
+          else
+            echo "No build file found to submit"
+            exit 1
+          fi
 
       - name: 📤 Upload Build Artifacts
         if: ${{ github.event.inputs.action == 'file' }}
