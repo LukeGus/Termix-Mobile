@@ -1,77 +1,93 @@
-# Termix Mobile
+# Repo Stats
+
+<p align="center">
+  <img src="https://flagcdn.com/us.svg" alt="English" width="24" height="16"> English
+</p>
+
+![GitHub Repo stars](https://img.shields.io/github/stars/LukeGus/Termix-Mobile?style=flat&label=Stars)
+![GitHub forks](https://img.shields.io/github/forks/LukeGus/Termix-Mobile?style=flat&label=Forks)
+![GitHub Release](https://img.shields.io/github/v/release/LukeGus/Termix-Mobile?style=flat&label=Release)
+<a href="https://discord.gg/jVQGdvHDrf"><img alt="Discord" src="https://img.shields.io/discord/1347374268253470720"></a>
+
+#### Top Technologies
+
+[![React Native Badge](https://img.shields.io/badge/-React%20Native-61DBFB?style=flat-square&labelColor=black&logo=react&logoColor=61DBFB)](#)
+[![TypeScript Badge](https://img.shields.io/badge/-TypeScript-3178C6?style=flat-square&labelColor=black&logo=typescript&logoColor=3178C6)](#)
+[![Expo Badge](https://img.shields.io/badge/-Expo-000020?style=flat-square&labelColor=black&logo=expo&logoColor=000020)](#)
+[![NativeWind Badge](https://img.shields.io/badge/-NativeWind-38B2AC?style=flat-square&labelColor=black&logo=tailwindcss&logoColor=38B2AC)](#)
+[![Android Badge](https://img.shields.io/badge/-Android-3DDC84?style=flat-square&labelColor=black&logo=android&logoColor=3DDC84)](#)
+[![iOS Badge](https://img.shields.io/badge/-iOS-000000?style=flat-square&labelColor=black&logo=ios&logoColor=000000)](#)
+
+<br />
+<p align="center">
+  <a href="https://github.com/LukeGus/Termix-Mobile">
+    <img alt="Termix Mobile Banner" src="./assets/images/icon.png" style="width: 200px; height: 200px;">  </a>
+</p>
+
+If you would like, you can support the project here!\
+[![GitHub Sponsor](https://img.shields.io/badge/Sponsor-LukeGus-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sponsors/LukeGus)
+
+# Overview
+
+<p align="center">
+  <a href="https://github.com/LukeGus/Termix-Mobile">
+    <img alt="Termix Mobile Icon" src="./assets/images/icon.png" style="width: 150px; height: 150px;">  </a>
+</p>
+
+Termix Mobile is the official mobile companion app for Termix, providing full remote control of your servers through SSH terminal management. Connect to your existing Termix server configuration and manage all your SSH hosts with professional terminal capabilities optimized for mobile devices.
 
 > **Requires a Termix server** - Install at [docs.termix.site/install](https://docs.termix.site/install)
 
-Take full remote control of your servers with Termix, the ultimate SSH terminal management tool. Connect to your existing Termix server configuration and manage all your SSH hosts with terminal capability.
+# Features
 
-## 🔐 Secure Authentication
+- **SSH Terminal Access** - Full-featured SSH terminal with xterm.js integration and multi-session support
+- **Advanced Keyboard Features** - Dual keyboard modes with custom terminal keyboard optimized for terminal use
+- **Host Management** - Folder-based organization with real-time server status and visual indicators
+- **Secure Authentication** - 2FA/TOTP multi-factor authentication with JWT token-based security
+- **Mobile-Optimized Interface** - Dark theme with responsive layout and gesture-supported design
+- **Real-time Communication** - WebSocket-based instant responsiveness with auto-reconnect
+- **Server Configuration** - Easy setup with auto connection testing and secure storage
+- **Performance Optimized** - Efficient memory management for multiple sessions without degradation
 
-- **2FA/TOTP multi-factor authentication** support secures your connections
-- **JWT token-based authentication** with password and SSH key support
-- **Account registration** activated when your server administrator enables it
-- Complete control over access management
+# Installation
 
-## 💻 Terminal Experience
+Termix Mobile is available for both Android and iOS platforms:
 
-- **Full-featured SSH terminal** with xterm.js integration
-- **Multi-session terminal support** with intuitive tabbing interface
-- **Real-time connection status tracking** keeps you informed about server status
-- **Auto-reconnect with intelligent retry** ensures sessions stay connected
-- **Automatic terminal resize handling** optimized for your screen size
+## Android
+- Download from Google Play Store (coming soon)
+- Or build from source using the instructions below
 
-## ⌨️ Advanced Keyboard Features
+## iOS
+- Download from Apple App Store (coming soon)
+- Or build from source using the instructions below
 
-- **Dual keyboard modes**: System keyboard and custom terminal keyboard
-- **Custom terminal keyboard** optimized for terminal use with:
-  - Function keys (F1-F12)
-  - Navigation keys
-  - All basic terminal shortcuts
-- **Modifier key support** (Ctrl, Alt) for terminal commands
-- **Built-in shortcuts**: Ctrl+C, Ctrl+D, Ctrl+Z, Ctrl+L
-- **Clipboard paste** and sticky keyboard focus for seamless workflow
+## Building from Source
 
-## 🖥️ Host Management
+1. Clone the repository:
+```bash
+git clone https://github.com/LukeGus/Termix-Mobile.git
+cd Termix-Mobile
+```
 
-- **Folder-based host organization** for better server management
-- **Real-time server status** with visual indicators:
-  - 🟢 Online
-  - 🔴 Offline
-  - ⚪ Unknown
-- **Animated ping effects** for immediate connection health feedback
-- **Filter and search** hosts by name, IP address, or username
-- **Single-tap SSH connection** to any host
-- **Host tagging and categorization** for easy management of large server lists
+2. Install dependencies:
+```bash
+npm install
+```
 
-## 📱 Mobile-Optimized Interface
+3. For Android development:
+```bash
+npx expo run:android
+```
 
-- **Dark theme** tailored for terminal work
-- **Responsive layout** that fits any screen size
-- **Pull-to-refresh** capability for real-time host status updates
-- **Tab-based navigation** for seamless host switching
-- **Gesture-supported interface** designed for flawless touch performance
+4. For iOS development:
+```bash
+npx expo run:ios
+```
 
-## ⚙️ Server Configuration
+# Support
 
-- **Easy server configuration** with auto connection testing
-- **HTTP and HTTPS support** via automatic server URL normalization
-- **Version compatibility checking** prevents connection issues
-- **Secure server configuration storage** protects your settings
+If you need help with Termix Mobile, you can join the [Discord](https://discord.gg/jVQGdvHDrf) server and visit the support channel. You can also open an issue or open a pull request on the [GitHub](https://github.com/LukeGus/Termix-Mobile/issues) repo.
 
-## 🚀 Performance and Reliability
+# License
 
-- **Real-time communication** using WebSocket for instant responsiveness
-- **Efficient memory management** handles multiple sessions without performance degradation
-
-## 👨‍💼 Perfect for System Administrators
-
-Whether you are a:
-- **System administrator** handling multiple servers
-- **DevOps engineer** needing access on the go
-- **Developer** using remote environments
-- **IT professional** demanding secure terminal access
-
-Termix provides the professional SSH terminal capabilities you need on mobile.
-
----
-
-Connect to your existing Termix server infrastructure and experience the most feature-complete mobile SSH terminal solution available. Whether troubleshooting production issues, operating with development environments, or just doing day-to-day maintenance, Termix gives you the tools you need to stay productive from anywhere.
+Distributed under the Apache License Version 2.0. See LICENSE for more information.
