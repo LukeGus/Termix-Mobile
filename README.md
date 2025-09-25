@@ -1,9 +1,5 @@
 # Repo Stats
 
-<p align="center">
-  <img src="https://flagcdn.com/us.svg" alt="English" width="24" height="16"> English
-</p>
-
 ![GitHub Repo stars](https://img.shields.io/github/stars/LukeGus/Termix-Mobile?style=flat&label=Stars)
 ![GitHub forks](https://img.shields.io/github/forks/LukeGus/Termix-Mobile?style=flat&label=Forks)
 ![GitHub Release](https://img.shields.io/github/v/release/LukeGus/Termix-Mobile?style=flat&label=Release)
@@ -18,21 +14,10 @@
 [![Android Badge](https://img.shields.io/badge/-Android-3DDC84?style=flat-square&labelColor=black&logo=android&logoColor=3DDC84)](#)
 [![iOS Badge](https://img.shields.io/badge/-iOS-000000?style=flat-square&labelColor=black&logo=ios&logoColor=000000)](#)
 
-<br />
-<p align="center">
-  <a href="https://github.com/LukeGus/Termix-Mobile">
-    <img alt="Termix Mobile Banner" src="./assets/images/icon.png" style="width: 200px; height: 200px;">  </a>
-</p>
-
 If you would like, you can support the project here!\
 [![GitHub Sponsor](https://img.shields.io/badge/Sponsor-LukeGus-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sponsors/LukeGus)
 
 # Overview
-
-<p align="center">
-  <a href="https://github.com/LukeGus/Termix-Mobile">
-    <img alt="Termix Mobile Icon" src="./assets/images/icon.png" style="width: 150px; height: 150px;">  </a>
-</p>
 
 Termix Mobile is the official mobile companion app for Termix, providing full remote control of your servers through SSH terminal management. Connect to your existing Termix server configuration and manage all your SSH hosts with professional terminal capabilities optimized for mobile devices.
 
@@ -51,42 +36,11 @@ Termix Mobile is the official mobile companion app for Termix, providing full re
 
 # Installation
 
-Termix Mobile is available for both Android and iOS platforms:
-
-## Android
-- Download from Google Play Store (coming soon)
-- Or build from source using the instructions below
-
-## iOS
-- Download from Apple App Store (coming soon)
-- Or build from source using the instructions below
-
-## Building from Source
-
-1. Clone the repository:
-```bash
-git clone https://github.com/LukeGus/Termix-Mobile.git
-cd Termix-Mobile
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. For Android development:
-```bash
-npx expo run:android
-```
-
-4. For iOS development:
-```bash
-npx expo run:ios
-```
+Termix Mobile is available for both [Android](https://docs.termix.site/install) and [iOS](https://docs.termix.site/install) platforms.
 
 # Support
 
-If you need help with Termix Mobile, you can join the [Discord](https://discord.gg/jVQGdvHDrf) server and visit the support channel. You can also open an issue or open a pull request on the [GitHub](https://github.com/LukeGus/Termix-Mobile/issues) repo.
+If you need help with Termix Mobile, you can join the [Discord](https://discord.gg/jVQGdvHDrf) server and visit the support channel. You can also open an issue or open a pull request on the main [GitHub](https://github.com/LukeGus/Termix/issues) repo.
 
 # License
 
