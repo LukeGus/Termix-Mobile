@@ -107,9 +107,33 @@ jobs:
 
       - name: 📤 Upload Build Artifacts
         if: ${{ github.event.inputs.action == 'file' }}
+        run: |
+          # Find and upload the build file
+          if [ "${{ github.event.inputs.platform }}" = "android" ]; then
+            BUILD_FILE=$(find . -name "build-*.apk" -o -name "build-*.aab" | head -1)
+          else
+            BUILD_FILE=$(find . -name "build-*.ipa" -o -name "build-*.app" | head -1)
+          fi
+          
+          if [ -n "$BUILD_FILE" ]; then
+            echo "Uploading file: $BUILD_FILE"
+            # Create a temporary directory and copy the file
+            mkdir -p temp-upload
+            cp "$BUILD_FILE" temp-upload/
+            
+            # Upload using the upload-artifact action
+            echo "::set-output name=file_path::temp-upload/$BUILD_FILE"
+          else
+            echo "No build file found to upload"
+            exit 1
+          fi
+        id: find-build-file
+
+      - name: 📤 Upload Build Artifacts
+        if: ${{ github.event.inputs.action == 'file' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.inputs.platform }}-${{ github.event.inputs.profile }}-build
-          path: "build-*.apk,build-*.aab,build-*.ipa,build-*.app"
+          path: temp-upload/
           retention-days: 30
           if-no-files-found: warn
