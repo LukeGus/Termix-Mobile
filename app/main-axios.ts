@@ -323,9 +323,23 @@ export async function testServerConnection(
     };
   } catch (error: any) {
     console.error("Connection test error:", error);
+    
+    // Provide more specific error messages for common HTTP issues
+    let errorMessage = error.message || "Connection test failed";
+    
+    if (error.name === "AbortError") {
+      errorMessage = "Connection timeout - server not responding";
+    } else if (error.message?.includes("Network request failed")) {
+      errorMessage = "Network error - check if server is running and accessible";
+    } else if (error.message?.includes("Failed to fetch")) {
+      errorMessage = "Failed to connect - check server URL and network connection";
+    } else if (serverUrl.startsWith("https://") && error.message?.includes("SSL")) {
+      errorMessage = "SSL/TLS error - try using HTTP instead of HTTPS";
+    }
+    
     return {
       success: false,
-      error: error.message || "Connection test failed",
+      error: errorMessage,
     };
   }
 }

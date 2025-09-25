@@ -64,10 +64,18 @@ export default function ServerForm() {
   const normalizeServerUrl = (input: string): string => {
     let url = input.trim();
 
+    // Remove trailing slash
     url = url.replace(/\/$/, "");
 
+    // If no protocol is specified, try to be smart about it
     if (!url.startsWith("http://") && !url.startsWith("https://")) {
-      url = `https://${url}`;
+      // For localhost or IP addresses, prefer HTTP
+      if (url.includes("localhost") || url.includes("127.0.0.1") || /^\d+\.\d+\.\d+\.\d+/.test(url)) {
+        url = `http://${url}`;
+      } else {
+        // For domain names, prefer HTTPS
+        url = `https://${url}`;
+      }
     }
 
     return url;
@@ -84,8 +92,21 @@ export default function ServerForm() {
     setErrorMessage("");
 
     try {
-      const serverUrl = normalizeServerUrl(formData.ip);
-      const connectionTest = await testServerConnection(serverUrl);
+      let serverUrl = normalizeServerUrl(formData.ip);
+      let connectionTest = await testServerConnection(serverUrl);
+
+      // If the initial test fails and we defaulted to HTTPS, try HTTP as fallback
+      if (!connectionTest.success && serverUrl.startsWith("https://")) {
+        const httpUrl = serverUrl.replace("https://", "http://");
+        const httpTest = await testServerConnection(httpUrl);
+        
+        if (httpTest.success) {
+          // Update the form data to use the working HTTP URL
+          setFormData(prev => ({ ...prev, ip: httpUrl }));
+          serverUrl = httpUrl;
+          connectionTest = httpTest;
+        }
+      }
 
       if (connectionTest.success) {
         setConnectionStatus("success");
