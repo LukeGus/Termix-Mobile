@@ -12,7 +12,13 @@ import "../global.css";
 import UpdateRequired from "@/app/Authentication/UpdateRequired";
 
 function RootLayoutContent() {
-  const { showServerManager, showLoginForm, isAuthenticated, showUpdateScreen, isLoading } = useAppContext();
+  const {
+    showServerManager,
+    showLoginForm,
+    isAuthenticated,
+    showUpdateScreen,
+    isLoading,
+  } = useAppContext();
 
   if (isLoading) {
     return (
@@ -24,7 +30,7 @@ function RootLayoutContent() {
   }
 
   if (showUpdateScreen) {
-      return <UpdateRequired />
+    return <UpdateRequired />;
   }
 
   if (showServerManager) {
@@ -41,7 +47,7 @@ function RootLayoutContent() {
         <Stack
           screenOptions={{
             headerShown: false,
-            contentStyle: { backgroundColor: '#18181b' },
+            contentStyle: { backgroundColor: "#18181b" },
           }}
         >
           <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -62,14 +68,14 @@ export default function RootLayout() {
           <TerminalSessionsProvider>
             <KeyboardProvider>
               <RootLayoutContent />
-              <Toaster 
+              <Toaster
                 theme="dark"
                 position="top-center"
                 toastOptions={{
                   style: {
-                    backgroundColor: '#18181b',
+                    backgroundColor: "#18181b",
                     borderWidth: 1,
-                    borderColor: '#27272a',
+                    borderColor: "#27272a",
                   },
                 }}
                 richColors={false}

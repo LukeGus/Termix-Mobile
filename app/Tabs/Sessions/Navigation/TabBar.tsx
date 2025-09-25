@@ -1,8 +1,14 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, TextInput } from 'react-native';
-import { X, ArrowLeft, Plus, Minus } from 'lucide-react-native';
-import { TerminalSession } from '@/app/contexts/TerminalSessionsContext';
-import { useRouter } from 'expo-router';
+import React from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+} from "react-native";
+import { X, ArrowLeft, Plus, Minus } from "lucide-react-native";
+import { TerminalSession } from "@/app/contexts/TerminalSessionsContext";
+import { useRouter } from "expo-router";
 
 interface TabBarProps {
   sessions: TerminalSession[];
@@ -15,7 +21,16 @@ interface TabBarProps {
   hiddenInputRef: React.RefObject<TextInput | null>;
 }
 
-export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClose, onAddSession, onToggleKeyboard, isCustomKeyboardVisible, hiddenInputRef }: TabBarProps) {
+export default function TabBar({
+  sessions,
+  activeSessionId,
+  onTabPress,
+  onTabClose,
+  onAddSession,
+  onToggleKeyboard,
+  isCustomKeyboardVisible,
+  hiddenInputRef,
+}: TabBarProps) {
   const router = useRouter();
 
   if (sessions.length === 0) {
@@ -23,28 +38,33 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
   }
 
   return (
-    <View 
+    <View
       style={{
-        backgroundColor: '#0e0e10',
+        backgroundColor: "#0e0e10",
         borderTopWidth: 1.5,
-        borderTopColor: '#303032',
+        borderTopColor: "#303032",
         minHeight: 60,
         maxHeight: 60,
       }}
       onStartShouldSetResponder={() => true}
       onResponderGrant={() => {
-        // Ensure the hidden input keeps focus as soon as touch begins
         hiddenInputRef.current?.focus();
       }}
       onResponderTerminationRequest={() => false}
       onTouchEndCapture={() => hiddenInputRef.current?.focus()}
       focusable={false}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', height: '100%', paddingHorizontal: 8 }}>
-        {/* Back button - anchored left */}
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          height: "100%",
+          paddingHorizontal: 8,
+        }}
+      >
         <TouchableOpacity
           onPressIn={() => hiddenInputRef.current?.focus()}
-          onPress={() => router.navigate('/hosts' as any)}
+          onPress={() => router.navigate("/hosts" as any)}
           onPressOut={() => hiddenInputRef.current?.focus()}
           focusable={false}
           className="items-center justify-center rounded-md"
@@ -53,9 +73,9 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
             width: 44,
             height: 44,
             borderWidth: 2,
-            borderColor: '#303032',
-            backgroundColor: '#2a2a2a',
-            shadowColor: '#000',
+            borderColor: "#303032",
+            backgroundColor: "#2a2a2a",
+            shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.1,
             shadowRadius: 4,
@@ -66,7 +86,6 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
           <ArrowLeft size={20} color="#ffffff" />
         </TouchableOpacity>
 
-        {/* Scrollable tabs in the middle */}
         <ScrollView
           horizontal
           keyboardShouldPersistTaps="always"
@@ -74,10 +93,10 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
           showsVerticalScrollIndicator={false}
           focusable={false}
           style={{ flex: 1 }}
-          contentContainerStyle={{ 
+          contentContainerStyle={{
             paddingVertical: 8,
             gap: 6,
-            alignItems: 'center'
+            alignItems: "center",
           }}
           className="flex-row"
           scrollEnabled={true}
@@ -91,7 +110,7 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
         >
           {sessions.map((session) => {
             const isActive = session.id === activeSessionId;
-            
+
             return (
               <TouchableOpacity
                 key={session.id}
@@ -102,9 +121,9 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
                 className="flex-row items-center rounded-md"
                 style={{
                   borderWidth: 2,
-                  borderColor: '#303032',
-                  backgroundColor: isActive ? '#2a2a2a' : '#1a1a1a',
-                  shadowColor: isActive ? '#000' : 'transparent',
+                  borderColor: "#303032",
+                  backgroundColor: isActive ? "#2a2a2a" : "#1a1a1a",
+                  shadowColor: isActive ? "#000" : "transparent",
                   shadowOffset: { width: 0, height: 2 },
                   shadowOpacity: isActive ? 0.1 : 0,
                   shadowRadius: 4,
@@ -114,15 +133,15 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
                 }}
               >
                 <View className="flex-1 px-3 py-2">
-                  <Text 
+                  <Text
                     className={`text-sm font-medium ${
-                      isActive ? 'text-white' : 'text-gray-400'
+                      isActive ? "text-white" : "text-gray-400"
                     }`}
                   >
                     {session.title}
                   </Text>
                 </View>
-                
+
                 {/* Close button */}
                 <TouchableOpacity
                   onPressIn={() => hiddenInputRef.current?.focus()}
@@ -138,12 +157,12 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
                     width: 36,
                     height: 44,
                     borderLeftWidth: 1,
-                    borderLeftColor: '#303032',
+                    borderLeftColor: "#303032",
                   }}
                 >
-                  <X 
-                    size={16} 
-                    color={isActive ? '#ffffff' : '#9CA3AF'} 
+                  <X
+                    size={16}
+                    color={isActive ? "#ffffff" : "#9CA3AF"}
                     strokeWidth={2}
                   />
                 </TouchableOpacity>
@@ -152,7 +171,6 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
           })}
         </ScrollView>
 
-        {/* Keyboard toggle button - anchored right */}
         <TouchableOpacity
           onPressIn={() => hiddenInputRef.current?.focus()}
           onPress={() => onToggleKeyboard?.()}
@@ -164,9 +182,9 @@ export default function TabBar({ sessions, activeSessionId, onTabPress, onTabClo
             width: 44,
             height: 44,
             borderWidth: 2,
-            borderColor: '#303032',
-            backgroundColor: '#2a2a2a',
-            shadowColor: '#000',
+            borderColor: "#303032",
+            backgroundColor: "#2a2a2a",
+            shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.1,
             shadowRadius: 4,

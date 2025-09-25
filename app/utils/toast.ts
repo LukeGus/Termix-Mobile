@@ -1,13 +1,12 @@
-import { toast } from 'sonner-native';
+import { toast } from "sonner-native";
 
-// Custom toast functions that match your UI theme
 export const showToast = {
   success: (message: string) => {
     toast.success(message, {
       style: {
-        backgroundColor: '#18181b',
+        backgroundColor: "#18181b",
         borderWidth: 1,
-        borderColor: '#16a34a',
+        borderColor: "#16a34a",
       },
     });
   },
@@ -15,9 +14,9 @@ export const showToast = {
   error: (message: string) => {
     toast.error(message, {
       style: {
-        backgroundColor: '#18181b',
+        backgroundColor: "#18181b",
         borderWidth: 1,
-        borderColor: '#dc2626',
+        borderColor: "#dc2626",
       },
     });
   },
@@ -25,9 +24,9 @@ export const showToast = {
   warning: (message: string) => {
     toast.warning(message, {
       style: {
-        backgroundColor: '#18181b',
+        backgroundColor: "#18181b",
         borderWidth: 1,
-        borderColor: '#d97706',
+        borderColor: "#d97706",
       },
     });
   },
@@ -35,9 +34,9 @@ export const showToast = {
   info: (message: string) => {
     toast.info(message, {
       style: {
-        backgroundColor: '#18181b',
+        backgroundColor: "#18181b",
         borderWidth: 1,
-        borderColor: '#2563eb',
+        borderColor: "#2563eb",
       },
     });
   },
@@ -45,11 +44,10 @@ export const showToast = {
   default: (message: string) => {
     toast(message, {
       style: {
-        backgroundColor: '#18181b',
+        backgroundColor: "#18181b",
         borderWidth: 1,
-        borderColor: '#27272a',
+        borderColor: "#27272a",
       },
     });
   },
 };
-

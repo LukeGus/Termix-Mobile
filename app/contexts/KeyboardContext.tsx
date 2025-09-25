@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Keyboard } from 'react-native';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { Keyboard } from "react-native";
 
 interface KeyboardContextType {
   keyboardHeight: number;
@@ -11,20 +11,28 @@ const KeyboardContext = createContext<KeyboardContextType>({
   isKeyboardVisible: false,
 });
 
-export const KeyboardProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const KeyboardProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (e) => {
-      setKeyboardHeight(e.endCoordinates.height);
-      setIsKeyboardVisible(true);
-    });
+    const keyboardDidShowListener = Keyboard.addListener(
+      "keyboardDidShow",
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+        setIsKeyboardVisible(true);
+      },
+    );
 
-    const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
-      setKeyboardHeight(0);
-      setIsKeyboardVisible(false);
-    });
+    const keyboardDidHideListener = Keyboard.addListener(
+      "keyboardDidHide",
+      () => {
+        setKeyboardHeight(0);
+        setIsKeyboardVisible(false);
+      },
+    );
 
     return () => {
       keyboardDidShowListener?.remove();
@@ -42,7 +50,7 @@ export const KeyboardProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 export const useKeyboard = () => {
   const context = useContext(KeyboardContext);
   if (!context) {
-    throw new Error('useKeyboard must be used within a KeyboardProvider');
+    throw new Error("useKeyboard must be used within a KeyboardProvider");
   }
   return context;
 };

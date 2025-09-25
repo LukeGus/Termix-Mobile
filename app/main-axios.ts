@@ -1,271 +1,273 @@
 import axios, { AxiosError, type AxiosInstance } from "axios";
 import type {
-    SSHHost,
-    SSHHostData,
-    TunnelConfig,
-    TunnelStatus,
-    Credential,
-    CredentialData,
-    HostInfo,
-    ApiResponse,
-    FileManagerFile,
-    FileManagerShortcut,
+  SSHHost,
+  SSHHostData,
+  TunnelConfig,
+  TunnelStatus,
+  Credential,
+  CredentialData,
+  HostInfo,
+  ApiResponse,
+  FileManagerFile,
+  FileManagerShortcut,
 } from "../types/index";
 import {
-    apiLogger,
-    authLogger,
-    sshLogger,
-    tunnelLogger,
-    fileLogger,
-    statsLogger,
-    systemLogger,
-    type LogContext,
+  apiLogger,
+  authLogger,
+  sshLogger,
+  tunnelLogger,
+  fileLogger,
+  statsLogger,
+  systemLogger,
+  type LogContext,
 } from "../lib/frontend-logger";
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 interface FileManagerOperation {
-    name: string;
-    path: string;
-    isSSH: boolean;
-    sshSessionId?: string;
-    hostId: number;
+  name: string;
+  path: string;
+  isSSH: boolean;
+  sshSessionId?: string;
+  hostId: number;
 }
 
 export type ServerStatus = {
-    status: "online" | "offline";
-    lastChecked: string;
+  status: "online" | "offline";
+  lastChecked: string;
 };
 
 interface CpuMetrics {
-    percent: number | null;
-    cores: number | null;
-    load: [number, number, number] | null;
+  percent: number | null;
+  cores: number | null;
+  load: [number, number, number] | null;
 }
 
 interface MemoryMetrics {
-    percent: number | null;
-    usedGiB: number | null;
-    totalGiB: number | null;
+  percent: number | null;
+  usedGiB: number | null;
+  totalGiB: number | null;
 }
 
 interface DiskMetrics {
-    percent: number | null;
-    usedHuman: string | null;
-    totalHuman: string | null;
+  percent: number | null;
+  usedHuman: string | null;
+  totalHuman: string | null;
 }
 
 export type ServerMetrics = {
-    cpu: CpuMetrics;
-    memory: MemoryMetrics;
-    disk: DiskMetrics;
-    lastChecked: string;
+  cpu: CpuMetrics;
+  memory: MemoryMetrics;
+  disk: DiskMetrics;
+  lastChecked: string;
 };
 
 interface AuthResponse {
-    token?: string;
-    requires_totp?: boolean;
-    temp_token?: string;
+  token?: string;
+  requires_totp?: boolean;
+  temp_token?: string;
 }
 
 interface UserInfo {
-    totp_enabled: boolean;
-    id: string;
-    username: string;
-    is_admin: boolean;
+  totp_enabled: boolean;
+  id: string;
+  username: string;
+  is_admin: boolean;
 }
 
 interface UserCount {
-    count: number;
+  count: number;
 }
-
 
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
 
 export function isElectron(): boolean {
-    // In React Native, we're not in Electron
-    return false;
+  return false;
 }
 
 function getLoggerForService(serviceName: string) {
-    if (serviceName.includes("SSH") || serviceName.includes("ssh")) {
-        return sshLogger;
-    } else if (serviceName.includes("TUNNEL") || serviceName.includes("tunnel")) {
-        return tunnelLogger;
-    } else if (serviceName.includes("FILE") || serviceName.includes("file")) {
-        return fileLogger;
-    } else if (serviceName.includes("STATS") || serviceName.includes("stats")) {
-        return statsLogger;
-    } else if (serviceName.includes("AUTH") || serviceName.includes("auth")) {
-        return authLogger;
-    } else {
-        return apiLogger;
-    }
+  if (serviceName.includes("SSH") || serviceName.includes("ssh")) {
+    return sshLogger;
+  } else if (serviceName.includes("TUNNEL") || serviceName.includes("tunnel")) {
+    return tunnelLogger;
+  } else if (serviceName.includes("FILE") || serviceName.includes("file")) {
+    return fileLogger;
+  } else if (serviceName.includes("STATS") || serviceName.includes("stats")) {
+    return statsLogger;
+  } else if (serviceName.includes("AUTH") || serviceName.includes("auth")) {
+    return authLogger;
+  } else {
+    return apiLogger;
+  }
 }
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-export async function setCookie(name: string, value: string, days = 7): Promise<void> {
-    try {
-        await AsyncStorage.setItem(name, value);
-    } catch (error) {
-        console.error('Failed to save token:', error);
-    }
+export async function setCookie(
+  name: string,
+  value: string,
+  days = 7,
+): Promise<void> {
+  try {
+    await AsyncStorage.setItem(name, value);
+  } catch (error) {
+    console.error("Failed to save token:", error);
+  }
 }
 
 export async function getCookie(name: string): Promise<string | undefined> {
-    try {
-        const token = await AsyncStorage.getItem(name);
-        return token || undefined;
-    } catch (error) {
-        console.error('Failed to get token:', error);
-        return undefined;
-    }
+  try {
+    const token = await AsyncStorage.getItem(name);
+    return token || undefined;
+  } catch (error) {
+    console.error("Failed to get token:", error);
+    return undefined;
+  }
 }
 
 function createApiInstance(
-    baseURL: string,
-    serviceName: string = "API",
+  baseURL: string,
+  serviceName: string = "API",
 ): AxiosInstance {
-    const instance = axios.create({
-        baseURL,
-        headers: { "Content-Type": "application/json" },
-        timeout: 30000,
-    });
+  const instance = axios.create({
+    baseURL,
+    headers: { "Content-Type": "application/json" },
+    timeout: 30000,
+  });
 
-    instance.interceptors.request.use(async (config) => {
-        const startTime = performance.now();
-        const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  instance.interceptors.request.use(async (config) => {
+    const startTime = performance.now();
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-        (config as any).startTime = startTime;
-        (config as any).requestId = requestId;
+    (config as any).startTime = startTime;
+    (config as any).requestId = requestId;
 
-        const token = await getCookie("jwt");
-        const method = config.method?.toUpperCase() || "UNKNOWN";
-        const url = config.url || "UNKNOWN";
-        const fullUrl = `${config.baseURL}${url}`;
+    const token = await getCookie("jwt");
+    const method = config.method?.toUpperCase() || "UNKNOWN";
+    const url = config.url || "UNKNOWN";
+    const fullUrl = `${config.baseURL}${url}`;
 
-        const context: LogContext = {
-            requestId,
-            method,
-            url: fullUrl,
-            operation: "request_start",
-        };
+    const context: LogContext = {
+      requestId,
+      method,
+      url: fullUrl,
+      operation: "request_start",
+    };
 
-        const logger = getLoggerForService(serviceName);
+    const logger = getLoggerForService(serviceName);
 
-        logger.requestStart(method, fullUrl, context);
+    logger.requestStart(method, fullUrl, context);
 
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        } else {
-            authLogger.warn(
-                "No JWT token found, request will be unauthenticated",
-                context,
-            );
-        }
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      authLogger.warn(
+        "No JWT token found, request will be unauthenticated",
+        context,
+      );
+    }
 
-        // React Native specific headers
-        config.headers["User-Agent"] = "Termix-Mobile/1.0.0";
+    config.headers["User-Agent"] = "Termix-Mobile/1.0.0";
 
-        return config;
-    });
+    return config;
+  });
 
-    instance.interceptors.response.use(
-        (response) => {
-            const endTime = performance.now();
-            const startTime = (response.config as any).startTime;
-            const requestId = (response.config as any).requestId;
-            const responseTime = Math.round(endTime - startTime);
+  instance.interceptors.response.use(
+    (response) => {
+      const endTime = performance.now();
+      const startTime = (response.config as any).startTime;
+      const requestId = (response.config as any).requestId;
+      const responseTime = Math.round(endTime - startTime);
 
-            const method = response.config.method?.toUpperCase() || "UNKNOWN";
-            const url = response.config.url || "UNKNOWN";
-            const fullUrl = `${response.config.baseURL}${url}`;
+      const method = response.config.method?.toUpperCase() || "UNKNOWN";
+      const url = response.config.url || "UNKNOWN";
+      const fullUrl = `${response.config.baseURL}${url}`;
 
-            const context: LogContext = {
-                requestId,
-                method,
-                url: fullUrl,
-                status: response.status,
-                statusText: response.statusText,
-                responseTime,
-                operation: "request_success",
-            };
+      const context: LogContext = {
+        requestId,
+        method,
+        url: fullUrl,
+        status: response.status,
+        statusText: response.statusText,
+        responseTime,
+        operation: "request_success",
+      };
 
-            const logger = getLoggerForService(serviceName);
+      const logger = getLoggerForService(serviceName);
 
-            logger.requestSuccess(
-                method,
-                fullUrl,
-                response.status,
-                responseTime,
-                context,
-            );
+      logger.requestSuccess(
+        method,
+        fullUrl,
+        response.status,
+        responseTime,
+        context,
+      );
 
-            if (responseTime > 3000) {
-                logger.warn(`🐌 Slow request: ${responseTime}ms`, context);
-            }
+      if (responseTime > 3000) {
+        logger.warn(`🐌 Slow request: ${responseTime}ms`, context);
+      }
 
-            return response;
-        },
-        (error: AxiosError) => {
-            const endTime = performance.now();
-            const startTime = (error.config as any)?.startTime;
-            const requestId = (error.config as any)?.requestId;
-            const responseTime = startTime
-                ? Math.round(endTime - startTime)
-                : undefined;
+      return response;
+    },
+    (error: AxiosError) => {
+      const endTime = performance.now();
+      const startTime = (error.config as any)?.startTime;
+      const requestId = (error.config as any)?.requestId;
+      const responseTime = startTime
+        ? Math.round(endTime - startTime)
+        : undefined;
 
-            const method = error.config?.method?.toUpperCase() || "UNKNOWN";
-        const url = error.config?.url || "UNKNOWN";
-        const fullUrl = error.config?.baseURL ? `${error.config.baseURL}${url}` : url;
-            const status = error.response?.status;
-            const message =
-                (error.response?.data as any)?.error ||
-                (error as Error).message ||
-                "Unknown error";
-            const errorCode = (error.response?.data as any)?.code || error.code;
+      const method = error.config?.method?.toUpperCase() || "UNKNOWN";
+      const url = error.config?.url || "UNKNOWN";
+      const fullUrl = error.config?.baseURL
+        ? `${error.config.baseURL}${url}`
+        : url;
+      const status = error.response?.status;
+      const message =
+        (error.response?.data as any)?.error ||
+        (error as Error).message ||
+        "Unknown error";
+      const errorCode = (error.response?.data as any)?.code || error.code;
 
-            const context: LogContext = {
-                requestId,
-                method,
-                url: fullUrl,
-                status,
-                responseTime,
-                errorCode,
-                errorMessage: message,
-                operation: "request_error",
-            };
+      const context: LogContext = {
+        requestId,
+        method,
+        url: fullUrl,
+        status,
+        responseTime,
+        errorCode,
+        errorMessage: message,
+        operation: "request_error",
+      };
 
-            const logger = getLoggerForService(serviceName);
+      const logger = getLoggerForService(serviceName);
 
-            if (status === 401) {
-                logger.authError(method, fullUrl, context);
-            } else if (status === 0 || !status) {
-                logger.networkError(method, fullUrl, message, context);
-            } else {
-                logger.requestError(
-                    method,
-                    fullUrl,
-                    status || 0,
-                    message,
-                    responseTime,
-                    context,
-                );
-            }
+      if (status === 401) {
+        logger.authError(method, fullUrl, context);
+      } else if (status === 0 || !status) {
+        logger.networkError(method, fullUrl, message, context);
+      } else {
+        logger.requestError(
+          method,
+          fullUrl,
+          status || 0,
+          message,
+          responseTime,
+          context,
+        );
+      }
 
-            if (status === 401) {
-                // Remove JWT token from AsyncStorage
-                AsyncStorage.removeItem("jwt").catch(error => {
-                    console.error('Failed to remove token:', error);
-                });
-            }
+      if (status === 401) {
+        AsyncStorage.removeItem("jwt").catch((error) => {
+          console.error("Failed to remove token:", error);
+        });
+      }
 
-            return Promise.reject(error);
-        },
-    );
+      return Promise.reject(error);
+    },
+  );
 
-    return instance;
+  return instance;
 }
 
 // ============================================================================
@@ -275,239 +277,203 @@ function createApiInstance(
 let configuredServerUrl: string | null = null;
 
 export interface ServerConfig {
-    serverUrl: string;
-    lastUpdated: string;
-}
-
-// React Native doesn't support Electron APIs
-export async function getServerConfig(): Promise<ServerConfig | null> {
-    return null;
+  serverUrl: string;
+  lastUpdated: string;
 }
 
 export async function saveServerConfig(config: ServerConfig): Promise<boolean> {
-    // In React Native, we'll store server config in AsyncStorage
-    try {
-        console.log('Saving server config:', config);
-        await AsyncStorage.setItem('serverConfig', JSON.stringify(config));
-        configuredServerUrl = config.serverUrl;
-        console.log('Updated configuredServerUrl to:', configuredServerUrl);
-        updateApiInstances();
-        await detectAndUpdateApiInstances();
-        console.log('Server config saved successfully');
-        return true;
-    } catch (error) {
-        console.error("Failed to save server config:", error);
-        return false;
-    }
+  try {
+    await AsyncStorage.setItem("serverConfig", JSON.stringify(config));
+    configuredServerUrl = config.serverUrl;
+    updateApiInstances();
+    await detectAndUpdateApiInstances();
+    return true;
+  } catch (error) {
+    console.error("Failed to save server config:", error);
+    return false;
+  }
 }
 
 export async function testServerConnection(
-    serverUrl: string,
+  serverUrl: string,
 ): Promise<{ success: boolean; error?: string }> {
-    try {
-        console.log('Testing connection to:', serverUrl);
-        
-        // Ensure URL doesn't have trailing slash for health check
-        const cleanUrl = serverUrl.replace(/\/$/, '');
-        const healthUrl = `${cleanUrl}/health`;
-        
-        console.log('Health check URL:', healthUrl);
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // Increased timeout
-        
-        const response = await fetch(healthUrl, {
-            method: 'GET',
-            signal: controller.signal,
-            headers: {
-                'Accept': 'application/json',
-                'User-Agent': 'Termix-Mobile/1.0.0'
-            }
-        });
-        
-        clearTimeout(timeoutId);
-        
-        console.log('Health check response:', response.status, response.statusText);
-        
-        return { 
-            success: response.ok,
-            error: response.ok ? undefined : `HTTP ${response.status}: ${response.statusText}`
-        };
-    } catch (error: any) {
-        console.error('Connection test error:', error);
-        return { 
-            success: false, 
-            error: error.message || "Connection test failed" 
-        };
-    }
+  try {
+    const cleanUrl = serverUrl.replace(/\/$/, "");
+    const healthUrl = `${cleanUrl}/health`;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // Increased timeout
+
+    const response = await fetch(healthUrl, {
+      method: "GET",
+      signal: controller.signal,
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "Termix-Mobile/1.0.0",
+      },
+    });
+
+    clearTimeout(timeoutId);
+
+    return {
+      success: response.ok,
+      error: response.ok
+        ? undefined
+        : `HTTP ${response.status}: ${response.statusText}`,
+    };
+  } catch (error: any) {
+    console.error("Connection test error:", error);
+    return {
+      success: false,
+      error: error.message || "Connection test failed",
+    };
+  }
 }
 
-// Initialize server config from AsyncStorage when needed
 export async function initializeServerConfig(): Promise<void> {
-    try {
-        console.log('Initializing server config...');
-        const configStr = await AsyncStorage.getItem('serverConfig');
-        console.log('Config string from storage:', configStr);
-        
-        if (configStr) {
-            const config = JSON.parse(configStr);
-            console.log('Parsed config:', config);
-            
-            if (config?.serverUrl) {
-                console.log('Setting configuredServerUrl to:', config.serverUrl);
-                configuredServerUrl = config.serverUrl;
-                updateApiInstances();
-                await detectAndUpdateApiInstances();
-                console.log('Server config initialized successfully');
-            } else {
-                console.log('No serverUrl in config');
-            }
-        } else {
-            console.log('No server config found in storage');
-        }
-    } catch (error) {
-        console.error("Failed to load server config:", error);
+  try {
+    const configStr = await AsyncStorage.getItem("serverConfig");
+
+    if (configStr) {
+      const config = JSON.parse(configStr);
+
+      if (config?.serverUrl) {
+        configuredServerUrl = config.serverUrl;
+        updateApiInstances();
+        await detectAndUpdateApiInstances();
+      } else {
+      }
+    } else {
     }
+  } catch (error) {
+    console.error("Failed to load server config:", error);
+  }
 }
 
 export function getCurrentServerUrl(): string | null {
-    return configuredServerUrl;
+  return configuredServerUrl;
 }
 
-// Check if user is authenticated
 export async function isAuthenticated(): Promise<boolean> {
-    try {
-        const token = await getCookie("jwt");
-        return !!token;
-    } catch (error) {
-        console.error("Failed to check authentication status:", error);
-        return false;
-    }
+  try {
+    const token = await getCookie("jwt");
+    return !!token;
+  } catch (error) {
+    console.error("Failed to check authentication status:", error);
+    return false;
+  }
 }
 
-// Clear authentication data
 export async function clearAuth(): Promise<void> {
-    try {
-        console.log('Clearing authentication data...');
-        await AsyncStorage.removeItem("jwt");
-        console.log('JWT token cleared');
-    } catch (error) {
-        console.error("Failed to clear auth data:", error);
-    }
+  try {
+    await AsyncStorage.removeItem("jwt");
+  } catch (error) {
+    console.error("Failed to clear auth data:", error);
+  }
 }
 
 function getApiUrl(path: string, defaultPort: number): string {
-    if (configuredServerUrl) {
-        const baseUrl = configuredServerUrl.replace(/\/$/, "");
-        const fullUrl = `${baseUrl}${path}`;
-        console.log(`API URL for ${path}: ${fullUrl}`);
-        return fullUrl;
-    }
-    // Fallback to localhost if no server configured
-    const fallbackUrl = `http://localhost:${defaultPort}${path}`;
-    console.log(`Fallback API URL for ${path}: ${fallbackUrl}`);
-    return fallbackUrl;
+  if (configuredServerUrl) {
+    const baseUrl = configuredServerUrl.replace(/\/$/, "");
+    const fullUrl = `${baseUrl}${path}`;
+    return fullUrl;
+  }
+  const fallbackUrl = `http://localhost:${defaultPort}${path}`;
+  return fallbackUrl;
 }
 
-// Build root base (without trailing /ssh) for a given default port
 function getRootBase(defaultPort: number): string {
-    if (configuredServerUrl) {
-        const trimmed = configuredServerUrl.replace(/\/$/, "");
-        const withoutSsh = trimmed.replace(/\/(ssh)(\/$)?$/, "");
-        return withoutSsh || trimmed;
-    }
-    return `http://localhost:${defaultPort}`;
+  if (configuredServerUrl) {
+    const trimmed = configuredServerUrl.replace(/\/$/, "");
+    const withoutSsh = trimmed.replace(/\/(ssh)(\/$)?$/, "");
+    return withoutSsh || trimmed;
+  }
+  return `http://localhost:${defaultPort}`;
 }
 
-// Build /ssh base (ensure exactly one /ssh suffix) for a given default port
 function getSshBase(defaultPort: number): string {
-    if (configuredServerUrl) {
-        const trimmed = configuredServerUrl.replace(/\/$/, "");
-        if (/\/(ssh)$/.test(trimmed)) {
-            return trimmed; // already ends with /ssh
-        }
-        return `${trimmed}/ssh`;
+  if (configuredServerUrl) {
+    const trimmed = configuredServerUrl.replace(/\/$/, "");
+    if (/\/(ssh)$/.test(trimmed)) {
+      return trimmed;
     }
-    return `http://localhost:${defaultPort}/ssh`;
+    return `${trimmed}/ssh`;
+  }
+  return `http://localhost:${defaultPort}/ssh`;
 }
 
-// Initialize API instances
 function initializeApiInstances() {
-    // SSH Host Management API (port 8081)
-    sshHostApi = createApiInstance(getApiUrl("/ssh", 8081), "SSH_HOST");
+  sshHostApi = createApiInstance(getApiUrl("/ssh", 8081), "SSH_HOST");
 
-    // Tunnel Management API (port 8083)
-    tunnelApi = createApiInstance(getApiUrl("/ssh", 8083), "TUNNEL");
+  tunnelApi = createApiInstance(getApiUrl("/ssh", 8083), "TUNNEL");
 
-    // File Manager Operations API (port 8084)
-    fileManagerApi = createApiInstance(
-        getApiUrl("/ssh/file_manager", 8084),
-        "FILE_MANAGER",
-    );
+  fileManagerApi = createApiInstance(
+    getApiUrl("/ssh/file_manager", 8084),
+    "FILE_MANAGER",
+  );
 
-    // Server Statistics API (port 8085)
-    // Note: Some deployments mount stats at root, others under /ssh.
-    // We create the instance with /ssh by default and add runtime fallbacks in the call sites.
-    statsApi = createApiInstance(getApiUrl("/ssh", 8085), "STATS");
+  statsApi = createApiInstance(getApiUrl("/ssh", 8085), "STATS");
 
-    // Authentication API (port 8081)
-    authApi = createApiInstance(getApiUrl("", 8081), "AUTH");
+  authApi = createApiInstance(getApiUrl("", 8081), "AUTH");
 }
 
-// Try to detect correct bases for AUTH and STATS and update instances
 async function detectAndUpdateApiInstances(): Promise<void> {
-    try {
-        const [statsRootOk, statsSshOk, authRootOk, authSshOk] = await Promise.all([
-            // Stats root check
-            (async () => {
-                try {
-                    const base = getRootBase(8085).replace(/\/$/, "");
-                    const res = await fetch(`${base}/status`, { method: 'HEAD' });
-                    return res.ok;
-                } catch { return false; }
-            })(),
-            // Stats /ssh check
-            (async () => {
-                try {
-                    const base = getSshBase(8085).replace(/\/$/, "");
-                    const res = await fetch(`${base}/status`, { method: 'HEAD' });
-                    return res.ok;
-                } catch { return false; }
-            })(),
-            // Auth root check
-            (async () => {
-                try {
-                    const base = getRootBase(8081).replace(/\/$/, "");
-                    const res = await fetch(`${base}/users/registration-allowed`, { method: 'HEAD' });
-                    return res.ok;
-                } catch { return false; }
-            })(),
-            // Auth /ssh check
-            (async () => {
-                try {
-                    const base = getSshBase(8081).replace(/\/$/, "");
-                    const res = await fetch(`${base}/users/registration-allowed`, { method: 'HEAD' });
-                    return res.ok;
-                } catch { return false; }
-            })(),
-        ]);
-
-        // Choose stats base preference: root then /ssh, else keep existing
-        if (statsRootOk) {
-            statsApi = createApiInstance(getRootBase(8085), "STATS");
-        } else if (statsSshOk) {
-            statsApi = createApiInstance(getSshBase(8085), "STATS");
+  try {
+    const [statsRootOk, statsSshOk, authRootOk, authSshOk] = await Promise.all([
+      (async () => {
+        try {
+          const base = getRootBase(8085).replace(/\/$/, "");
+          const res = await fetch(`${base}/status`, { method: "HEAD" });
+          return res.ok;
+        } catch {
+          return false;
         }
-
-        // Choose auth base preference: root then /ssh, else keep existing
-        if (authRootOk) {
-            authApi = createApiInstance(getRootBase(8081), "AUTH");
-        } else if (authSshOk) {
-            authApi = createApiInstance(getSshBase(8081), "AUTH");
+      })(),
+      (async () => {
+        try {
+          const base = getSshBase(8085).replace(/\/$/, "");
+          const res = await fetch(`${base}/status`, { method: "HEAD" });
+          return res.ok;
+        } catch {
+          return false;
         }
-    } catch (e) {
-        // Non-fatal; default instances remain
+      })(),
+      (async () => {
+        try {
+          const base = getRootBase(8081).replace(/\/$/, "");
+          const res = await fetch(`${base}/users/registration-allowed`, {
+            method: "HEAD",
+          });
+          return res.ok;
+        } catch {
+          return false;
+        }
+      })(),
+      (async () => {
+        try {
+          const base = getSshBase(8081).replace(/\/$/, "");
+          const res = await fetch(`${base}/users/registration-allowed`, {
+            method: "HEAD",
+          });
+          return res.ok;
+        } catch {
+          return false;
+        }
+      })(),
+    ]);
+
+    if (statsRootOk) {
+      statsApi = createApiInstance(getRootBase(8085), "STATS");
+    } else if (statsSshOk) {
+      statsApi = createApiInstance(getSshBase(8085), "STATS");
     }
+
+    if (authRootOk) {
+      authApi = createApiInstance(getRootBase(8081), "AUTH");
+    } else if (authSshOk) {
+      authApi = createApiInstance(getSshBase(8081), "AUTH");
+    }
+  } catch (e) {}
 }
 
 // SSH Host Management API (port 8081)
@@ -525,21 +491,20 @@ export let statsApi: AxiosInstance;
 // Authentication API (port 8081)
 export let authApi: AxiosInstance;
 
-// Initialize API instances immediately
 initializeApiInstances();
 
 function updateApiInstances() {
-    systemLogger.info("Updating API instances with new server configuration", {
-        operation: "api_instance_update",
-        configuredServerUrl,
-    });
+  systemLogger.info("Updating API instances with new server configuration", {
+    operation: "api_instance_update",
+    configuredServerUrl,
+  });
 
-    initializeApiInstances();
+  initializeApiInstances();
 
-    systemLogger.success("All API instances updated successfully", {
-        operation: "api_instance_update_complete",
-        configuredServerUrl,
-    });
+  systemLogger.success("All API instances updated successfully", {
+    operation: "api_instance_update_complete",
+    configuredServerUrl,
+  });
 }
 
 // ============================================================================
@@ -547,139 +512,138 @@ function updateApiInstances() {
 // ============================================================================
 
 class ApiError extends Error {
-    constructor(
-        message: string,
-        public status?: number,
-        public code?: string,
-    ) {
-        super(message);
-        this.name = "ApiError";
-    }
+  constructor(
+    message: string,
+    public status?: number,
+    public code?: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
 }
 
 function handleApiError(error: unknown, operation: string): never {
-    const context: LogContext = {
-        operation: "error_handling",
-        errorOperation: operation,
+  const context: LogContext = {
+    operation: "error_handling",
+    errorOperation: operation,
+  };
+
+  if (axios.isAxiosError(error)) {
+    const status = error.response?.status;
+    const message = error.response?.data?.error || error.message;
+    const code = error.response?.data?.code;
+    const url = error.config?.url || "UNKNOWN";
+    const method = error.config?.method?.toUpperCase() || "UNKNOWN";
+
+    const errorContext: LogContext = {
+      ...context,
+      method,
+      url,
+      status,
+      errorCode: code,
+      errorMessage: message,
     };
 
-    if (axios.isAxiosError(error)) {
-        const status = error.response?.status;
-        const message = error.response?.data?.error || error.message;
-        const code = error.response?.data?.code;
-        const url = error.config?.url || "UNKNOWN";
-        const method = error.config?.method?.toUpperCase() || "UNKNOWN";
-
-        const errorContext: LogContext = {
-            ...context,
-            method,
-            url,
-            status,
-            errorCode: code,
-            errorMessage: message,
-        };
-
-        if (status === 401) {
-            authLogger.warn(
-                `Auth failed: ${method} ${url} - ${message}`,
-                errorContext,
-            );
-            throw new ApiError(
-                "Authentication required. Please log in again.",
-                401,
-                "AUTH_REQUIRED",
-            );
-        } else if (status === 403) {
-            authLogger.warn(`Access denied: ${method} ${url}`, errorContext);
-            throw new ApiError(
-                "Access denied. You do not have permission to perform this action.",
-                403,
-                "ACCESS_DENIED",
-            );
-        } else if (status === 404) {
-            apiLogger.warn(`Not found: ${method} ${url}`, errorContext);
-            throw new ApiError(
-                "Resource not found. The requested item may have been deleted.",
-                404,
-                "NOT_FOUND",
-            );
-        } else if (status === 409) {
-            apiLogger.warn(`Conflict: ${method} ${url}`, errorContext);
-            throw new ApiError(
-                "Conflict. The resource already exists or is in use.",
-                409,
-                "CONFLICT",
-            );
-        } else if (status === 422) {
-            apiLogger.warn(
-                `Validation error: ${method} ${url} - ${message}`,
-                errorContext,
-            );
-            throw new ApiError(
-                "Validation error. Please check your input and try again.",
-                422,
-                "VALIDATION_ERROR",
-            );
-        } else if (status && status >= 500) {
-            apiLogger.error(
-                `Server error: ${method} ${url} - ${message}`,
-                error,
-                errorContext,
-            );
-            throw new ApiError(
-                "Server error occurred. Please try again later.",
-                status,
-                "SERVER_ERROR",
-            );
-        } else if (status === 0) {
-            // Check if this is a "no server configured" error
-            if (url.includes("no-server-configured")) {
-                apiLogger.error(
-                    `No server configured: ${method} ${url}`,
-                    error,
-                    errorContext,
-                );
-                throw new ApiError(
-                    "No server configured. Please configure a Termix server first.",
-                    0,
-                    "NO_SERVER_CONFIGURED",
-                );
-            }
-            apiLogger.error(
-                `Network error: ${method} ${url} - ${message}`,
-                error,
-                errorContext,
-            );
-            throw new ApiError(
-                "Network error. Please check your connection and try again.",
-                0,
-                "NETWORK_ERROR",
-            );
-        } else {
-            apiLogger.error(
-                `Request failed: ${method} ${url} - ${message}`,
-                error,
-                errorContext,
-            );
-            throw new ApiError(message || `Failed to ${operation}`, status, code);
-        }
-    }
-
-    if (error instanceof ApiError) {
-        throw error;
-    }
-
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    apiLogger.error(
-        `Unexpected error during ${operation}: ${errorMessage}`,
+    if (status === 401) {
+      authLogger.warn(
+        `Auth failed: ${method} ${url} - ${message}`,
+        errorContext,
+      );
+      throw new ApiError(
+        "Authentication required. Please log in again.",
+        401,
+        "AUTH_REQUIRED",
+      );
+    } else if (status === 403) {
+      authLogger.warn(`Access denied: ${method} ${url}`, errorContext);
+      throw new ApiError(
+        "Access denied. You do not have permission to perform this action.",
+        403,
+        "ACCESS_DENIED",
+      );
+    } else if (status === 404) {
+      apiLogger.warn(`Not found: ${method} ${url}`, errorContext);
+      throw new ApiError(
+        "Resource not found. The requested item may have been deleted.",
+        404,
+        "NOT_FOUND",
+      );
+    } else if (status === 409) {
+      apiLogger.warn(`Conflict: ${method} ${url}`, errorContext);
+      throw new ApiError(
+        "Conflict. The resource already exists or is in use.",
+        409,
+        "CONFLICT",
+      );
+    } else if (status === 422) {
+      apiLogger.warn(
+        `Validation error: ${method} ${url} - ${message}`,
+        errorContext,
+      );
+      throw new ApiError(
+        "Validation error. Please check your input and try again.",
+        422,
+        "VALIDATION_ERROR",
+      );
+    } else if (status && status >= 500) {
+      apiLogger.error(
+        `Server error: ${method} ${url} - ${message}`,
         error,
-        context,
-    );
-    throw new ApiError(
-        `Unexpected error during ${operation}: ${errorMessage}`,
-        undefined,
-        "UNKNOWN_ERROR",
-    );
+        errorContext,
+      );
+      throw new ApiError(
+        "Server error occurred. Please try again later.",
+        status,
+        "SERVER_ERROR",
+      );
+    } else if (status === 0) {
+      if (url.includes("no-server-configured")) {
+        apiLogger.error(
+          `No server configured: ${method} ${url}`,
+          error,
+          errorContext,
+        );
+        throw new ApiError(
+          "No server configured. Please configure a Termix server first.",
+          0,
+          "NO_SERVER_CONFIGURED",
+        );
+      }
+      apiLogger.error(
+        `Network error: ${method} ${url} - ${message}`,
+        error,
+        errorContext,
+      );
+      throw new ApiError(
+        "Network error. Please check your connection and try again.",
+        0,
+        "NETWORK_ERROR",
+      );
+    } else {
+      apiLogger.error(
+        `Request failed: ${method} ${url} - ${message}`,
+        error,
+        errorContext,
+      );
+      throw new ApiError(message || `Failed to ${operation}`, status, code);
+    }
+  }
+
+  if (error instanceof ApiError) {
+    throw error;
+  }
+
+  const errorMessage = error instanceof Error ? error.message : "Unknown error";
+  apiLogger.error(
+    `Unexpected error during ${operation}: ${errorMessage}`,
+    error,
+    context,
+  );
+  throw new ApiError(
+    `Unexpected error during ${operation}: ${errorMessage}`,
+    undefined,
+    "UNKNOWN_ERROR",
+  );
 }
 
 // ============================================================================
@@ -687,152 +651,152 @@ function handleApiError(error: unknown, operation: string): never {
 // ============================================================================
 
 export async function getSSHHosts(): Promise<SSHHost[]> {
-    try {
-        const response = await sshHostApi.get("/db/host");
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "fetch SSH hosts");
-    }
+  try {
+    const response = await sshHostApi.get("/db/host");
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "fetch SSH hosts");
+  }
 }
 
 export async function createSSHHost(hostData: SSHHostData): Promise<SSHHost> {
-    try {
-        const submitData = {
-            name: hostData.name || "",
-            ip: hostData.ip,
-            port: parseInt(hostData.port.toString()) || 22,
-            username: hostData.username,
-            folder: hostData.folder || "",
-            tags: hostData.tags || [],
-            pin: Boolean(hostData.pin),
-            authType: hostData.authType,
-            password: hostData.authType === "password" ? hostData.password : null,
-            key: hostData.authType === "key" ? hostData.key : null,
-            keyPassword: hostData.authType === "key" ? hostData.keyPassword : null,
-            keyType: hostData.authType === "key" ? hostData.keyType : null,
-            credentialId:
-                hostData.authType === "credential" ? hostData.credentialId : null,
-            enableTerminal: Boolean(hostData.enableTerminal),
-            enableTunnel: Boolean(hostData.enableTunnel),
-            enableFileManager: Boolean(hostData.enableFileManager),
-            defaultPath: hostData.defaultPath || "/",
-            tunnelConnections: hostData.tunnelConnections || [],
-        };
+  try {
+    const submitData = {
+      name: hostData.name || "",
+      ip: hostData.ip,
+      port: parseInt(hostData.port.toString()) || 22,
+      username: hostData.username,
+      folder: hostData.folder || "",
+      tags: hostData.tags || [],
+      pin: Boolean(hostData.pin),
+      authType: hostData.authType,
+      password: hostData.authType === "password" ? hostData.password : null,
+      key: hostData.authType === "key" ? hostData.key : null,
+      keyPassword: hostData.authType === "key" ? hostData.keyPassword : null,
+      keyType: hostData.authType === "key" ? hostData.keyType : null,
+      credentialId:
+        hostData.authType === "credential" ? hostData.credentialId : null,
+      enableTerminal: Boolean(hostData.enableTerminal),
+      enableTunnel: Boolean(hostData.enableTunnel),
+      enableFileManager: Boolean(hostData.enableFileManager),
+      defaultPath: hostData.defaultPath || "/",
+      tunnelConnections: hostData.tunnelConnections || [],
+    };
 
-        if (!submitData.enableTunnel) {
-            submitData.tunnelConnections = [];
-        }
-
-        if (!submitData.enableFileManager) {
-            submitData.defaultPath = "";
-        }
-
-        if (hostData.authType === "key" && hostData.key instanceof File) {
-            const formData = new FormData();
-            formData.append("key", hostData.key);
-
-            const dataWithoutFile = { ...submitData };
-            delete dataWithoutFile.key;
-            formData.append("data", JSON.stringify(dataWithoutFile));
-
-            const response = await sshHostApi.post("/db/host", formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
-            return response.data;
-        } else {
-            const response = await sshHostApi.post("/db/host", submitData);
-            return response.data;
-        }
-    } catch (error) {
-        handleApiError(error, "create SSH host");
+    if (!submitData.enableTunnel) {
+      submitData.tunnelConnections = [];
     }
+
+    if (!submitData.enableFileManager) {
+      submitData.defaultPath = "";
+    }
+
+    if (hostData.authType === "key" && hostData.key instanceof File) {
+      const formData = new FormData();
+      formData.append("key", hostData.key);
+
+      const dataWithoutFile = { ...submitData };
+      delete dataWithoutFile.key;
+      formData.append("data", JSON.stringify(dataWithoutFile));
+
+      const response = await sshHostApi.post("/db/host", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } else {
+      const response = await sshHostApi.post("/db/host", submitData);
+      return response.data;
+    }
+  } catch (error) {
+    handleApiError(error, "create SSH host");
+  }
 }
 
 export async function updateSSHHost(
-    hostId: number,
-    hostData: SSHHostData,
+  hostId: number,
+  hostData: SSHHostData,
 ): Promise<SSHHost> {
-    try {
-        const submitData = {
-            name: hostData.name || "",
-            ip: hostData.ip,
-            port: parseInt(hostData.port.toString()) || 22,
-            username: hostData.username,
-            folder: hostData.folder || "",
-            tags: hostData.tags || [],
-            pin: Boolean(hostData.pin),
-            authType: hostData.authType,
-            password: hostData.authType === "password" ? hostData.password : null,
-            key: hostData.authType === "key" ? hostData.key : null,
-            keyPassword: hostData.authType === "key" ? hostData.keyPassword : null,
-            keyType: hostData.authType === "key" ? hostData.keyType : null,
-            credentialId:
-                hostData.authType === "credential" ? hostData.credentialId : null,
-            enableTerminal: Boolean(hostData.enableTerminal),
-            enableTunnel: Boolean(hostData.enableTunnel),
-            enableFileManager: Boolean(hostData.enableFileManager),
-            defaultPath: hostData.defaultPath || "/",
-            tunnelConnections: hostData.tunnelConnections || [],
-        };
+  try {
+    const submitData = {
+      name: hostData.name || "",
+      ip: hostData.ip,
+      port: parseInt(hostData.port.toString()) || 22,
+      username: hostData.username,
+      folder: hostData.folder || "",
+      tags: hostData.tags || [],
+      pin: Boolean(hostData.pin),
+      authType: hostData.authType,
+      password: hostData.authType === "password" ? hostData.password : null,
+      key: hostData.authType === "key" ? hostData.key : null,
+      keyPassword: hostData.authType === "key" ? hostData.keyPassword : null,
+      keyType: hostData.authType === "key" ? hostData.keyType : null,
+      credentialId:
+        hostData.authType === "credential" ? hostData.credentialId : null,
+      enableTerminal: Boolean(hostData.enableTerminal),
+      enableTunnel: Boolean(hostData.enableTunnel),
+      enableFileManager: Boolean(hostData.enableFileManager),
+      defaultPath: hostData.defaultPath || "/",
+      tunnelConnections: hostData.tunnelConnections || [],
+    };
 
-        if (!submitData.enableTunnel) {
-            submitData.tunnelConnections = [];
-        }
-        if (!submitData.enableFileManager) {
-            submitData.defaultPath = "";
-        }
-
-        if (hostData.authType === "key" && hostData.key instanceof File) {
-            const formData = new FormData();
-            formData.append("key", hostData.key);
-
-            const dataWithoutFile = { ...submitData };
-            delete dataWithoutFile.key;
-            formData.append("data", JSON.stringify(dataWithoutFile));
-
-            const response = await sshHostApi.put(`/db/host/${hostId}`, formData, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
-            return response.data;
-        } else {
-            const response = await sshHostApi.put(`/db/host/${hostId}`, submitData);
-            return response.data;
-        }
-    } catch (error) {
-        handleApiError(error, "update SSH host");
+    if (!submitData.enableTunnel) {
+      submitData.tunnelConnections = [];
     }
+    if (!submitData.enableFileManager) {
+      submitData.defaultPath = "";
+    }
+
+    if (hostData.authType === "key" && hostData.key instanceof File) {
+      const formData = new FormData();
+      formData.append("key", hostData.key);
+
+      const dataWithoutFile = { ...submitData };
+      delete dataWithoutFile.key;
+      formData.append("data", JSON.stringify(dataWithoutFile));
+
+      const response = await sshHostApi.put(`/db/host/${hostId}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    } else {
+      const response = await sshHostApi.put(`/db/host/${hostId}`, submitData);
+      return response.data;
+    }
+  } catch (error) {
+    handleApiError(error, "update SSH host");
+  }
 }
 
 export async function bulkImportSSHHosts(hosts: SSHHostData[]): Promise<{
-    message: string;
-    success: number;
-    failed: number;
-    errors: string[];
+  message: string;
+  success: number;
+  failed: number;
+  errors: string[];
 }> {
-    try {
-        const response = await sshHostApi.post("/bulk-import", { hosts });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "bulk import SSH hosts");
-    }
+  try {
+    const response = await sshHostApi.post("/bulk-import", { hosts });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "bulk import SSH hosts");
+  }
 }
 
 export async function deleteSSHHost(hostId: number): Promise<any> {
-    try {
-        const response = await sshHostApi.delete(`/db/host/${hostId}`);
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "delete SSH host");
-    }
+  try {
+    const response = await sshHostApi.delete(`/db/host/${hostId}`);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "delete SSH host");
+  }
 }
 
 export async function getSSHHostById(hostId: number): Promise<SSHHost> {
-    try {
-        const response = await sshHostApi.get(`/db/host/${hostId}`);
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "fetch SSH host");
-    }
+  try {
+    const response = await sshHostApi.get(`/db/host/${hostId}`);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "fetch SSH host");
+  }
 }
 
 // ============================================================================
@@ -840,48 +804,48 @@ export async function getSSHHostById(hostId: number): Promise<SSHHost> {
 // ============================================================================
 
 export async function getTunnelStatuses(): Promise<
-    Record<string, TunnelStatus>
+  Record<string, TunnelStatus>
 > {
-    try {
-        const response = await tunnelApi.get("/tunnel/status");
-        return response.data || {};
-    } catch (error) {
-        handleApiError(error, "fetch tunnel statuses");
-    }
+  try {
+    const response = await tunnelApi.get("/tunnel/status");
+    return response.data || {};
+  } catch (error) {
+    handleApiError(error, "fetch tunnel statuses");
+  }
 }
 
 export async function getTunnelStatusByName(
-    tunnelName: string,
+  tunnelName: string,
 ): Promise<TunnelStatus | undefined> {
-    const statuses = await getTunnelStatuses();
-    return statuses[tunnelName];
+  const statuses = await getTunnelStatuses();
+  return statuses[tunnelName];
 }
 
 export async function connectTunnel(tunnelConfig: TunnelConfig): Promise<any> {
-    try {
-        const response = await tunnelApi.post("/tunnel/connect", tunnelConfig);
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "connect tunnel");
-    }
+  try {
+    const response = await tunnelApi.post("/tunnel/connect", tunnelConfig);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "connect tunnel");
+  }
 }
 
 export async function disconnectTunnel(tunnelName: string): Promise<any> {
-    try {
-        const response = await tunnelApi.post("/tunnel/disconnect", { tunnelName });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "disconnect tunnel");
-    }
+  try {
+    const response = await tunnelApi.post("/tunnel/disconnect", { tunnelName });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "disconnect tunnel");
+  }
 }
 
 export async function cancelTunnel(tunnelName: string): Promise<any> {
-    try {
-        const response = await tunnelApi.post("/tunnel/cancel", { tunnelName });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "cancel tunnel");
-    }
+  try {
+    const response = await tunnelApi.post("/tunnel/cancel", { tunnelName });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "cancel tunnel");
+  }
 }
 
 // ============================================================================
@@ -889,114 +853,114 @@ export async function cancelTunnel(tunnelName: string): Promise<any> {
 // ============================================================================
 
 export async function getFileManagerRecent(
-    hostId: number,
+  hostId: number,
 ): Promise<FileManagerFile[]> {
-    try {
-        const response = await sshHostApi.get(
-            `/file_manager/recent?hostId=${hostId}`,
-        );
-        return response.data || [];
-    } catch (error) {
-        return [];
-    }
+  try {
+    const response = await sshHostApi.get(
+      `/file_manager/recent?hostId=${hostId}`,
+    );
+    return response.data || [];
+  } catch (error) {
+    return [];
+  }
 }
 
 export async function addFileManagerRecent(
-    file: FileManagerOperation,
+  file: FileManagerOperation,
 ): Promise<any> {
-    try {
-        const response = await sshHostApi.post("/file_manager/recent", file);
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "add recent file");
-    }
+  try {
+    const response = await sshHostApi.post("/file_manager/recent", file);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "add recent file");
+  }
 }
 
 export async function removeFileManagerRecent(
-    file: FileManagerOperation,
+  file: FileManagerOperation,
 ): Promise<any> {
-    try {
-        const response = await sshHostApi.delete("/file_manager/recent", {
-            data: file,
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "remove recent file");
-    }
+  try {
+    const response = await sshHostApi.delete("/file_manager/recent", {
+      data: file,
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "remove recent file");
+  }
 }
 
 export async function getFileManagerPinned(
-    hostId: number,
+  hostId: number,
 ): Promise<FileManagerFile[]> {
-    try {
-        const response = await sshHostApi.get(
-            `/file_manager/pinned?hostId=${hostId}`,
-        );
-        return response.data || [];
-    } catch (error) {
-        return [];
-    }
+  try {
+    const response = await sshHostApi.get(
+      `/file_manager/pinned?hostId=${hostId}`,
+    );
+    return response.data || [];
+  } catch (error) {
+    return [];
+  }
 }
 
 export async function addFileManagerPinned(
-    file: FileManagerOperation,
+  file: FileManagerOperation,
 ): Promise<any> {
-    try {
-        const response = await sshHostApi.post("/file_manager/pinned", file);
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "add pinned file");
-    }
+  try {
+    const response = await sshHostApi.post("/file_manager/pinned", file);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "add pinned file");
+  }
 }
 
 export async function removeFileManagerPinned(
-    file: FileManagerOperation,
+  file: FileManagerOperation,
 ): Promise<any> {
-    try {
-        const response = await sshHostApi.delete("/file_manager/pinned", {
-            data: file,
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "remove pinned file");
-    }
+  try {
+    const response = await sshHostApi.delete("/file_manager/pinned", {
+      data: file,
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "remove pinned file");
+  }
 }
 
 export async function getFileManagerShortcuts(
-    hostId: number,
+  hostId: number,
 ): Promise<FileManagerShortcut[]> {
-    try {
-        const response = await sshHostApi.get(
-            `/file_manager/shortcuts?hostId=${hostId}`,
-        );
-        return response.data || [];
-    } catch (error) {
-        return [];
-    }
+  try {
+    const response = await sshHostApi.get(
+      `/file_manager/shortcuts?hostId=${hostId}`,
+    );
+    return response.data || [];
+  } catch (error) {
+    return [];
+  }
 }
 
 export async function addFileManagerShortcut(
-    shortcut: FileManagerOperation,
+  shortcut: FileManagerOperation,
 ): Promise<any> {
-    try {
-        const response = await sshHostApi.post("/file_manager/shortcuts", shortcut);
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "add shortcut");
-    }
+  try {
+    const response = await sshHostApi.post("/file_manager/shortcuts", shortcut);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "add shortcut");
+  }
 }
 
 export async function removeFileManagerShortcut(
-    shortcut: FileManagerOperation,
+  shortcut: FileManagerOperation,
 ): Promise<any> {
-    try {
-        const response = await sshHostApi.delete("/file_manager/shortcuts", {
-            data: shortcut,
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "remove shortcut");
-    }
+  try {
+    const response = await sshHostApi.delete("/file_manager/shortcuts", {
+      data: shortcut,
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "remove shortcut");
+  }
 }
 
 // ============================================================================
@@ -1004,222 +968,222 @@ export async function removeFileManagerShortcut(
 // ============================================================================
 
 export async function connectSSH(
-    sessionId: string,
-    config: {
-        hostId?: number;
-        ip: string;
-        port: number;
-        username: string;
-        password?: string;
-        sshKey?: string;
-        keyPassword?: string;
-        authType?: string;
-        credentialId?: number;
-        userId?: string;
-    },
+  sessionId: string,
+  config: {
+    hostId?: number;
+    ip: string;
+    port: number;
+    username: string;
+    password?: string;
+    sshKey?: string;
+    keyPassword?: string;
+    authType?: string;
+    credentialId?: number;
+    userId?: string;
+  },
 ): Promise<any> {
-    try {
-        const response = await fileManagerApi.post("/ssh/connect", {
-            sessionId,
-            ...config,
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "connect SSH");
-    }
+  try {
+    const response = await fileManagerApi.post("/ssh/connect", {
+      sessionId,
+      ...config,
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "connect SSH");
+  }
 }
 
 export async function disconnectSSH(sessionId: string): Promise<any> {
-    try {
-        const response = await fileManagerApi.post("/ssh/disconnect", {
-            sessionId,
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "disconnect SSH");
-    }
+  try {
+    const response = await fileManagerApi.post("/ssh/disconnect", {
+      sessionId,
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "disconnect SSH");
+  }
 }
 
 export async function getSSHStatus(
-    sessionId: string,
+  sessionId: string,
 ): Promise<{ connected: boolean }> {
-    try {
-        const response = await fileManagerApi.get("/ssh/status", {
-            params: { sessionId },
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "get SSH status");
-    }
+  try {
+    const response = await fileManagerApi.get("/ssh/status", {
+      params: { sessionId },
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "get SSH status");
+  }
 }
 
 export async function listSSHFiles(
-    sessionId: string,
-    path: string,
+  sessionId: string,
+  path: string,
 ): Promise<any[]> {
-    try {
-        const response = await fileManagerApi.get("/ssh/listFiles", {
-            params: { sessionId, path },
-        });
-        return response.data || [];
-    } catch (error) {
-        handleApiError(error, "list SSH files");
-    }
+  try {
+    const response = await fileManagerApi.get("/ssh/listFiles", {
+      params: { sessionId, path },
+    });
+    return response.data || [];
+  } catch (error) {
+    handleApiError(error, "list SSH files");
+  }
 }
 
 export async function readSSHFile(
-    sessionId: string,
-    path: string,
+  sessionId: string,
+  path: string,
 ): Promise<{ content: string; path: string }> {
-    try {
-        const response = await fileManagerApi.get("/ssh/readFile", {
-            params: { sessionId, path },
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "read SSH file");
-    }
+  try {
+    const response = await fileManagerApi.get("/ssh/readFile", {
+      params: { sessionId, path },
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "read SSH file");
+  }
 }
 
 export async function writeSSHFile(
-    sessionId: string,
-    path: string,
-    content: string,
-    hostId?: number,
-    userId?: string,
+  sessionId: string,
+  path: string,
+  content: string,
+  hostId?: number,
+  userId?: string,
 ): Promise<any> {
-    try {
-        const response = await fileManagerApi.post("/ssh/writeFile", {
-            sessionId,
-            path,
-            content,
-            hostId,
-            userId,
-        });
+  try {
+    const response = await fileManagerApi.post("/ssh/writeFile", {
+      sessionId,
+      path,
+      content,
+      hostId,
+      userId,
+    });
 
-        if (
-            response.data &&
-            (response.data.message === "File written successfully" ||
-                response.status === 200)
-        ) {
-            return response.data;
-        } else {
-            throw new Error("File write operation did not return success status");
-        }
-    } catch (error) {
-        handleApiError(error, "write SSH file");
+    if (
+      response.data &&
+      (response.data.message === "File written successfully" ||
+        response.status === 200)
+    ) {
+      return response.data;
+    } else {
+      throw new Error("File write operation did not return success status");
     }
+  } catch (error) {
+    handleApiError(error, "write SSH file");
+  }
 }
 
 export async function uploadSSHFile(
-    sessionId: string,
-    path: string,
-    fileName: string,
-    content: string,
-    hostId?: number,
-    userId?: string,
+  sessionId: string,
+  path: string,
+  fileName: string,
+  content: string,
+  hostId?: number,
+  userId?: string,
 ): Promise<any> {
-    try {
-        const response = await fileManagerApi.post("/ssh/uploadFile", {
-            sessionId,
-            path,
-            fileName,
-            content,
-            hostId,
-            userId,
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "upload SSH file");
-    }
+  try {
+    const response = await fileManagerApi.post("/ssh/uploadFile", {
+      sessionId,
+      path,
+      fileName,
+      content,
+      hostId,
+      userId,
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "upload SSH file");
+  }
 }
 
 export async function createSSHFile(
-    sessionId: string,
-    path: string,
-    fileName: string,
-    content: string = "",
-    hostId?: number,
-    userId?: string,
+  sessionId: string,
+  path: string,
+  fileName: string,
+  content: string = "",
+  hostId?: number,
+  userId?: string,
 ): Promise<any> {
-    try {
-        const response = await fileManagerApi.post("/ssh/createFile", {
-            sessionId,
-            path,
-            fileName,
-            content,
-            hostId,
-            userId,
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "create SSH file");
-    }
+  try {
+    const response = await fileManagerApi.post("/ssh/createFile", {
+      sessionId,
+      path,
+      fileName,
+      content,
+      hostId,
+      userId,
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "create SSH file");
+  }
 }
 
 export async function createSSHFolder(
-    sessionId: string,
-    path: string,
-    folderName: string,
-    hostId?: number,
-    userId?: string,
+  sessionId: string,
+  path: string,
+  folderName: string,
+  hostId?: number,
+  userId?: string,
 ): Promise<any> {
-    try {
-        const response = await fileManagerApi.post("/ssh/createFolder", {
-            sessionId,
-            path,
-            folderName,
-            hostId,
-            userId,
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "create SSH folder");
-    }
+  try {
+    const response = await fileManagerApi.post("/ssh/createFolder", {
+      sessionId,
+      path,
+      folderName,
+      hostId,
+      userId,
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "create SSH folder");
+  }
 }
 
 export async function deleteSSHItem(
-    sessionId: string,
-    path: string,
-    isDirectory: boolean,
-    hostId?: number,
-    userId?: string,
+  sessionId: string,
+  path: string,
+  isDirectory: boolean,
+  hostId?: number,
+  userId?: string,
 ): Promise<any> {
-    try {
-        const response = await fileManagerApi.delete("/ssh/deleteItem", {
-            data: {
-                sessionId,
-                path,
-                isDirectory,
-                hostId,
-                userId,
-            },
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "delete SSH item");
-    }
+  try {
+    const response = await fileManagerApi.delete("/ssh/deleteItem", {
+      data: {
+        sessionId,
+        path,
+        isDirectory,
+        hostId,
+        userId,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "delete SSH item");
+  }
 }
 
 export async function renameSSHItem(
-    sessionId: string,
-    oldPath: string,
-    newName: string,
-    hostId?: number,
-    userId?: string,
+  sessionId: string,
+  oldPath: string,
+  newName: string,
+  hostId?: number,
+  userId?: string,
 ): Promise<any> {
-    try {
-        const response = await fileManagerApi.put("/ssh/renameItem", {
-            sessionId,
-            oldPath,
-            newName,
-            hostId,
-            userId,
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "rename SSH item");
-    }
+  try {
+    const response = await fileManagerApi.put("/ssh/renameItem", {
+      sessionId,
+      oldPath,
+      newName,
+      hostId,
+      userId,
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "rename SSH item");
+  }
 }
 
 // ============================================================================
@@ -1227,59 +1191,68 @@ export async function renameSSHItem(
 // ============================================================================
 
 export async function getAllServerStatuses(): Promise<
-    Record<number, ServerStatus>
+  Record<number, ServerStatus>
 > {
-    try {
-        const response = await statsApi.get("/status");
+  try {
+    const response = await statsApi.get("/status");
+    return response.data || {};
+  } catch (error: any) {
+    if (error?.response?.status === 404) {
+      try {
+        const alt = axios.create({
+          baseURL: getRootBase(8085),
+          headers: { "Content-Type": "application/json" },
+        });
+        const response = await alt.get("/status");
         return response.data || {};
-    } catch (error: any) {
-        if (error?.response?.status === 404) {
-            try {
-                const alt = axios.create({ baseURL: getRootBase(8085), headers: { "Content-Type": "application/json" } });
-                const response = await alt.get("/status");
-                return response.data || {};
-            } catch (e) {
-                handleApiError(e, "fetch server statuses");
-            }
-        }
-        handleApiError(error, "fetch server statuses");
+      } catch (e) {
+        handleApiError(e, "fetch server statuses");
+      }
     }
+    handleApiError(error, "fetch server statuses");
+  }
 }
 
 export async function getServerStatusById(id: number): Promise<ServerStatus> {
-    try {
-        const response = await statsApi.get(`/status/${id}`);
+  try {
+    const response = await statsApi.get(`/status/${id}`);
+    return response.data;
+  } catch (error: any) {
+    if (error?.response?.status === 404) {
+      try {
+        const alt = axios.create({
+          baseURL: getRootBase(8085),
+          headers: { "Content-Type": "application/json" },
+        });
+        const response = await alt.get(`/status/${id}`);
         return response.data;
-    } catch (error: any) {
-        if (error?.response?.status === 404) {
-            try {
-                const alt = axios.create({ baseURL: getRootBase(8085), headers: { "Content-Type": "application/json" } });
-                const response = await alt.get(`/status/${id}`);
-                return response.data;
-            } catch (e) {
-                handleApiError(e, "fetch server status");
-            }
-        }
-        handleApiError(error, "fetch server status");
+      } catch (e) {
+        handleApiError(e, "fetch server status");
+      }
     }
+    handleApiError(error, "fetch server status");
+  }
 }
 
 export async function getServerMetricsById(id: number): Promise<ServerMetrics> {
-    try {
-        const response = await statsApi.get(`/metrics/${id}`);
+  try {
+    const response = await statsApi.get(`/metrics/${id}`);
+    return response.data;
+  } catch (error: any) {
+    if (error?.response?.status === 404) {
+      try {
+        const alt = axios.create({
+          baseURL: getRootBase(8085),
+          headers: { "Content-Type": "application/json" },
+        });
+        const response = await alt.get(`/metrics/${id}`);
         return response.data;
-    } catch (error: any) {
-        if (error?.response?.status === 404) {
-            try {
-                const alt = axios.create({ baseURL: getRootBase(8085), headers: { "Content-Type": "application/json" } });
-                const response = await alt.get(`/metrics/${id}`);
-                return response.data;
-            } catch (e) {
-                handleApiError(e, "fetch server metrics");
-            }
-        }
-        handleApiError(error, "fetch server metrics");
+      } catch (e) {
+        handleApiError(e, "fetch server metrics");
+      }
     }
+    handleApiError(error, "fetch server metrics");
+  }
 }
 
 // ============================================================================
@@ -1287,303 +1260,315 @@ export async function getServerMetricsById(id: number): Promise<ServerMetrics> {
 // ============================================================================
 
 export async function registerUser(
-    username: string,
-    password: string,
+  username: string,
+  password: string,
 ): Promise<any> {
-    try {
-        const response = await authApi.post("/users/create", {
-            username,
-            password,
+  try {
+    const response = await authApi.post("/users/create", {
+      username,
+      password,
+    });
+    return response.data;
+  } catch (error: any) {
+    if (error?.response?.status === 404) {
+      try {
+        const alt = axios.create({
+          baseURL: getSshBase(8081),
+          headers: { "Content-Type": "application/json" },
+        });
+        const response = await alt.post("/users/create", {
+          username,
+          password,
         });
         return response.data;
-    } catch (error: any) {
-        if (error?.response?.status === 404) {
-            try {
-                const alt = axios.create({ baseURL: getSshBase(8081), headers: { "Content-Type": "application/json" } });
-                const response = await alt.post("/users/create", { username, password });
-                return response.data;
-            } catch (e) {
-                handleApiError(e, "register user");
-            }
-        }
-        handleApiError(error, "register user");
+      } catch (e) {
+        handleApiError(e, "register user");
+      }
     }
+    handleApiError(error, "register user");
+  }
 }
 
 export async function loginUser(
-    username: string,
-    password: string,
+  username: string,
+  password: string,
 ): Promise<AuthResponse> {
-    try {
-        const response = await authApi.post("/users/login", { username, password });
+  try {
+    const response = await authApi.post("/users/login", { username, password });
+    return response.data;
+  } catch (error: any) {
+    if (error?.response?.status === 404) {
+      try {
+        const alt = axios.create({
+          baseURL: getSshBase(8081),
+          headers: { "Content-Type": "application/json" },
+        });
+        const response = await alt.post("/users/login", { username, password });
         return response.data;
-    } catch (error: any) {
-        if (error?.response?.status === 404) {
-            try {
-                const alt = axios.create({ baseURL: getSshBase(8081), headers: { "Content-Type": "application/json" } });
-                const response = await alt.post("/users/login", { username, password });
-                return response.data;
-            } catch (e) {
-                handleApiError(e, "login user");
-            }
-        }
-        handleApiError(error, "login user");
+      } catch (e) {
+        handleApiError(e, "login user");
+      }
     }
+    handleApiError(error, "login user");
+  }
 }
 
 export async function getUserInfo(): Promise<UserInfo> {
-    try {
-        const response = await authApi.get("/users/me");
+  try {
+    const response = await authApi.get("/users/me");
+    return response.data;
+  } catch (error: any) {
+    if (error?.response?.status === 404) {
+      try {
+        const alt = axios.create({
+          baseURL: getSshBase(8081),
+          headers: { "Content-Type": "application/json" },
+        });
+        const response = await alt.get("/users/me");
         return response.data;
-    } catch (error: any) {
-        if (error?.response?.status === 404) {
-            try {
-                const alt = axios.create({ baseURL: getSshBase(8081), headers: { "Content-Type": "application/json" } });
-                const response = await alt.get("/users/me");
-                return response.data;
-            } catch (e) {
-                handleApiError(e, "fetch user info");
-            }
-        }
-        handleApiError(error, "fetch user info");
+      } catch (e) {
+        handleApiError(e, "fetch user info");
+      }
     }
+    handleApiError(error, "fetch user info");
+  }
 }
 
 export async function getRegistrationAllowed(): Promise<{ allowed: boolean }> {
-    try {
-        const response = await authApi.get("/users/registration-allowed");
+  try {
+    const response = await authApi.get("/users/registration-allowed");
+    return response.data;
+  } catch (error: any) {
+    if (error?.response?.status === 404) {
+      try {
+        const alt = axios.create({
+          baseURL: getSshBase(8081),
+          headers: { "Content-Type": "application/json" },
+        });
+        const response = await alt.get("/users/registration-allowed");
         return response.data;
-    } catch (error: any) {
-        if (error?.response?.status === 404) {
-            try {
-                const alt = axios.create({ baseURL: getSshBase(8081), headers: { "Content-Type": "application/json" } });
-                const response = await alt.get("/users/registration-allowed");
-                return response.data;
-            } catch (e) {
-                handleApiError(e, "check registration status");
-            }
-        }
-        handleApiError(error, "check registration status");
+      } catch (e) {
+        handleApiError(e, "check registration status");
+      }
     }
+    handleApiError(error, "check registration status");
+  }
 }
 
-
 export async function getUserCount(): Promise<UserCount> {
-    try {
-        const response = await authApi.get("/users/count");
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "fetch user count");
-    }
+  try {
+    const response = await authApi.get("/users/count");
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "fetch user count");
+  }
 }
 
 export async function initiatePasswordReset(username: string): Promise<any> {
-    try {
-        const response = await authApi.post("/users/initiate-reset", { username });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "initiate password reset");
-    }
+  try {
+    const response = await authApi.post("/users/initiate-reset", { username });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "initiate password reset");
+  }
 }
 
 export async function verifyPasswordResetCode(
-    username: string,
-    resetCode: string,
+  username: string,
+  resetCode: string,
 ): Promise<any> {
-    try {
-        const response = await authApi.post("/users/verify-reset-code", {
-            username,
-            resetCode,
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "verify reset code");
-    }
+  try {
+    const response = await authApi.post("/users/verify-reset-code", {
+      username,
+      resetCode,
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "verify reset code");
+  }
 }
 
 export async function completePasswordReset(
-    username: string,
-    tempToken: string,
-    newPassword: string,
+  username: string,
+  tempToken: string,
+  newPassword: string,
 ): Promise<any> {
-    try {
-        const response = await authApi.post("/users/complete-reset", {
-            username,
-            tempToken,
-            newPassword,
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "complete password reset");
-    }
+  try {
+    const response = await authApi.post("/users/complete-reset", {
+      username,
+      tempToken,
+      newPassword,
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "complete password reset");
+  }
 }
-
 
 // ============================================================================
 // USER MANAGEMENT
 // ============================================================================
 
 export async function getUserList(): Promise<{ users: UserInfo[] }> {
-    try {
-        const response = await authApi.get("/users/list");
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "fetch user list");
-    }
+  try {
+    const response = await authApi.get("/users/list");
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "fetch user list");
+  }
 }
 
 export async function makeUserAdmin(username: string): Promise<any> {
-    try {
-        const response = await authApi.post("/users/make-admin", { username });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "make user admin");
-    }
+  try {
+    const response = await authApi.post("/users/make-admin", { username });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "make user admin");
+  }
 }
 
 export async function removeAdminStatus(username: string): Promise<any> {
-    try {
-        const response = await authApi.post("/users/remove-admin", { username });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "remove admin status");
-    }
+  try {
+    const response = await authApi.post("/users/remove-admin", { username });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "remove admin status");
+  }
 }
 
 export async function deleteUser(username: string): Promise<any> {
-    try {
-        const response = await authApi.delete("/users/delete-user", {
-            data: { username },
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "delete user");
-    }
+  try {
+    const response = await authApi.delete("/users/delete-user", {
+      data: { username },
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "delete user");
+  }
 }
 
 export async function deleteAccount(password: string): Promise<any> {
-    try {
-        const response = await authApi.delete("/users/delete-account", {
-            data: { password },
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "delete account");
-    }
+  try {
+    const response = await authApi.delete("/users/delete-account", {
+      data: { password },
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "delete account");
+  }
 }
 
 export async function updateRegistrationAllowed(
-    allowed: boolean,
+  allowed: boolean,
 ): Promise<any> {
-    try {
-        const response = await authApi.patch("/users/registration-allowed", {
-            allowed,
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "update registration allowed");
-    }
+  try {
+    const response = await authApi.patch("/users/registration-allowed", {
+      allowed,
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "update registration allowed");
+  }
 }
-
 
 // ============================================================================
 // ALERTS
 // ============================================================================
 
 export async function setupTOTP(): Promise<{
-    secret: string;
-    qr_code: string;
+  secret: string;
+  qr_code: string;
 }> {
-    try {
-        const response = await authApi.post("/users/totp/setup");
-        return response.data;
-    } catch (error) {
-        handleApiError(error as AxiosError, "setup TOTP");
-        throw error;
-    }
+  try {
+    const response = await authApi.post("/users/totp/setup");
+    return response.data;
+  } catch (error) {
+    handleApiError(error as AxiosError, "setup TOTP");
+    throw error;
+  }
 }
 
 export async function enableTOTP(
-    totp_code: string,
+  totp_code: string,
 ): Promise<{ message: string; backup_codes: string[] }> {
-    try {
-        const response = await authApi.post("/users/totp/enable", { totp_code });
-        return response.data;
-    } catch (error) {
-        handleApiError(error as AxiosError, "enable TOTP");
-        throw error;
-    }
+  try {
+    const response = await authApi.post("/users/totp/enable", { totp_code });
+    return response.data;
+  } catch (error) {
+    handleApiError(error as AxiosError, "enable TOTP");
+    throw error;
+  }
 }
 
 export async function disableTOTP(
-    password?: string,
-    totp_code?: string,
+  password?: string,
+  totp_code?: string,
 ): Promise<{ message: string }> {
-    try {
-        const response = await authApi.post("/users/totp/disable", {
-            password,
-            totp_code,
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error as AxiosError, "disable TOTP");
-        throw error;
-    }
+  try {
+    const response = await authApi.post("/users/totp/disable", {
+      password,
+      totp_code,
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error as AxiosError, "disable TOTP");
+    throw error;
+  }
 }
 
 export async function verifyTOTPLogin(
-    temp_token: string,
-    totp_code: string,
+  temp_token: string,
+  totp_code: string,
 ): Promise<AuthResponse> {
-    try {
-        const response = await authApi.post("/users/totp/verify-login", {
-            temp_token,
-            totp_code,
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error as AxiosError, "verify TOTP login");
-        throw error;
-    }
+  try {
+    const response = await authApi.post("/users/totp/verify-login", {
+      temp_token,
+      totp_code,
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error as AxiosError, "verify TOTP login");
+    throw error;
+  }
 }
 
 export async function generateBackupCodes(
-    password?: string,
-    totp_code?: string,
+  password?: string,
+  totp_code?: string,
 ): Promise<{ backup_codes: string[] }> {
-    try {
-        const response = await authApi.post("/users/totp/backup-codes", {
-            password,
-            totp_code,
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error as AxiosError, "generate backup codes");
-        throw error;
-    }
+  try {
+    const response = await authApi.post("/users/totp/backup-codes", {
+      password,
+      totp_code,
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error as AxiosError, "generate backup codes");
+    throw error;
+  }
 }
 
 export async function getUserAlerts(
-    userId: string,
+  userId: string,
 ): Promise<{ alerts: any[] }> {
-    try {
-        const response = await authApi.get(`/alerts/user/${userId}`);
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "fetch user alerts");
-    }
+  try {
+    const response = await authApi.get(`/alerts/user/${userId}`);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "fetch user alerts");
+  }
 }
 
 export async function dismissAlert(
-    userId: string,
-    alertId: string,
+  userId: string,
+  alertId: string,
 ): Promise<any> {
-    try {
-        const response = await authApi.post("/alerts/dismiss", { userId, alertId });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "dismiss alert");
-    }
+  try {
+    const response = await authApi.post("/alerts/dismiss", { userId, alertId });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "dismiss alert");
+  }
 }
 
 // ============================================================================
@@ -1591,21 +1576,21 @@ export async function dismissAlert(
 // ============================================================================
 
 export async function getReleasesRSS(perPage: number = 100): Promise<any> {
-    try {
-        const response = await authApi.get(`/releases/rss?per_page=${perPage}`);
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "fetch releases RSS");
-    }
+  try {
+    const response = await authApi.get(`/releases/rss?per_page=${perPage}`);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "fetch releases RSS");
+  }
 }
 
 export async function getVersionInfo(): Promise<any> {
-    try {
-        const response = await authApi.get("/version");
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "fetch version info");
-    }
+  try {
+    const response = await authApi.get("/version");
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "fetch version info");
+  }
 }
 
 // ============================================================================
@@ -1613,12 +1598,12 @@ export async function getVersionInfo(): Promise<any> {
 // ============================================================================
 
 export async function getDatabaseHealth(): Promise<any> {
-    try {
-        const response = await authApi.get("/users/db-health");
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "check database health");
-    }
+  try {
+    const response = await authApi.get("/users/db-health");
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "check database health");
+  }
 }
 
 // ============================================================================
@@ -1626,126 +1611,126 @@ export async function getDatabaseHealth(): Promise<any> {
 // ============================================================================
 
 export async function getCredentials(): Promise<any> {
-    try {
-        const response = await authApi.get("/credentials");
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "fetch credentials");
-    }
+  try {
+    const response = await authApi.get("/credentials");
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "fetch credentials");
+  }
 }
 
 export async function getCredentialDetails(credentialId: number): Promise<any> {
-    try {
-        const response = await authApi.get(`/credentials/${credentialId}`);
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "fetch credential details");
-    }
+  try {
+    const response = await authApi.get(`/credentials/${credentialId}`);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "fetch credential details");
+  }
 }
 
 export async function createCredential(credentialData: any): Promise<any> {
-    try {
-        const response = await authApi.post("/credentials", credentialData);
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "create credential");
-    }
+  try {
+    const response = await authApi.post("/credentials", credentialData);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "create credential");
+  }
 }
 
 export async function updateCredential(
-    credentialId: number,
-    credentialData: any,
+  credentialId: number,
+  credentialData: any,
 ): Promise<any> {
-    try {
-        const response = await authApi.put(
-            `/credentials/${credentialId}`,
-            credentialData,
-        );
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "update credential");
-    }
+  try {
+    const response = await authApi.put(
+      `/credentials/${credentialId}`,
+      credentialData,
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "update credential");
+  }
 }
 
 export async function deleteCredential(credentialId: number): Promise<any> {
-    try {
-        const response = await authApi.delete(`/credentials/${credentialId}`);
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "delete credential");
-    }
+  try {
+    const response = await authApi.delete(`/credentials/${credentialId}`);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "delete credential");
+  }
 }
 
 export async function getCredentialHosts(credentialId: number): Promise<any> {
-    try {
-        const response = await authApi.get(`/credentials/${credentialId}/hosts`);
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "fetch credential hosts");
-    }
+  try {
+    const response = await authApi.get(`/credentials/${credentialId}/hosts`);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "fetch credential hosts");
+  }
 }
 
 export async function getCredentialFolders(): Promise<any> {
-    try {
-        const response = await authApi.get("/credentials/folders");
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "fetch credential folders");
-    }
+  try {
+    const response = await authApi.get("/credentials/folders");
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "fetch credential folders");
+  }
 }
 
 // Get SSH host with resolved credentials
 export async function getSSHHostWithCredentials(hostId: number): Promise<any> {
-    try {
-        const response = await sshHostApi.get(
-            `/db/host/${hostId}/with-credentials`,
-        );
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "fetch SSH host with credentials");
-    }
+  try {
+    const response = await sshHostApi.get(
+      `/db/host/${hostId}/with-credentials`,
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "fetch SSH host with credentials");
+  }
 }
 
 // Apply credential to SSH host
 export async function applyCredentialToHost(
-    hostId: number,
-    credentialId: number,
+  hostId: number,
+  credentialId: number,
 ): Promise<any> {
-    try {
-        const response = await sshHostApi.post(
-            `/db/host/${hostId}/apply-credential`,
-            { credentialId },
-        );
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "apply credential to host");
-    }
+  try {
+    const response = await sshHostApi.post(
+      `/db/host/${hostId}/apply-credential`,
+      { credentialId },
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "apply credential to host");
+  }
 }
 
 // Remove credential from SSH host
 export async function removeCredentialFromHost(hostId: number): Promise<any> {
-    try {
-        const response = await sshHostApi.delete(`/db/host/${hostId}/credential`);
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "remove credential from host");
-    }
+  try {
+    const response = await sshHostApi.delete(`/db/host/${hostId}/credential`);
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "remove credential from host");
+  }
 }
 
 // Migrate host to managed credential
 export async function migrateHostToCredential(
-    hostId: number,
-    credentialName: string,
+  hostId: number,
+  credentialName: string,
 ): Promise<any> {
-    try {
-        const response = await sshHostApi.post(
-            `/db/host/${hostId}/migrate-to-credential`,
-            { credentialName },
-        );
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "migrate host to credential");
-    }
+  try {
+    const response = await sshHostApi.post(
+      `/db/host/${hostId}/migrate-to-credential`,
+      { credentialName },
+    );
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "migrate host to credential");
+  }
 }
 
 // ============================================================================
@@ -1753,56 +1738,60 @@ export async function migrateHostToCredential(
 // ============================================================================
 
 export function createTerminalWebSocket(): WebSocket | null {
-    try {
-        const serverUrl = getCurrentServerUrl();
-        
-        if (!serverUrl) {
-            return null;
-        }
+  try {
+    const serverUrl = getCurrentServerUrl();
 
-        const wsProtocol = serverUrl.startsWith('https://') ? 'wss://' : 'ws://';
-        const wsHost = serverUrl.replace(/^https?:\/\//, '');
-
-        const cleanHost = wsHost.replace(/\/$/, '');
-        const wsUrl = `${wsProtocol}${cleanHost}/ssh/websocket/`;
-
-        return new WebSocket(wsUrl);
-    } catch (error) {
-        return null;
+    if (!serverUrl) {
+      return null;
     }
+
+    const wsProtocol = serverUrl.startsWith("https://") ? "wss://" : "ws://";
+    const wsHost = serverUrl.replace(/^https?:\/\//, "");
+
+    const cleanHost = wsHost.replace(/\/$/, "");
+    const wsUrl = `${wsProtocol}${cleanHost}/ssh/websocket/`;
+
+    return new WebSocket(wsUrl);
+  } catch (error) {
+    return null;
+  }
 }
 
 export function connectToTerminalHost(
-    ws: WebSocket,
-    hostConfig: any,
-    cols: number,
-    rows: number
+  ws: WebSocket,
+  hostConfig: any,
+  cols: number,
+  rows: number,
 ): void {
-    if (ws.readyState === WebSocket.OPEN) {
-        const connectMessage = {
-            type: 'connectToHost',
-            data: {
-                cols,
-                rows,
-                hostConfig
-            }
-        };
+  if (ws.readyState === WebSocket.OPEN) {
+    const connectMessage = {
+      type: "connectToHost",
+      data: {
+        cols,
+        rows,
+        hostConfig,
+      },
+    };
 
-        ws.send(JSON.stringify(connectMessage));
-    } else {
-    }
+    ws.send(JSON.stringify(connectMessage));
+  } else {
+  }
 }
 
 export function sendTerminalInput(ws: WebSocket, input: string): void {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: 'input', data: input }));
-    }
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: "input", data: input }));
+  }
 }
 
-export function sendTerminalResize(ws: WebSocket, cols: number, rows: number): void {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: 'resize', data: { cols, rows } }));
-    }
+export function sendTerminalResize(
+  ws: WebSocket,
+  cols: number,
+  rows: number,
+): void {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: "resize", data: { cols, rows } }));
+  }
 }
 
 // ============================================================================
@@ -1810,65 +1799,65 @@ export function sendTerminalResize(ws: WebSocket, cols: number, rows: number): v
 // ============================================================================
 
 export async function getFoldersWithStats(): Promise<any> {
-    try {
-        const token = await getCookie("jwt");
+  try {
+    const token = await getCookie("jwt");
 
-        const tryFetch = async (base: string) => {
-            const cleanBase = base.replace(/\/$/, "");
-            const url = `${cleanBase}/db/folders/with-stats`;
-            const res = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'User-Agent': 'Termix-Mobile/1.0.0',
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-                },
-            });
-            if (res.ok) return await res.json();
-            if (res.status === 404) return null;
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-        };
+    const tryFetch = async (base: string) => {
+      const cleanBase = base.replace(/\/$/, "");
+      const url = `${cleanBase}/db/folders/with-stats`;
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "Termix-Mobile/1.0.0",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      if (res.ok) return await res.json();
+      if (res.status === 404) return null;
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    };
 
-        // Prefer /ssh base first, then root
-        const sshBase = getSshBase(8081);
-        let data = await tryFetch(sshBase);
-        if (data === null) {
-            const rootBase = getRootBase(8081);
-            data = await tryFetch(rootBase);
-        }
-        return data;
-    } catch {
-        // Treat as optional; return null quietly
-        return null;
+    // Prefer /ssh base first, then root
+    const sshBase = getSshBase(8081);
+    let data = await tryFetch(sshBase);
+    if (data === null) {
+      const rootBase = getRootBase(8081);
+      data = await tryFetch(rootBase);
     }
+    return data;
+  } catch {
+    // Treat as optional; return null quietly
+    return null;
+  }
 }
 
 export async function renameFolder(
-    oldName: string,
-    newName: string,
+  oldName: string,
+  newName: string,
 ): Promise<any> {
-    try {
-        const response = await authApi.put("/ssh/folders/rename", {
-            oldName,
-            newName,
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "rename folder");
-    }
+  try {
+    const response = await authApi.put("/ssh/folders/rename", {
+      oldName,
+      newName,
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "rename folder");
+  }
 }
 
 export async function renameCredentialFolder(
-    oldName: string,
-    newName: string,
+  oldName: string,
+  newName: string,
 ): Promise<any> {
-    try {
-        const response = await authApi.put("/credentials/folders/rename", {
-            oldName,
-            newName,
-        });
-        return response.data;
-    } catch (error) {
-        handleApiError(error, "rename credential folder");
-    }
+  try {
+    const response = await authApi.put("/credentials/folders/rename", {
+      oldName,
+      newName,
+    });
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "rename credential folder");
+  }
 }

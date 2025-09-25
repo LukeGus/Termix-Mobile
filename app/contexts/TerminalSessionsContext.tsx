@@ -1,6 +1,12 @@
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
-import { SSHHost } from '@/types';
-import { router } from 'expo-router';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useCallback,
+} from "react";
+import { SSHHost } from "@/types";
+import { router } from "expo-router";
 
 export interface TerminalSession {
   id: string;
@@ -23,12 +29,16 @@ interface TerminalSessionsContextType {
   setLastKeyboardHeight: (height: number) => void;
 }
 
-const TerminalSessionsContext = createContext<TerminalSessionsContextType | undefined>(undefined);
+const TerminalSessionsContext = createContext<
+  TerminalSessionsContextType | undefined
+>(undefined);
 
 export const useTerminalSessions = () => {
   const context = useContext(TerminalSessionsContext);
   if (context === undefined) {
-    throw new Error('useTerminalSessions must be used within a TerminalSessionsProvider');
+    throw new Error(
+      "useTerminalSessions must be used within a TerminalSessionsProvider",
+    );
   }
   return context;
 };
@@ -37,24 +47,25 @@ interface TerminalSessionsProviderProps {
   children: ReactNode;
 }
 
-export const TerminalSessionsProvider: React.FC<TerminalSessionsProviderProps> = ({ children }) => {
+export const TerminalSessionsProvider: React.FC<
+  TerminalSessionsProviderProps
+> = ({ children }) => {
   const [sessions, setSessions] = useState<TerminalSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isCustomKeyboardVisible, setIsCustomKeyboardVisible] = useState(false);
   const [lastKeyboardHeight, setLastKeyboardHeight] = useState(300);
 
   const addSession = useCallback((host: SSHHost): string => {
-    setSessions(prev => {
-      // Find all existing sessions for this host
-      const existingSessions = prev.filter(session => session.host.id === host.id);
-      
-      // Generate title with number suffix if needed
+    setSessions((prev) => {
+      const existingSessions = prev.filter(
+        (session) => session.host.id === host.id,
+      );
+
       let title = host.name;
       if (existingSessions.length > 0) {
         title = `${host.name} (${existingSessions.length + 1})`;
       }
-      
-      // Create new session
+
       const sessionId = `${host.id}-${Date.now()}`;
       const newSession: TerminalSession = {
         id: sessionId,
@@ -64,85 +75,98 @@ export const TerminalSessionsProvider: React.FC<TerminalSessionsProviderProps> =
         createdAt: new Date(),
       };
 
-      // Deactivate all other sessions
-      const updatedSessions = prev.map(session => ({
+      const updatedSessions = prev.map((session) => ({
         ...session,
         isActive: false,
       }));
-      
-      // Add new session
+
       setActiveSessionId(sessionId);
       return [...updatedSessions, newSession];
     });
 
-    return '';
+    return "";
   }, []);
 
-  const removeSession = useCallback((sessionId: string) => {
-    setSessions(prev => {
-      const sessionToRemove = prev.find(session => session.id === sessionId);
-      if (!sessionToRemove) return prev;
-      
-      const updatedSessions = prev.filter(session => session.id !== sessionId);
-      
-      // Renumber sessions for the same host
-      const hostId = sessionToRemove.host.id;
-      const sameHostSessions = updatedSessions.filter(session => session.host.id === hostId);
-      
-      if (sameHostSessions.length > 0) {
-        // Sort by creation time to maintain order
-        sameHostSessions.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-        
-        // Renumber the sessions
-        sameHostSessions.forEach((session, index) => {
-          const sessionIndex = updatedSessions.findIndex(s => s.id === session.id);
-          if (sessionIndex !== -1) {
-            updatedSessions[sessionIndex] = {
-              ...session,
-              title: index === 0 ? session.host.name : `${session.host.name} (${index + 1})`,
-            };
-          }
-        });
-      }
-      
-      // If we're removing the active session, set a new active one
-      if (activeSessionId === sessionId) {
-        if (updatedSessions.length > 0) {
-          const newActiveSession = updatedSessions[updatedSessions.length - 1];
-          setActiveSessionId(newActiveSession.id);
-          // Update the new active session
-          updatedSessions[updatedSessions.length - 1] = {
-            ...newActiveSession,
-            isActive: true,
-          };
-        } else {
-          setActiveSessionId(null);
+  const removeSession = useCallback(
+    (sessionId: string) => {
+      setSessions((prev) => {
+        const sessionToRemove = prev.find(
+          (session) => session.id === sessionId,
+        );
+        if (!sessionToRemove) return prev;
+
+        const updatedSessions = prev.filter(
+          (session) => session.id !== sessionId,
+        );
+
+        const hostId = sessionToRemove.host.id;
+        const sameHostSessions = updatedSessions.filter(
+          (session) => session.host.id === hostId,
+        );
+
+        if (sameHostSessions.length > 0) {
+          sameHostSessions.sort(
+            (a, b) => a.createdAt.getTime() - b.createdAt.getTime(),
+          );
+
+          sameHostSessions.forEach((session, index) => {
+            const sessionIndex = updatedSessions.findIndex(
+              (s) => s.id === session.id,
+            );
+            if (sessionIndex !== -1) {
+              updatedSessions[sessionIndex] = {
+                ...session,
+                title:
+                  index === 0
+                    ? session.host.name
+                    : `${session.host.name} (${index + 1})`,
+              };
+            }
+          });
         }
-      }
-      
-      return updatedSessions;
-    });
-  }, [activeSessionId]);
+
+        if (activeSessionId === sessionId) {
+          if (updatedSessions.length > 0) {
+            const newActiveSession =
+              updatedSessions[updatedSessions.length - 1];
+            setActiveSessionId(newActiveSession.id);
+            updatedSessions[updatedSessions.length - 1] = {
+              ...newActiveSession,
+              isActive: true,
+            };
+          } else {
+            setActiveSessionId(null);
+          }
+        }
+
+        return updatedSessions;
+      });
+    },
+    [activeSessionId],
+  );
 
   const setActiveSession = useCallback((sessionId: string) => {
-    setSessions(prev => 
-      prev.map(session => ({
+    setSessions((prev) =>
+      prev.map((session) => ({
         ...session,
         isActive: session.id === sessionId,
-      }))
+      })),
     );
     setActiveSessionId(sessionId);
   }, []);
 
-  const navigateToSessions = useCallback((host?: SSHHost) => {
-    if (host) {
-      addSession(host);
-    }
-    router.push('/(tabs)/sessions');
-  }, [addSession]);
+  const navigateToSessions = useCallback(
+    (host?: SSHHost) => {
+      if (host) {
+        addSession(host);
+      }
+      router.push("/(tabs)/sessions");
+    },
+    [addSession],
+  );
 
   const toggleCustomKeyboard = useCallback(() => {
-    setIsCustomKeyboardVisible(prev => !prev);
+    setIsCustomKeyboardVisible((prev) => !prev);
   }, []);
 
   return (

@@ -1,9 +1,15 @@
-import React, { useRef, useEffect, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
-import { WebView } from 'react-native-webview';
-import { Dimensions } from 'react-native';
-import { getCurrentServerUrl } from '../../main-axios';
-import { showToast } from '../../utils/toast';
+import React, {
+  useRef,
+  useEffect,
+  useState,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
+import { View, Text, ActivityIndicator, Dimensions } from "react-native";
+import { WebView } from "react-native-webview";
+import { getCurrentServerUrl } from "../../main-axios";
+import { showToast } from "../../utils/toast";
 
 interface TerminalProps {
   hostConfig: {
@@ -12,7 +18,7 @@ interface TerminalProps {
     ip: string;
     port: number;
     username: string;
-    authType: 'password' | 'key' | 'credential';
+    authType: "password" | "key" | "credential";
     password?: string;
     key?: string;
     keyPassword?: string;
@@ -29,64 +35,68 @@ export type TerminalHandle = {
   fit: () => void;
 };
 
-export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({ 
-  hostConfig,
-  isVisible,
-  title = 'Terminal',
-  onClose
-}, ref) => {
-  const webViewRef = useRef<WebView>(null);
-  const [webViewKey, setWebViewKey] = useState(0);
-  const [screenDimensions, setScreenDimensions] = useState(Dimensions.get('window'));
-  const [isConnecting, setIsConnecting] = useState(true);
-  const [isRetrying, setIsRetrying] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
-  const [isConnected, setIsConnected] = useState(false);
-  const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
+  ({ hostConfig, isVisible, title = "Terminal", onClose }, ref) => {
+    const webViewRef = useRef<WebView>(null);
+    const [webViewKey, setWebViewKey] = useState(0);
+    const [screenDimensions, setScreenDimensions] = useState(
+      Dimensions.get("window"),
+    );
+    const [isConnecting, setIsConnecting] = useState(true);
+    const [isRetrying, setIsRetrying] = useState(false);
+    const [retryCount, setRetryCount] = useState(0);
+    const [isConnected, setIsConnected] = useState(false);
+    const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+      null,
+    );
 
-  // Handle screen dimension changes for responsive design
-  useEffect(() => {
-    const subscription = Dimensions.addEventListener('change', ({ window }) => {
-      setScreenDimensions(window);
-    });
+    useEffect(() => {
+      const subscription = Dimensions.addEventListener(
+        "change",
+        ({ window }) => {
+          setScreenDimensions(window);
+        },
+      );
 
-    return () => subscription?.remove();
-  }, []);
+      return () => subscription?.remove();
+    }, []);
 
-  // Handle connection failure and close tab
-  const handleConnectionFailure = useCallback((errorMessage: string) => {
-    showToast.error(errorMessage);
-    setIsConnecting(false);
-    setIsConnected(false);
-    // Close immediately on unrecoverable/failed connection
-    if (onClose) {
-      onClose();
-    }
-  }, [onClose]);
+    const handleConnectionFailure = useCallback(
+      (errorMessage: string) => {
+        showToast.error(errorMessage);
+        setIsConnecting(false);
+        setIsConnected(false);
+        if (onClose) {
+          onClose();
+        }
+      },
+      [onClose],
+    );
 
-  const getWebSocketUrl = () => {
-    const serverUrl = getCurrentServerUrl();
+    const getWebSocketUrl = () => {
+      const serverUrl = getCurrentServerUrl();
 
-    if (!serverUrl) {
-      showToast.error('No server URL found - please configure a server first');
-      return null;
-    }
+      if (!serverUrl) {
+        showToast.error(
+          "No server URL found - please configure a server first",
+        );
+        return null;
+      }
 
-    // Use proper protocol based on server URL
-    const wsProtocol = serverUrl.startsWith('https://') ? 'wss://' : 'ws://';
-    const wsHost = serverUrl.replace(/^https?:\/\//, '');
-    const cleanHost = wsHost.replace(/\/$/, '');
-    const wsUrl = `${wsProtocol}${cleanHost}/ssh/websocket/`;
-    
-    return wsUrl;
-  };
+      const wsProtocol = serverUrl.startsWith("https://") ? "wss://" : "ws://";
+      const wsHost = serverUrl.replace(/^https?:\/\//, "");
+      const cleanHost = wsHost.replace(/\/$/, "");
+      const wsUrl = `${wsProtocol}${cleanHost}/ssh/websocket/`;
 
-  const generateHTML = useCallback(() => {
-    const wsUrl = getWebSocketUrl();
-    const { width, height } = screenDimensions;
+      return wsUrl;
+    };
 
-    if (!wsUrl) {
-      return `
+    const generateHTML = useCallback(() => {
+      const wsUrl = getWebSocketUrl();
+      const { width, height } = screenDimensions;
+
+      if (!wsUrl) {
+        return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -100,13 +110,12 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
   </div>
 </body>
 </html>`;
-    }
+      }
 
-    // Calculate proper terminal size based on screen dimensions
-    const terminalWidth = Math.floor(width / 8); // Approximate character width
-    const terminalHeight = Math.floor(height / 16); // Approximate character height
+      const terminalWidth = Math.floor(width / 8);
+      const terminalHeight = Math.floor(height / 16);
 
-    return `
+      return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -188,11 +197,9 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
   <div id="terminal"></div>
   
   <script>
-    // Get screen dimensions
     const screenWidth = ${width};
     const screenHeight = ${height};
     
-    // Calculate font size based on screen width - increased for better readability
     const baseFontSize = Math.max(14, Math.min(20, screenWidth / 25));
     
     const terminal = new Terminal({
@@ -220,29 +227,24 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
       cursorInactiveStyle: 'bar'
     });
 
-    // Load fit addon
     const fitAddon = new FitAddon.FitAddon();
     terminal.loadAddon(fitAddon);
     
-    // Open terminal
     terminal.open(document.getElementById('terminal'));
     
-    // Fit terminal to container
     fitAddon.fit();
     
-    // Host configuration from React Native
     const hostConfig = ${JSON.stringify(hostConfig)};
     const wsUrl = '${wsUrl}';
     
     let ws = null;
     let reconnectAttempts = 0;
-    const maxReconnectAttempts = 3; // 3 retries max as requested
+    const maxReconnectAttempts = 3;
     let reconnectTimeout = null;
     let connectionTimeout = null;
     let shouldNotReconnect = false;
     let hasNotifiedFailure = false;
     
-    // Notify React Native of connection state
     function notifyConnectionState(state, data = {}) {
       if (window.ReactNativeWebView) {
         window.ReactNativeWebView.postMessage(JSON.stringify({
@@ -278,7 +280,6 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
       }, delay);
     }
     
-    // Expose an input bridge for React Native to send keystrokes
     window.nativeInput = function(data) {
       try {
         if (ws && ws.readyState === WebSocket.OPEN) {
@@ -289,8 +290,6 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
       } catch (e) {}
     }
 
-    // Prevent the webview content from stealing focus or opening dialogs
-    // Only prevent events on the terminal itself, not the entire document
     const terminalElement = document.getElementById('terminal');
     ['touchstart','touchend','touchmove','mousedown','mouseup','click','dblclick','contextmenu'].forEach(function(ev){
       terminalElement.addEventListener(ev, function(e){
@@ -300,7 +299,6 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
       }, { passive: false });
     });
 
-    // WebSocket connection function
     function connectWebSocket() {
       try {
         if (!wsUrl) {
@@ -312,7 +310,6 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
         
         ws = new WebSocket(wsUrl);
         
-        // Set connection timeout
         connectionTimeout = setTimeout(() => {
           if (ws && ws.readyState === WebSocket.CONNECTING) {
             try { ws.close(); } catch (_) {}
@@ -322,20 +319,18 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
               notifyFailureOnce('Connection timeout - server not responding');
             }
           }
-        }, 30000); // 30 second timeout
+        }, 30000);
         
         ws.onopen = function() {
           clearTimeout(connectionTimeout);
           notifyConnectionState('connected', { hostName: hostConfig.name });
           hasNotifiedFailure = false;
-          reconnectAttempts = 0; // Reset retry count on successful connection
+          reconnectAttempts = 0;
           
-          // Clear terminal on reconnect - more thorough clearing
           terminal.clear();
           terminal.reset();
-          terminal.write('\x1b[2J\x1b[H'); // Clear screen and move cursor to top
+          terminal.write('\x1b[2J\x1b[H');
           
-          // Send initial connection message with fitted dimensions
           const connectMessage = {
             type: 'connectToHost',
             data: {
@@ -347,14 +342,12 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
           
           ws.send(JSON.stringify(connectMessage));
           
-          // Set up terminal input handler
           terminal.onData(function(data) {
             if (ws && ws.readyState === WebSocket.OPEN) {
               ws.send(JSON.stringify({ type: 'input', data: data }));
             }
           });
           
-          // Start ping interval
           startPingInterval();
         };
         
@@ -373,14 +366,11 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
                 return;
               }
             } else if (msg.type === 'connected') {
-              // Don't show any bracket messages
             } else if (msg.type === 'disconnected') {
               notifyConnectionState('disconnected', { hostName: hostConfig.name });
             } else if (msg.type === 'pong') {
-              // Server responded to ping - connection is alive
             }
           } catch (error) {
-            // If it's not JSON, treat as raw terminal data
             terminal.write(event.data);
           }
         };
@@ -402,7 +392,6 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
         
         ws.onerror = function(error) {
           clearTimeout(connectionTimeout);
-          // onclose will handle reconnection and failure notifications
         };
         
       } catch (error) {
@@ -411,7 +400,6 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
       }
     }
     
-    // Ping interval to keep connection alive
     let pingInterval = null;
     
     function startPingInterval() {
@@ -420,7 +408,7 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
         if (ws && ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({ type: 'ping' }));
         }
-      }, 15000); // Ping every 15 seconds instead of 30
+      }, 15000);
     }
     
     function stopPingInterval() {
@@ -430,12 +418,9 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
       }
     }
     
-    // Handle terminal resize
     function handleResize() {
-      // Fit terminal to new container size
       fitAddon.fit();
       
-      // Send new dimensions to server
       if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({
           type: 'resize',
@@ -444,7 +429,6 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
       }
     }
 
-    // Expose a fit method for React Native to call when layout changes (e.g., keyboard height)
     window.nativeFit = function() {
       try {
         fitAddon.fit();
@@ -454,23 +438,18 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
       } catch (e) {}
     }
     
-    // Listen for resize events
     window.addEventListener('resize', handleResize);
     
-    // Listen for orientation changes
     window.addEventListener('orientationchange', function() {
-      setTimeout(handleResize, 100); // Small delay for orientation change
+      setTimeout(handleResize, 100);
     });
     
-    // Clear terminal initially - more thorough clearing
     terminal.clear();
     terminal.reset();
-    terminal.write('\x1b[2J\x1b[H'); // Clear screen and move cursor to top
+    terminal.write('\x1b[2J\x1b[H');
     
-    // Initial connection
     connectWebSocket();
     
-    // Cleanup function
     window.addEventListener('beforeunload', function() {
       stopPingInterval();
       if (reconnectTimeout) {
@@ -483,209 +462,225 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(({
         ws.close();
       }
     });
-    
-    // Focus terminal
-    // Do not focus the terminal to avoid invoking native keyboards or dialogs
   </script>
 </body>
 </html>
     `;
-  }, [hostConfig, screenDimensions]);
+    }, [hostConfig, screenDimensions]);
 
-  // Handle messages from WebView
-  const handleWebViewMessage = useCallback((event: any) => {
-    try {
-      const message = JSON.parse(event.nativeEvent.data);
-      
-      switch (message.type) {
-        case 'connecting':
-          if (message.data.retryCount > 0) {
-            setIsRetrying(true);
-            setIsConnecting(false);
-          } else {
-            setIsConnecting(true);
-            setIsRetrying(false);
+    const handleWebViewMessage = useCallback(
+      (event: any) => {
+        try {
+          const message = JSON.parse(event.nativeEvent.data);
+
+          switch (message.type) {
+            case "connecting":
+              if (message.data.retryCount > 0) {
+                setIsRetrying(true);
+                setIsConnecting(false);
+              } else {
+                setIsConnecting(true);
+                setIsRetrying(false);
+              }
+              setRetryCount(message.data.retryCount);
+              break;
+
+            case "connected":
+              setIsConnecting(false);
+              setIsRetrying(false);
+              setIsConnected(true);
+              setRetryCount(0);
+              setTimeout(() => {}, 100);
+              break;
+
+            case "disconnected":
+              setIsConnecting(false);
+              setIsRetrying(false);
+              setIsConnected(false);
+              showToast.warning(`Disconnected from ${message.data.hostName}`);
+              if (onClose) {
+                onClose();
+              }
+              break;
+
+            case "connectionFailed":
+              setIsConnecting(false);
+              setIsRetrying(false);
+              handleConnectionFailure(
+                `${message.data.hostName}: ${message.data.message}`,
+              );
+              break;
           }
-          setRetryCount(message.data.retryCount);
-          break;
-          
-        case 'connected':
-          setIsConnecting(false);
-          setIsRetrying(false);
-          setIsConnected(true);
-          setRetryCount(0);
-          // Small delay to ensure terminal is fully cleared before showing
-          setTimeout(() => {
-            // Terminal will be shown after clearing is complete
-          }, 100);
-          break;
-          
-        case 'disconnected':
-          setIsConnecting(false);
-          setIsRetrying(false);
-          setIsConnected(false);
-          showToast.warning(`Disconnected from ${message.data.hostName}`);
-          // Close immediately
-          if (onClose) {
-            onClose();
-          }
-          break;
-          
-        case 'connectionFailed':
-          setIsConnecting(false);
-          setIsRetrying(false);
-          handleConnectionFailure(`${message.data.hostName}: ${message.data.message}`);
-          break;
-      }
-    } catch (error) {
-      console.error('Error parsing WebView message:', error);
-    }
-  }, [handleConnectionFailure, onClose]);
+        } catch (error) {}
+      },
+      [handleConnectionFailure, onClose],
+    );
 
-  // Expose imperative handle to allow Sessions screen to send input
-  useImperativeHandle(ref, () => ({
-    sendInput: (data: string) => {
-      try {
-        const escaped = JSON.stringify(data);
-        webViewRef.current?.injectJavaScript(`window.nativeInput(${escaped}); true;`);
-      } catch (e) {}
-    },
-    fit: () => {
-      try {
-        webViewRef.current?.injectJavaScript(`window.nativeFit && window.nativeFit(); true;`);
-      } catch (e) {}
-    }
-  }), []);
+    useImperativeHandle(
+      ref,
+      () => ({
+        sendInput: (data: string) => {
+          try {
+            const escaped = JSON.stringify(data);
+            webViewRef.current?.injectJavaScript(
+              `window.nativeInput(${escaped}); true;`,
+            );
+          } catch (e) {}
+        },
+        fit: () => {
+          try {
+            webViewRef.current?.injectJavaScript(
+              `window.nativeFit && window.nativeFit(); true;`,
+            );
+          } catch (e) {}
+        },
+      }),
+      [],
+    );
 
-  // Only refresh WebView when hostConfig actually changes (not when switching tabs)
-  useEffect(() => {
-    // Only recreate WebView if the host configuration has actually changed
-    setWebViewKey(prev => prev + 1);
-    setIsConnecting(true);
-    setIsRetrying(false);
-    setIsConnected(false);
-    setRetryCount(0);
-  }, [hostConfig.id]);
+    useEffect(() => {
+      setWebViewKey((prev) => prev + 1);
+      setIsConnecting(true);
+      setIsRetrying(false);
+      setIsConnected(false);
+      setRetryCount(0);
+    }, [hostConfig.id]);
 
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (connectionTimeoutRef.current) {
-        clearTimeout(connectionTimeoutRef.current);
-      }
-    };
-  }, []);
+    useEffect(() => {
+      return () => {
+        if (connectionTimeoutRef.current) {
+          clearTimeout(connectionTimeoutRef.current);
+        }
+      };
+    }, []);
 
-  return (
-    <View style={{ 
-      flex: 1,
-      width: '100%',
-      height: '100%',
-      opacity: isVisible ? 1 : 0, // Show/hide instead of recreating
-      position: isVisible ? 'relative' : 'absolute',
-      zIndex: isVisible ? 1 : -1,
-    }}>
-      {/* Always render WebView for connection */}
-      <WebView
-        key={`terminal-${hostConfig.id}-${webViewKey}`}
-        ref={webViewRef}
-        source={{ html: generateHTML() }}
-        style={{ 
+    return (
+      <View
+        style={{
           flex: 1,
-          width: '100%',
-          height: '100%',
-          backgroundColor: '#09090b',
-          opacity: (isRetrying || isConnecting) ? 0 : 1, // Hide during connecting/retrying
+          width: "100%",
+          height: "100%",
+          opacity: isVisible ? 1 : 0,
+          position: isVisible ? "relative" : "absolute",
+          zIndex: isVisible ? 1 : -1,
         }}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        startInLoadingState={false}
-        scalesPageToFit={false}
-        allowsInlineMediaPlayback={true}
-        mediaPlaybackRequiresUserAction={false}
-        keyboardDisplayRequiresUserAction={false}
-        onScroll={() => {}}
-        onMessage={handleWebViewMessage}
-        onError={(syntheticEvent) => {
-          const { nativeEvent } = syntheticEvent;
-          handleConnectionFailure(`WebView error: ${nativeEvent.description}`);
-        }}
-        onHttpError={(syntheticEvent) => {
-          const { nativeEvent } = syntheticEvent;
-          handleConnectionFailure(`WebView HTTP error: ${nativeEvent.statusCode}`);
-        }}
-        scrollEnabled={false}
-        bounces={false}
-        showsHorizontalScrollIndicator={false}
-        showsVerticalScrollIndicator={false}
-        nestedScrollEnabled={false}
-      />
-      
-      {/* Show connecting/retrying overlay */}
-      {((isConnecting && !isConnected) || isRetrying) && (
-        <View style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          justifyContent: 'center',
-          alignItems: 'center',
-          backgroundColor: '#09090b',
-          padding: 20
-        }}>
-          <View style={{
-            backgroundColor: '#1a1a1a',
-            borderRadius: 12,
-            padding: 24,
-            alignItems: 'center',
-            borderWidth: 1,
-            borderColor: '#303032',
-            minWidth: 280,
-          }}>
-            <ActivityIndicator size="large" color="#22C55E" />
-            <Text style={{
-              color: '#ffffff',
-              fontSize: 18,
-              fontWeight: '600',
-              marginTop: 16,
-              textAlign: 'center'
-            }}>
-              {isRetrying ? 'Reconnecting...' : 'Connecting...'}
-            </Text>
-            <Text style={{
-              color: '#9CA3AF',
-              fontSize: 14,
-              marginTop: 8,
-              textAlign: 'center'
-            }}>
-              {hostConfig.name} • {hostConfig.ip}
-            </Text>
-            {retryCount > 0 && (
-              <View style={{
-                backgroundColor: '#0f0f0f',
-                borderRadius: 8,
-                paddingHorizontal: 12,
-                paddingVertical: 6,
-                marginTop: 12,
+      >
+        <WebView
+          key={`terminal-${hostConfig.id}-${webViewKey}`}
+          ref={webViewRef}
+          source={{ html: generateHTML() }}
+          style={{
+            flex: 1,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "#09090b",
+            opacity: isRetrying || isConnecting ? 0 : 1,
+          }}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+          startInLoadingState={false}
+          scalesPageToFit={false}
+          allowsInlineMediaPlayback={true}
+          mediaPlaybackRequiresUserAction={false}
+          keyboardDisplayRequiresUserAction={false}
+          onScroll={() => {}}
+          onMessage={handleWebViewMessage}
+          onError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            handleConnectionFailure(
+              `WebView error: ${nativeEvent.description}`,
+            );
+          }}
+          onHttpError={(syntheticEvent) => {
+            const { nativeEvent } = syntheticEvent;
+            handleConnectionFailure(
+              `WebView HTTP error: ${nativeEvent.statusCode}`,
+            );
+          }}
+          scrollEnabled={false}
+          bounces={false}
+          showsHorizontalScrollIndicator={false}
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled={false}
+        />
+
+        {((isConnecting && !isConnected) || isRetrying) && (
+          <View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              justifyContent: "center",
+              alignItems: "center",
+              backgroundColor: "#09090b",
+              padding: 20,
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: "#1a1a1a",
+                borderRadius: 12,
+                padding: 24,
+                alignItems: "center",
                 borderWidth: 1,
-                borderColor: '#303032',
-              }}>
-                <Text style={{
-                  color: '#EF4444',
-                  fontSize: 12,
-                  fontWeight: '500',
-                  textAlign: 'center'
-                }}>
-                  Retry {retryCount}/3
-                </Text>
-              </View>
-            )}
+                borderColor: "#303032",
+                minWidth: 280,
+              }}
+            >
+              <ActivityIndicator size="large" color="#22C55E" />
+              <Text
+                style={{
+                  color: "#ffffff",
+                  fontSize: 18,
+                  fontWeight: "600",
+                  marginTop: 16,
+                  textAlign: "center",
+                }}
+              >
+                {isRetrying ? "Reconnecting..." : "Connecting..."}
+              </Text>
+              <Text
+                style={{
+                  color: "#9CA3AF",
+                  fontSize: 14,
+                  marginTop: 8,
+                  textAlign: "center",
+                }}
+              >
+                {hostConfig.name} • {hostConfig.ip}
+              </Text>
+              {retryCount > 0 && (
+                <View
+                  style={{
+                    backgroundColor: "#0f0f0f",
+                    borderRadius: 8,
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    marginTop: 12,
+                    borderWidth: 1,
+                    borderColor: "#303032",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "#EF4444",
+                      fontSize: 12,
+                      fontWeight: "500",
+                      textAlign: "center",
+                    }}
+                  >
+                    Retry {retryCount}/3
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
-        </View>
-      )}
-    </View>
-  );
-});
+        )}
+      </View>
+    );
+  },
+);
 
 export default Terminal;

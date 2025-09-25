@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
-import { TerminalHandle } from './Terminal';
-import KeyboardKey from './KeyboardKey';
+import React, { useState, useEffect } from "react";
+import { View, ScrollView, StyleSheet } from "react-native";
+import { TerminalHandle } from "./Terminal";
+import KeyboardKey from "./KeyboardKey";
 
 interface KeyboardBarProps {
   terminalRef: React.RefObject<TerminalHandle | null>;
@@ -9,7 +9,11 @@ interface KeyboardBarProps {
   onModifierChange?: (modifiers: { ctrl: boolean; alt: boolean }) => void;
 }
 
-export default function KeyboardBar({ terminalRef, isVisible, onModifierChange }: KeyboardBarProps) {
+export default function KeyboardBar({
+  terminalRef,
+  isVisible,
+  onModifierChange,
+}: KeyboardBarProps) {
   if (!isVisible) return null;
 
   const [ctrlPressed, setCtrlPressed] = useState(false);
@@ -21,41 +25,40 @@ export default function KeyboardBar({ terminalRef, isVisible, onModifierChange }
 
   const sendSpecialKey = (key: string) => {
     switch (key) {
-      case 'Escape':
-        sendKey('\x1b');
+      case "Escape":
+        sendKey("\x1b");
         break;
-      case 'Tab':
-        sendKey('\t');
+      case "Tab":
+        sendKey("\t");
         break;
-      case 'Up':
-        sendKey('\x1b[A');
+      case "Up":
+        sendKey("\x1b[A");
         break;
-      case 'Down':
-        sendKey('\x1b[B');
+      case "Down":
+        sendKey("\x1b[B");
         break;
-      case 'Right':
-        sendKey('\x1b[C');
+      case "Right":
+        sendKey("\x1b[C");
         break;
-      case 'Left':
-        sendKey('\x1b[D');
+      case "Left":
+        sendKey("\x1b[D");
         break;
       default:
         sendKey(key);
     }
   };
 
-  const toggleModifier = (modifier: 'ctrl' | 'alt') => {
+  const toggleModifier = (modifier: "ctrl" | "alt") => {
     switch (modifier) {
-      case 'ctrl':
+      case "ctrl":
         setCtrlPressed(!ctrlPressed);
         break;
-      case 'alt':
+      case "alt":
         setAltPressed(!altPressed);
         break;
     }
   };
 
-  // Notify parent of modifier changes
   useEffect(() => {
     if (onModifierChange) {
       onModifierChange({ ctrl: ctrlPressed, alt: altPressed });
@@ -64,53 +67,41 @@ export default function KeyboardBar({ terminalRef, isVisible, onModifierChange }
 
   return (
     <View style={styles.keyboardBar}>
-      <ScrollView 
+      <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Basic Keys */}
-        <KeyboardKey 
-          label="Esc" 
-          onPress={() => sendSpecialKey('Escape')} 
-        />
-        <KeyboardKey 
-          label="Tab" 
-          onPress={() => sendSpecialKey('Tab')} 
-        />
-        
-        {/* Modifier Keys */}
-        <KeyboardKey 
-          label="Ctrl" 
-          onPress={() => toggleModifier('ctrl')} 
+        <KeyboardKey label="Esc" onPress={() => sendSpecialKey("Escape")} />
+        <KeyboardKey label="Tab" onPress={() => sendSpecialKey("Tab")} />
+
+        <KeyboardKey
+          label="Ctrl"
+          onPress={() => toggleModifier("ctrl")}
           isModifier={true}
           isActive={ctrlPressed}
         />
-        <KeyboardKey 
-          label="Alt" 
-          onPress={() => toggleModifier('alt')} 
+        <KeyboardKey
+          label="Alt"
+          onPress={() => toggleModifier("alt")}
           isModifier={true}
           isActive={altPressed}
         />
-        
-        {/* Separator */}
+
         <View style={styles.separator} />
-        
-        {/* Arrow Keys */}
-        <KeyboardKey label="↑" onPress={() => sendSpecialKey('Up')} />
-        <KeyboardKey label="↓" onPress={() => sendSpecialKey('Down')} />
-        <KeyboardKey label="←" onPress={() => sendSpecialKey('Left')} />
-        <KeyboardKey label="→" onPress={() => sendSpecialKey('Right')} />
-        
-        {/* Separator */}
+
+        <KeyboardKey label="↑" onPress={() => sendSpecialKey("Up")} />
+        <KeyboardKey label="↓" onPress={() => sendSpecialKey("Down")} />
+        <KeyboardKey label="←" onPress={() => sendSpecialKey("Left")} />
+        <KeyboardKey label="→" onPress={() => sendSpecialKey("Right")} />
+
         <View style={styles.separator} />
-        
-        {/* Special Characters */}
-        <KeyboardKey label="\" onPress={() => sendKey('\\')} />
-        <KeyboardKey label="|" onPress={() => sendKey('|')} />
-        <KeyboardKey label="~" onPress={() => sendKey('~')} />
-        <KeyboardKey label="-" onPress={() => sendKey('-')} />
+
+        <KeyboardKey label="\" onPress={() => sendKey("\\")} />
+        <KeyboardKey label="|" onPress={() => sendKey("|")} />
+        <KeyboardKey label="~" onPress={() => sendKey("~")} />
+        <KeyboardKey label="-" onPress={() => sendKey("-")} />
       </ScrollView>
     </View>
   );
@@ -118,21 +109,21 @@ export default function KeyboardBar({ terminalRef, isVisible, onModifierChange }
 
 const styles = StyleSheet.create({
   keyboardBar: {
-    backgroundColor: '#0e0e10',
+    backgroundColor: "#0e0e10",
     borderTopWidth: 1.5,
-    borderTopColor: '#303032',
+    borderTopColor: "#303032",
     height: 50,
   },
   scrollContent: {
     paddingHorizontal: 8,
     paddingVertical: 8,
-    alignItems: 'center',
+    alignItems: "center",
     gap: 6,
   },
   separator: {
     width: 1,
     height: 30,
-    backgroundColor: '#404040',
+    backgroundColor: "#404040",
     marginHorizontal: 8,
   },
 });
