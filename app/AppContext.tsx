@@ -10,6 +10,7 @@ import {
   getVersionInfo,
   initializeServerConfig,
   isAuthenticated as checkAuthStatus,
+  getLatestGitHubRelease,
 } from "./main-axios";
 import Constants from "expo-constants";
 
@@ -54,14 +55,19 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [isAuthenticated, setAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const currentMobileAppVersion = "1.5.0";
   const [showUpdateScreen, setShowUpdateScreen] = useState<boolean>(false);
 
-  const checkShouldShowUpdateScreen = async (
-    serverVersion: string,
-  ): Promise<boolean> => {
+  const checkShouldShowUpdateScreen = async (): Promise<boolean> => {
     try {
-      if (currentMobileAppVersion === serverVersion) {
+      const currentAppVersion = Constants.expoConfig?.version || "1.0.0";
+
+      const latestRelease = await getLatestGitHubRelease();
+
+      if (!latestRelease) {
+        return false;
+      }
+
+      if (currentAppVersion === latestRelease.version) {
         return false;
       }
 
@@ -69,13 +75,13 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         "dismissedUpdateVersion",
       );
 
-      if (dismissedVersion === serverVersion) {
+      if (dismissedVersion === latestRelease.version) {
         return false;
       }
 
       return true;
     } catch (error) {
-      return true;
+      return false;
     }
   };
 
@@ -91,9 +97,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
         const version = await getVersionInfo();
 
-        const shouldShowUpdateScreen = await checkShouldShowUpdateScreen(
-          version.localVersion,
-        );
+        const shouldShowUpdateScreen = await checkShouldShowUpdateScreen();
         setShowUpdateScreen(shouldShowUpdateScreen);
 
         if (serverConfig || legacyServer) {

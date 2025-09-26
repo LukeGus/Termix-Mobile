@@ -70,7 +70,11 @@ export default function ServerForm() {
     // If no protocol is specified, try to be smart about it
     if (!url.startsWith("http://") && !url.startsWith("https://")) {
       // For localhost or IP addresses, prefer HTTP
-      if (url.includes("localhost") || url.includes("127.0.0.1") || /^\d+\.\d+\.\d+\.\d+/.test(url)) {
+      if (
+        url.includes("localhost") ||
+        url.includes("127.0.0.1") ||
+        /^\d+\.\d+\.\d+\.\d+/.test(url)
+      ) {
         url = `http://${url}`;
       } else {
         // For domain names, prefer HTTPS
@@ -99,10 +103,10 @@ export default function ServerForm() {
       if (!connectionTest.success && serverUrl.startsWith("https://")) {
         const httpUrl = serverUrl.replace("https://", "http://");
         const httpTest = await testServerConnection(httpUrl);
-        
+
         if (httpTest.success) {
           // Update the form data to use the working HTTP URL
-          setFormData(prev => ({ ...prev, ip: httpUrl }));
+          setFormData((prev) => ({ ...prev, ip: httpUrl }));
           serverUrl = httpUrl;
           connectionTest = httpTest;
         }

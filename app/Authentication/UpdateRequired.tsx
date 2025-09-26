@@ -9,8 +9,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { X, AlertTriangle, Download } from "lucide-react-native";
 import { useAppContext } from "../AppContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getVersionInfo } from "../main-axios";
+import { getVersionInfo, getLatestGitHubRelease } from "../main-axios";
 import { useState, useEffect } from "react";
+import Constants from "expo-constants";
 
 export default function UpdateRequired() {
   const insets = useSafeAreaInsets();
@@ -19,15 +20,24 @@ export default function UpdateRequired() {
     localVersion: string;
     serverVersion: string;
   } | null>(null);
+  const [latestRelease, setLatestRelease] = useState<{
+    version: string;
+    tagName: string;
+    publishedAt: string;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const currentMobileAppVersion = "1.6.0";
+  const currentMobileAppVersion = Constants.expoConfig?.version || "1.0.0";
 
   useEffect(() => {
     const fetchVersionInfo = async () => {
       try {
-        const version = await getVersionInfo();
+        const [version, release] = await Promise.all([
+          getVersionInfo(),
+          getLatestGitHubRelease(),
+        ]);
         setVersionInfo(version);
+        setLatestRelease(release);
       } catch (error) {
       } finally {
         setIsLoading(false);
@@ -41,7 +51,7 @@ export default function UpdateRequired() {
     try {
       await AsyncStorage.setItem(
         "dismissedUpdateVersion",
-        versionInfo?.localVersion || "unknown",
+        latestRelease?.version || "unknown",
       );
       setShowUpdateScreen(false);
     } catch (error) {
@@ -82,9 +92,8 @@ export default function UpdateRequired() {
           </View>
 
           <Text className="text-gray-300 text-base leading-6 mb-6">
-            Your mobile app version does not match with the server version. Some
-            features may not work properly until you update your mobile app or
-            Termix server.
+            A new version of the mobile app is available. Some features may not
+            work properly until you update to the latest version.
           </Text>
 
           <View className="bg-dark-bg rounded-md p-4 border border-dark-border">
@@ -94,29 +103,29 @@ export default function UpdateRequired() {
 
             <View className="space-y-2">
               <View className="flex-row justify-between">
-                <Text className="text-gray-300">Current Mobile App:</Text>
-                <Text className="text-white font-mono">
+                <Text className="text-gray-300">Current Version:</Text>
+                <Text className="text-red-400 font-mono">
                   {currentMobileAppVersion}
                 </Text>
               </View>
 
               <View className="flex-row justify-between">
-                <Text className="text-gray-300">Server Version:</Text>
-                <Text className="text-red-400 font-mono">
-                  {versionInfo?.localVersion || "Unknown"}
+                <Text className="text-gray-300">Latest Release:</Text>
+                <Text className="text-green-400 font-mono">
+                  {latestRelease?.version || "Unknown"}
                 </Text>
               </View>
+
+              {latestRelease?.tagName && (
+                <View className="flex-row justify-between">
+                  <Text className="text-gray-300">Release Tag:</Text>
+                  <Text className="text-blue-400 font-mono text-xs">
+                    {latestRelease.tagName}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
-        </View>
-
-        <View className="bg-dark-bg-button rounded-lg p-6 border border-dark-border">
-          <Text className="text-gray-300 text-base leading-6 mb-4">
-            <Text className="text-yellow-400 font-semibold">Note:</Text> The
-            server or mobile app may have been updated with changes that don't
-            affect mobile. If you're experiencing issues, please update your
-            mobile app or Termix server to the latest version.
-          </Text>
         </View>
       </View>
 

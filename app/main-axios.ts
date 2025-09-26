@@ -323,20 +323,25 @@ export async function testServerConnection(
     };
   } catch (error: any) {
     console.error("Connection test error:", error);
-    
+
     // Provide more specific error messages for common HTTP issues
     let errorMessage = error.message || "Connection test failed";
-    
+
     if (error.name === "AbortError") {
       errorMessage = "Connection timeout - server not responding";
     } else if (error.message?.includes("Network request failed")) {
-      errorMessage = "Network error - check if server is running and accessible";
+      errorMessage =
+        "Network error - check if server is running and accessible";
     } else if (error.message?.includes("Failed to fetch")) {
-      errorMessage = "Failed to connect - check server URL and network connection";
-    } else if (serverUrl.startsWith("https://") && error.message?.includes("SSL")) {
+      errorMessage =
+        "Failed to connect - check server URL and network connection";
+    } else if (
+      serverUrl.startsWith("https://") &&
+      error.message?.includes("SSL")
+    ) {
       errorMessage = "SSL/TLS error - try using HTTP instead of HTTPS";
     }
-    
+
     return {
       success: false,
       error: errorMessage,
@@ -1604,6 +1609,34 @@ export async function getVersionInfo(): Promise<any> {
     return response.data;
   } catch (error) {
     handleApiError(error, "fetch version info");
+  }
+}
+
+export async function getLatestGitHubRelease(): Promise<{
+  version: string;
+  tagName: string;
+  publishedAt: string;
+} | null> {
+  try {
+    const response = await axios.get(
+      "https://api.github.com/repos/LukeGus/Termix-Mobile/releases/latest",
+    );
+    const release = response.data;
+
+    const tagName = release.tag_name;
+    const versionMatch = tagName.match(/release-(\d+\.\d+\.\d+)(?:-tag)?/);
+
+    if (versionMatch) {
+      return {
+        version: versionMatch[1],
+        tagName: tagName,
+        publishedAt: release.published_at,
+      };
+    }
+
+    return null;
+  } catch (error) {
+    return null;
   }
 }
 

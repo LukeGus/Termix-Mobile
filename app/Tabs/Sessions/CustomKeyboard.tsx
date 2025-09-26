@@ -225,6 +225,7 @@ export default function CustomKeyboard({
 
         <View style={styles.keyRow}>
           <KeyboardKey label="Enter" onPress={() => sendSpecialKey("Enter")} />
+          <KeyboardKey label="Space" onPress={() => sendKey(" ")} />
           <KeyboardKey
             label="Backspace"
             onPress={() => sendSpecialKey("Backspace")}
@@ -243,6 +244,9 @@ export default function CustomKeyboard({
           <KeyboardKey label="Ctrl+K" onPress={() => sendKey("\x0b")} />
           <KeyboardKey label="Ctrl+U" onPress={() => sendKey("\x15")} />
           <KeyboardKey label="Ctrl+W" onPress={() => sendKey("\x17")} />
+          <KeyboardKey label="Ctrl+R" onPress={() => sendKey("\x12")} />
+          <KeyboardKey label="Ctrl+Y" onPress={() => sendKey("\x19")} />
+          <KeyboardKey label="Alt+F" onPress={() => sendKey("\x1bf")} />
         </View>
       </ScrollView>
     </View>
