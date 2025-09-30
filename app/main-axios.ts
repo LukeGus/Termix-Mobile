@@ -271,10 +271,6 @@ function createApiInstance(
         );
       }
 
-      if (status === 401) {
-        AsyncStorage.removeItem("jwt");
-      }
-
       return Promise.reject(error);
     },
   );
@@ -285,6 +281,12 @@ function createApiInstance(
 // ============================================================================
 // API INSTANCES
 // ============================================================================
+
+let authStateCallback: ((isAuthenticated: boolean) => void) | null = null;
+
+export function setAuthStateCallback(callback: (isAuthenticated: boolean) => void) {
+  authStateCallback = callback;
+}
 
 let configuredServerUrl: string | null = null;
 
@@ -580,6 +582,10 @@ function handleApiError(error: unknown, operation: string): never {
         `Auth failed: ${method} ${url} - ${message}`,
         errorContext,
       );
+      AsyncStorage.removeItem("jwt");
+      if (authStateCallback) {
+        authStateCallback(false);
+      }
       throw new ApiError(
         "Authentication required. Please log in again.",
         401,
@@ -1348,7 +1354,6 @@ export async function loginUser(
   try {
     const response = await authApi.post("/users/login", { username, password });
 
-    // Extract token from set-cookie header
     let token = null;
     const setCookie = response.headers["set-cookie"];
     if (setCookie && Array.isArray(setCookie)) {
@@ -1373,7 +1378,6 @@ export async function loginUser(
         });
         const response = await alt.post("/users/login", { username, password });
 
-        // Extract token from set-cookie header
         let token = null;
         const setCookie = response.headers["set-cookie"];
         if (setCookie && Array.isArray(setCookie)) {

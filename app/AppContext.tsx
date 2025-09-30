@@ -11,6 +11,7 @@ import {
   initializeServerConfig,
   isAuthenticated as checkAuthStatus,
   getLatestGitHubRelease,
+  setAuthStateCallback,
 } from "./main-axios";
 import Constants from "expo-constants";
 
@@ -140,6 +141,16 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     };
 
     initializeApp();
+  }, []);
+
+  useEffect(() => {
+    setAuthStateCallback((isAuthenticated: boolean) => {
+      if (!isAuthenticated) {
+        setAuthenticated(false);
+        setShowLoginForm(true);
+        setShowServerManager(false);
+      }
+    });
   }, []);
 
   return (
