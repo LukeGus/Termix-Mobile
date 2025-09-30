@@ -245,7 +245,16 @@ function createApiInstance(
       if (status === 401) {
         logger.authError(method, fullUrl, context);
       } else if (status === 0 || !status) {
-        logger.networkError(method, fullUrl, message, context);
+        if (fullUrl.startsWith("https://") && 
+            (message?.includes("Network request failed") ||
+             message?.includes("SSL") ||
+             message?.includes("certificate") ||
+             message?.includes("handshake") ||
+             message?.includes("untrusted"))) {
+          logger.warn(`SSL certificate error: ${method} ${fullUrl} - ${message}`, context);
+        } else {
+          logger.networkError(method, fullUrl, message, context);
+        }
       } else {
         logger.requestError(
           method,
@@ -325,16 +334,25 @@ export async function testServerConnection(
     if (error.name === "AbortError") {
       errorMessage = "Connection timeout - server not responding";
     } else if (error.message?.includes("Network request failed")) {
-      errorMessage =
-        "Network error - check if server is running and accessible";
+      if (serverUrl.startsWith("https://")) {
+        errorMessage = "SSL certificate verification failed (mobile app does not support self-signed certificates generated from Termix)";
+      } else {
+        errorMessage = "Network error - check if server is running and accessible";
+      }
     } else if (error.message?.includes("Failed to fetch")) {
-      errorMessage =
-        "Failed to connect - check server URL and network connection";
+      if (serverUrl.startsWith("https://")) {
+        errorMessage = "Failed to establish secure connection";
+      } else {
+        errorMessage = "Failed to connect - check server URL and network connection";
+      }
     } else if (
       serverUrl.startsWith("https://") &&
-      error.message?.includes("SSL")
+      (error.message?.includes("SSL") || 
+       error.message?.includes("certificate") ||
+       error.message?.includes("handshake") ||
+       error.message?.includes("untrusted"))
     ) {
-      errorMessage = "SSL/TLS error - try using HTTP instead of HTTPS";
+      errorMessage = "SSL certificate verification failed (mobile app does not support self-signed certificates generated from Termix)";
     }
 
     return {
@@ -367,6 +385,7 @@ export async function initializeServerConfig(): Promise<void> {
 export function getCurrentServerUrl(): string | null {
   return configuredServerUrl;
 }
+
 
 export async function isAuthenticated(): Promise<boolean> {
   try {
@@ -615,6 +634,25 @@ function handleApiError(error: unknown, operation: string): never {
           "NO_SERVER_CONFIGURED",
         );
       }
+      
+      if (url.startsWith("https://") && 
+          (message?.includes("Network request failed") ||
+           message?.includes("SSL") ||
+           message?.includes("certificate") ||
+           message?.includes("handshake") ||
+           message?.includes("untrusted"))) {
+        apiLogger.error(
+          `SSL certificate error: ${method} ${url} - ${message}`,
+          error,
+          errorContext,
+        );
+        throw new ApiError(
+          "SSL certificate verification failed.",
+          0,
+          "SSL_CERTIFICATE_ERROR",
+        );
+      }
+      
       apiLogger.error(
         `Network error: ${method} ${url} - ${message}`,
         error,
@@ -1301,7 +1339,23 @@ export async function loginUser(
 ): Promise<AuthResponse> {
   try {
     const response = await authApi.post("/users/login", { username, password });
-    return response.data;
+    
+    // Extract token from set-cookie header
+    let token = null;
+    const setCookie = response.headers['set-cookie'];
+    if (setCookie && Array.isArray(setCookie)) {
+      for (const cookie of setCookie) {
+        if (cookie.startsWith('jwt=')) {
+          token = cookie.split('jwt=')[1].split(';')[0];
+          break;
+        }
+      }
+    }
+    
+    return {
+      ...response.data,
+      token: token || response.data.token
+    };
   } catch (error: any) {
     if (error?.response?.status === 404) {
       try {
@@ -1310,7 +1364,23 @@ export async function loginUser(
           headers: { "Content-Type": "application/json" },
         });
         const response = await alt.post("/users/login", { username, password });
-        return response.data;
+        
+        // Extract token from set-cookie header
+        let token = null;
+        const setCookie = response.headers['set-cookie'];
+        if (setCookie && Array.isArray(setCookie)) {
+          for (const cookie of setCookie) {
+            if (cookie.startsWith('jwt=')) {
+              token = cookie.split('jwt=')[1].split(';')[0];
+              break;
+            }
+          }
+        }
+        
+        return {
+          ...response.data,
+          token: token || response.data.token
+        };
       } catch (e) {
         handleApiError(e, "login user");
       }
