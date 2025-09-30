@@ -77,11 +77,7 @@ export default function LoginForm() {
         formData.password.trim(),
       );
 
-      if (response.requires_totp && response.temp_token) {
-        setTempToken(response.temp_token);
-        setAuthMode("totp");
-        setFormData((prev) => ({ ...prev, password: "" }));
-      } else if (response.token) {
+      if (response.token) {
         await setCookie("jwt", response.token);
         setAuthenticated(true);
         setFormData({ username: "", password: "", totpCode: "" });
@@ -154,12 +150,8 @@ export default function LoginForm() {
         formData.password.trim(),
       );
 
-      if (loginResponse.requires_totp && loginResponse.temp_token) {
-        setTempToken(loginResponse.temp_token);
-        setAuthMode("totp");
-        setFormData((prev) => ({ ...prev, password: "" }));
-      } else if (loginResponse.token) {
-        await setCookie("jwt", loginResponse.token);
+      if (loginResponse.token) {
+        setCookie("jwt", loginResponse.token);
         setAuthenticated(true);
         setFormData({ username: "", password: "", totpCode: "" });
         setShowLoginForm(false);

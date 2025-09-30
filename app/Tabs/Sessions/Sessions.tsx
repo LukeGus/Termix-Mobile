@@ -222,13 +222,79 @@ export default function Sessions() {
         ))}
 
         {sessions.length === 0 && (
-          <View className="flex-1 justify-center items-center">
-            <Text className="text-white text-lg">
-              No active terminal sessions
-            </Text>
-            <Text className="text-white text-sm mt-2">
-              Connect to a host from the Hosts tab to start a terminal session
-            </Text>
+          <View
+            style={{
+              position: "absolute",
+              top: insets.top,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              justifyContent: "center",
+              alignItems: "center",
+              paddingHorizontal: 24,
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: "#1a1a1a",
+                borderRadius: 12,
+                padding: 32,
+                alignItems: "center",
+                borderWidth: 1,
+                borderColor: "#303032",
+                minWidth: 280,
+                maxWidth: 400,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 12,
+                elevation: 8,
+              }}
+            >
+              <Text
+                style={{
+                  color: "#ffffff",
+                  fontSize: 20,
+                  fontWeight: "600",
+                  marginBottom: 12,
+                  textAlign: "center",
+                }}
+              >
+                No Active Terminal Sessions
+              </Text>
+              <Text
+                style={{
+                  color: "#9CA3AF",
+                  fontSize: 14,
+                  lineHeight: 20,
+                  textAlign: "center",
+                  marginBottom: 20,
+                }}
+              >
+                Connect to a host from the Hosts tab to start a terminal session
+              </Text>
+              <TouchableOpacity
+                onPress={handleAddSession}
+                style={{
+                  backgroundColor: "#22C55E",
+                  paddingHorizontal: 24,
+                  paddingVertical: 12,
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: "#16A34A",
+                }}
+              >
+                <Text
+                  style={{
+                    color: "#ffffff",
+                    fontSize: 14,
+                    fontWeight: "600",
+                  }}
+                >
+                  Go to Hosts
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       </View>

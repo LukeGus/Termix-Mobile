@@ -63,16 +63,19 @@ export type ServerMetrics = {
 };
 
 interface AuthResponse {
-  token?: string;
-  requires_totp?: boolean;
-  temp_token?: string;
+  token: string;
+  success?: boolean;
+  is_admin?: boolean;
+  username?: string;
 }
 
 interface UserInfo {
   totp_enabled: boolean;
-  id: string;
+  userId: string;
   username: string;
   is_admin: boolean;
+  is_oidc: boolean;
+  data_unlocked: boolean;
 }
 
 interface UserCount {
@@ -110,9 +113,7 @@ export async function setCookie(
 ): Promise<void> {
   try {
     await AsyncStorage.setItem(name, value);
-  } catch (error) {
-    console.error("Failed to save token:", error);
-  }
+  } catch (error) {}
 }
 
 export async function getCookie(name: string): Promise<string | undefined> {
@@ -120,7 +121,6 @@ export async function getCookie(name: string): Promise<string | undefined> {
     const token = await AsyncStorage.getItem(name);
     return token || undefined;
   } catch (error) {
-    console.error("Failed to get token:", error);
     return undefined;
   }
 }
@@ -258,9 +258,7 @@ function createApiInstance(
       }
 
       if (status === 401) {
-        AsyncStorage.removeItem("jwt").catch((error) => {
-          console.error("Failed to remove token:", error);
-        });
+        AsyncStorage.removeItem("jwt");
       }
 
       return Promise.reject(error);
@@ -322,8 +320,6 @@ export async function testServerConnection(
         : `HTTP ${response.status}: ${response.statusText}`,
     };
   } catch (error: any) {
-    console.error("Connection test error:", error);
-
     // Provide more specific error messages for common HTTP issues
     let errorMessage = error.message || "Connection test failed";
 
@@ -378,7 +374,6 @@ export async function isAuthenticated(): Promise<boolean> {
     const token = await getCookie("jwt");
     return !!token;
   } catch (error) {
-    console.error("Failed to check authentication status:", error);
     return false;
   }
 }
@@ -386,9 +381,7 @@ export async function isAuthenticated(): Promise<boolean> {
 export async function clearAuth(): Promise<void> {
   try {
     await AsyncStorage.removeItem("jwt");
-  } catch (error) {
-    console.error("Failed to clear auth data:", error);
-  }
+  } catch (error) {}
 }
 
 function getApiUrl(path: string, defaultPort: number): string {
@@ -1784,7 +1777,7 @@ export async function migrateHostToCredential(
 // TERMINAL WEBSOCKET CONNECTION
 // ============================================================================
 
-export function createTerminalWebSocket(): WebSocket | null {
+export async function createTerminalWebSocket(): Promise<WebSocket | null> {
   try {
     const serverUrl = getCurrentServerUrl();
 
@@ -1792,11 +1785,16 @@ export function createTerminalWebSocket(): WebSocket | null {
       return null;
     }
 
+    const jwtToken = await getCookie("jwt");
+    if (!jwtToken || jwtToken.trim() === "") {
+      return null;
+    }
+
     const wsProtocol = serverUrl.startsWith("https://") ? "wss://" : "ws://";
     const wsHost = serverUrl.replace(/^https?:\/\//, "");
 
     const cleanHost = wsHost.replace(/\/$/, "");
-    const wsUrl = `${wsProtocol}${cleanHost}/ssh/websocket/`;
+    const wsUrl = `${wsProtocol}${cleanHost}/ssh/websocket/?token=${encodeURIComponent(jwtToken)}`;
 
     return new WebSocket(wsUrl);
   } catch (error) {

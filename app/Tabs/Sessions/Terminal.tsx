@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import { View, Text, ActivityIndicator, Dimensions } from "react-native";
 import { WebView } from "react-native-webview";
-import { getCurrentServerUrl } from "../../main-axios";
+import { getCurrentServerUrl, getCookie } from "../../main-axios";
 import { showToast } from "../../utils/toast";
 
 interface TerminalProps {
@@ -46,6 +46,7 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
     const [isRetrying, setIsRetrying] = useState(false);
     const [retryCount, setRetryCount] = useState(0);
     const [isConnected, setIsConnected] = useState(false);
+    const [htmlContent, setHtmlContent] = useState("");
     const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
       null,
     );
@@ -73,7 +74,7 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
       [onClose],
     );
 
-    const getWebSocketUrl = () => {
+    const getWebSocketUrl = async () => {
       const serverUrl = getCurrentServerUrl();
 
       if (!serverUrl) {
@@ -83,16 +84,22 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
         return null;
       }
 
+      const jwtToken = await getCookie("jwt");
+      if (!jwtToken || jwtToken.trim() === "") {
+        showToast.error("Authentication required - please log in again");
+        return null;
+      }
+
       const wsProtocol = serverUrl.startsWith("https://") ? "wss://" : "ws://";
       const wsHost = serverUrl.replace(/^https?:\/\//, "");
       const cleanHost = wsHost.replace(/\/$/, "");
-      const wsUrl = `${wsProtocol}${cleanHost}/ssh/websocket/`;
+      const wsUrl = `${wsProtocol}${cleanHost}/ssh/websocket/?token=${encodeURIComponent(jwtToken)}`;
 
       return wsUrl;
     };
 
-    const generateHTML = useCallback(() => {
-      const wsUrl = getWebSocketUrl();
+    const generateHTML = useCallback(async () => {
+      const wsUrl = await getWebSocketUrl();
       const { width, height } = screenDimensions;
 
       if (!wsUrl) {
@@ -468,6 +475,14 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
     `;
     }, [hostConfig, screenDimensions]);
 
+    useEffect(() => {
+      const updateHtml = async () => {
+        const html = await generateHTML();
+        setHtmlContent(html);
+      };
+      updateHtml();
+    }, [generateHTML]);
+
     const handleWebViewMessage = useCallback(
       (event: any) => {
         try {
@@ -544,7 +559,13 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
       setIsRetrying(false);
       setIsConnected(false);
       setRetryCount(0);
-    }, [hostConfig.id]);
+
+      const updateHtml = async () => {
+        const html = await generateHTML();
+        setHtmlContent(html);
+      };
+      updateHtml();
+    }, [hostConfig.id, generateHTML]);
 
     useEffect(() => {
       return () => {
@@ -568,7 +589,7 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
         <WebView
           key={`terminal-${hostConfig.id}-${webViewKey}`}
           ref={webViewRef}
-          source={{ html: generateHTML() }}
+          source={{ html: htmlContent }}
           style={{
             flex: 1,
             width: "100%",
