@@ -609,7 +609,7 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
             width: "100%",
             height: "100%",
             backgroundColor: "#09090b",
-            opacity: (showConnectingOverlay || isRetrying) ? 0 : 1,
+            opacity: showConnectingOverlay || isRetrying ? 0 : 1,
           }}
           javaScriptEnabled={true}
           domStorageEnabled={true}
