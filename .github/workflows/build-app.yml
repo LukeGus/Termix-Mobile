@@ -12,24 +12,23 @@ on:
         type: choice
         description: Platform to build for
         options:
-          - android
           - ios
+          - android
       profile:
         type: choice
         description: Build profile to use
         options:
-          - development
-          - preview
           - production
+          - preview
+          - development
       action:
         type: choice
         description: What to do with the built app
         options:
-          - none
           - submit
           - file
+          - none
         required: true
-        default: none
 jobs:
   build:
     runs-on: ${{ github.event.inputs.os }}
