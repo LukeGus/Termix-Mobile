@@ -36,7 +36,7 @@ Termix Mobile is the official mobile companion app for Termix, providing full re
 
 # Installation
 
-Termix Mobile is available for both [Android](https://docs.termix.site/install) and [iOS](https://docs.termix.site/install) platforms.
+Termix Mobile is available for both [Android](https://docs.termix.site/install/connector/android) and [iOS](https://docs.termix.site/install/connector/ios) platforms.
 
 # Support
 
