@@ -32,7 +32,6 @@ Termix Mobile is the official mobile companion app for Termix, providing full re
 - **Mobile-Optimized Interface** - Dark theme with responsive layout and gesture-supported design
 - **Real-time Communication** - WebSocket-based instant responsiveness with auto-reconnect
 - **Server Configuration** - Easy setup with auto connection testing and secure storage
-- **Performance Optimized** - Efficient memory management for multiple sessions without degradation
 
 # Installation
 
