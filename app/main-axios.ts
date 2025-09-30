@@ -300,7 +300,7 @@ export async function testServerConnection(
     const healthUrl = `${cleanUrl}/health`;
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // Increased timeout
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     const response = await fetch(healthUrl, {
       method: "GET",
@@ -320,7 +320,6 @@ export async function testServerConnection(
         : `HTTP ${response.status}: ${response.statusText}`,
     };
   } catch (error: any) {
-    // Provide more specific error messages for common HTTP issues
     let errorMessage = error.message || "Connection test failed";
 
     if (error.name === "AbortError") {
@@ -488,19 +487,14 @@ async function detectAndUpdateApiInstances(): Promise<void> {
   } catch (e) {}
 }
 
-// SSH Host Management API (port 8081)
 export let sshHostApi: AxiosInstance;
 
-// Tunnel Management API (port 8083)
 export let tunnelApi: AxiosInstance;
 
-// File Manager Operations API (port 8084)
 export let fileManagerApi: AxiosInstance;
 
-// Server Statistics API (port 8085)
 export let statsApi: AxiosInstance;
 
-// Authentication API (port 8081)
 export let authApi: AxiosInstance;
 
 initializeApiInstances();

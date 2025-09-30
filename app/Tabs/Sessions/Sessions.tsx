@@ -10,6 +10,7 @@ import {
   Platform,
   TextInput,
   TouchableWithoutFeedback,
+  Pressable,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
@@ -220,86 +221,95 @@ export default function Sessions() {
             onClose={() => handleTabClose(session.id)}
           />
         ))}
+      </View>
 
-        {sessions.length === 0 && (
+      {sessions.length === 0 && (
+        <View
+          style={{
+            position: "absolute",
+            top: insets.top,
+            left: 0,
+            right: 0,
+            bottom: 115,
+            justifyContent: "center",
+            alignItems: "center",
+            paddingHorizontal: 24,
+            pointerEvents: "box-none",
+            zIndex: 1005,
+          }}
+        >
           <View
             style={{
-              position: "absolute",
-              top: insets.top,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              justifyContent: "center",
+              backgroundColor: "#1a1a1a",
+              borderRadius: 12,
+              padding: 32,
               alignItems: "center",
-              paddingHorizontal: 24,
+              borderWidth: 1,
+              borderColor: "#303032",
+              minWidth: 280,
+              maxWidth: 400,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 12,
+              elevation: 8,
+              pointerEvents: "box-none",
             }}
           >
+            <Text
+              style={{
+                color: "#ffffff",
+                fontSize: 20,
+                fontWeight: "600",
+                marginBottom: 12,
+                textAlign: "center",
+              }}
+            >
+              No Active Terminal Sessions
+            </Text>
+            <Text
+              style={{
+                color: "#9CA3AF",
+                fontSize: 14,
+                lineHeight: 20,
+                textAlign: "center",
+                marginBottom: 20,
+              }}
+            >
+              Connect to a host from the Hosts tab to start a terminal session
+            </Text>
             <View
               style={{
-                backgroundColor: "#1a1a1a",
-                borderRadius: 12,
-                padding: 32,
-                alignItems: "center",
+                backgroundColor: "#22C55E",
+                paddingHorizontal: 32,
+                paddingVertical: 16,
+                borderRadius: 8,
                 borderWidth: 1,
-                borderColor: "#303032",
-                minWidth: 280,
-                maxWidth: 400,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 12,
-                elevation: 8,
+                borderColor: "#16A34A",
+                minHeight: 48,
+                minWidth: 120,
+                justifyContent: "center",
+                alignItems: "center",
+                zIndex: 1004,
+              }}
+              onTouchEnd={() => {
+                handleAddSession();
               }}
             >
               <Text
                 style={{
                   color: "#ffffff",
-                  fontSize: 20,
-                  fontWeight: "600",
-                  marginBottom: 12,
-                  textAlign: "center",
-                }}
-              >
-                No Active Terminal Sessions
-              </Text>
-              <Text
-                style={{
-                  color: "#9CA3AF",
                   fontSize: 14,
-                  lineHeight: 20,
-                  textAlign: "center",
-                  marginBottom: 20,
+                  fontWeight: "600",
                 }}
               >
-                Connect to a host from the Hosts tab to start a terminal session
+                Go to Hosts
               </Text>
-              <TouchableOpacity
-                onPress={handleAddSession}
-                style={{
-                  backgroundColor: "#22C55E",
-                  paddingHorizontal: 24,
-                  paddingVertical: 12,
-                  borderRadius: 8,
-                  borderWidth: 1,
-                  borderColor: "#16A34A",
-                }}
-              >
-                <Text
-                  style={{
-                    color: "#ffffff",
-                    fontSize: 14,
-                    fontWeight: "600",
-                  }}
-                >
-                  Go to Hosts
-                </Text>
-              </TouchableOpacity>
             </View>
           </View>
-        )}
-      </View>
+        </View>
+      )}
 
-      {/* Bottom underlay matching TabBar background to cover space under it */}
       {sessions.length > 0 && (
         <View
           pointerEvents="none"
@@ -319,7 +329,6 @@ export default function Sessions() {
         />
       )}
 
-      {/* Horizontal Keyboard Bar - always visible when there are sessions */}
       {sessions.length > 0 && (
         <View
           style={{

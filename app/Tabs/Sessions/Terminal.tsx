@@ -46,7 +46,10 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
     const [isRetrying, setIsRetrying] = useState(false);
     const [retryCount, setRetryCount] = useState(0);
     const [isConnected, setIsConnected] = useState(false);
+    const [hasReceivedData, setHasReceivedData] = useState(false);
+    const [showConnectingOverlay, setShowConnectingOverlay] = useState(true);
     const [htmlContent, setHtmlContent] = useState("");
+    const [currentHostId, setCurrentHostId] = useState<number | null>(null);
     const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
       null,
     );
@@ -364,6 +367,7 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
             
             if (msg.type === 'data') {
               terminal.write(msg.data);
+              notifyConnectionState('dataReceived', { hostName: hostConfig.name });
             } else if (msg.type === 'error') {
               const message = msg.message || 'Unknown error';
               if (isUnrecoverableError(message)) {
@@ -498,6 +502,7 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
                 setIsRetrying(false);
               }
               setRetryCount(message.data.retryCount);
+              setShowConnectingOverlay(true);
               break;
 
             case "connected":
@@ -505,7 +510,11 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
               setIsRetrying(false);
               setIsConnected(true);
               setRetryCount(0);
-              setTimeout(() => {}, 100);
+              break;
+
+            case "dataReceived":
+              setHasReceivedData(true);
+              setShowConnectingOverlay(false);
               break;
 
             case "disconnected":
@@ -554,18 +563,23 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
     );
 
     useEffect(() => {
-      setWebViewKey((prev) => prev + 1);
-      setIsConnecting(true);
-      setIsRetrying(false);
-      setIsConnected(false);
-      setRetryCount(0);
+      if (hostConfig.id !== currentHostId) {
+        setCurrentHostId(hostConfig.id);
+        setWebViewKey((prev) => prev + 1);
+        setIsConnecting(true);
+        setIsRetrying(false);
+        setIsConnected(false);
+        setHasReceivedData(false);
+        setShowConnectingOverlay(true);
+        setRetryCount(0);
 
-      const updateHtml = async () => {
-        const html = await generateHTML();
-        setHtmlContent(html);
-      };
-      updateHtml();
-    }, [hostConfig.id, generateHTML]);
+        const updateHtml = async () => {
+          const html = await generateHTML();
+          setHtmlContent(html);
+        };
+        updateHtml();
+      }
+    }, [hostConfig.id, currentHostId]);
 
     useEffect(() => {
       return () => {
@@ -595,7 +609,7 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
             width: "100%",
             height: "100%",
             backgroundColor: "#09090b",
-            opacity: isRetrying || isConnecting ? 0 : 1,
+            opacity: (showConnectingOverlay || isRetrying) ? 0 : 1,
           }}
           javaScriptEnabled={true}
           domStorageEnabled={true}
@@ -625,7 +639,7 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
           nestedScrollEnabled={false}
         />
 
-        {((isConnecting && !isConnected) || isRetrying) && (
+        {(showConnectingOverlay || isRetrying) && (
           <View
             style={{
               position: "absolute",
