@@ -440,7 +440,6 @@ export default function LoginForm() {
             paddingBottom: insets.bottom + 20,
           }}
         >
-          {/* Header */}
           <View className="items-center mb-8">
             <View className="w-16 h-16 bg-dark-bg-button rounded-2xl items-center justify-center mb-4">
               <User size={32} color="#ffffff" />
@@ -461,12 +460,10 @@ export default function LoginForm() {
             )}
           </View>
 
-          {/* Auth Form Card */}
           <View className="bg-dark-bg-panel rounded-2xl p-6 border border-dark-border-panel">
             {renderAuthForm()}
           </View>
 
-          {/* Alternative Auth Methods */}
           {authMode === "login" && (
             <View className="mt-6" style={{ gap: 12 }}>
               {registrationAllowed && (
@@ -487,7 +484,6 @@ export default function LoginForm() {
             </View>
           )}
 
-          {/* Back Button */}
           <TouchableOpacity
             onPress={
               authMode === "login"

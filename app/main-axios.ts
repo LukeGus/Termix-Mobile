@@ -284,7 +284,9 @@ function createApiInstance(
 
 let authStateCallback: ((isAuthenticated: boolean) => void) | null = null;
 
-export function setAuthStateCallback(callback: (isAuthenticated: boolean) => void) {
+export function setAuthStateCallback(
+  callback: (isAuthenticated: boolean) => void,
+) {
   authStateCallback = callback;
 }
 
@@ -387,8 +389,7 @@ export async function initializeServerConfig(): Promise<void> {
       }
     } else {
     }
-  } catch (error) {
-  }
+  } catch (error) {}
 }
 
 export function getCurrentServerUrl(): string | null {

@@ -595,124 +595,132 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
           flex: 1,
           width: "100%",
           height: "100%",
-          opacity: isVisible ? 1 : 0,
-          position: isVisible ? "relative" : "absolute",
-          zIndex: isVisible ? 1 : -1,
         }}
       >
-        <WebView
-          key={`terminal-${hostConfig.id}-${webViewKey}`}
-          ref={webViewRef}
-          source={{ html: htmlContent }}
+        <View
           style={{
             flex: 1,
             width: "100%",
             height: "100%",
-            backgroundColor: "#09090b",
-            opacity: showConnectingOverlay || isRetrying ? 0 : 1,
+            opacity: isVisible ? 1 : 0,
+            position: isVisible ? "relative" : "absolute",
+            zIndex: isVisible ? 1 : -1,
           }}
-          javaScriptEnabled={true}
-          domStorageEnabled={true}
-          startInLoadingState={false}
-          scalesPageToFit={false}
-          allowsInlineMediaPlayback={true}
-          mediaPlaybackRequiresUserAction={false}
-          keyboardDisplayRequiresUserAction={false}
-          onScroll={() => {}}
-          onMessage={handleWebViewMessage}
-          onError={(syntheticEvent) => {
-            const { nativeEvent } = syntheticEvent;
-            handleConnectionFailure(
-              `WebView error: ${nativeEvent.description}`,
-            );
-          }}
-          onHttpError={(syntheticEvent) => {
-            const { nativeEvent } = syntheticEvent;
-            handleConnectionFailure(
-              `WebView HTTP error: ${nativeEvent.statusCode}`,
-            );
-          }}
-          scrollEnabled={false}
-          bounces={false}
-          showsHorizontalScrollIndicator={false}
-          showsVerticalScrollIndicator={false}
-          nestedScrollEnabled={false}
-        />
-
-        {(showConnectingOverlay || isRetrying) && (
-          <View
+        >
+          <WebView
+            key={`terminal-${hostConfig.id}-${webViewKey}`}
+            ref={webViewRef}
+            source={{ html: htmlContent }}
             style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              justifyContent: "center",
-              alignItems: "center",
+              flex: 1,
+              width: "100%",
+              height: "100%",
               backgroundColor: "#09090b",
-              padding: 20,
+              opacity: showConnectingOverlay || isRetrying ? 0 : 1,
             }}
-          >
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            startInLoadingState={false}
+            scalesPageToFit={false}
+            allowsInlineMediaPlayback={true}
+            mediaPlaybackRequiresUserAction={false}
+            keyboardDisplayRequiresUserAction={false}
+            onScroll={() => {}}
+            onMessage={handleWebViewMessage}
+            onError={(syntheticEvent) => {
+              const { nativeEvent } = syntheticEvent;
+              handleConnectionFailure(
+                `WebView error: ${nativeEvent.description}`,
+              );
+            }}
+            onHttpError={(syntheticEvent) => {
+              const { nativeEvent } = syntheticEvent;
+              handleConnectionFailure(
+                `WebView HTTP error: ${nativeEvent.statusCode}`,
+              );
+            }}
+            scrollEnabled={false}
+            bounces={false}
+            showsHorizontalScrollIndicator={false}
+            showsVerticalScrollIndicator={false}
+            nestedScrollEnabled={false}
+          />
+
+          {(showConnectingOverlay || isRetrying) && (
             <View
               style={{
-                backgroundColor: "#1a1a1a",
-                borderRadius: 12,
-                padding: 24,
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                justifyContent: "center",
                 alignItems: "center",
-                borderWidth: 1,
-                borderColor: "#303032",
-                minWidth: 280,
+                backgroundColor: "#09090b",
+                padding: 20,
               }}
             >
-              <ActivityIndicator size="large" color="#22C55E" />
-              <Text
+              <View
                 style={{
-                  color: "#ffffff",
-                  fontSize: 18,
-                  fontWeight: "600",
-                  marginTop: 16,
-                  textAlign: "center",
+                  backgroundColor: "#1a1a1a",
+                  borderRadius: 12,
+                  padding: 24,
+                  alignItems: "center",
+                  borderWidth: 1,
+                  borderColor: "#303032",
+                  minWidth: 280,
                 }}
               >
-                {isRetrying ? "Reconnecting..." : "Connecting..."}
-              </Text>
-              <Text
-                style={{
-                  color: "#9CA3AF",
-                  fontSize: 14,
-                  marginTop: 8,
-                  textAlign: "center",
-                }}
-              >
-                {hostConfig.name} • {hostConfig.ip}
-              </Text>
-              {retryCount > 0 && (
-                <View
+                <ActivityIndicator size="large" color="#22C55E" />
+                <Text
                   style={{
-                    backgroundColor: "#0f0f0f",
-                    borderRadius: 8,
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    marginTop: 12,
-                    borderWidth: 1,
-                    borderColor: "#303032",
+                    color: "#ffffff",
+                    fontSize: 18,
+                    fontWeight: "600",
+                    marginTop: 16,
+                    textAlign: "center",
                   }}
                 >
-                  <Text
+                  {isRetrying ? "Reconnecting..." : "Connecting..."}
+                </Text>
+                <Text
+                  style={{
+                    color: "#9CA3AF",
+                    fontSize: 14,
+                    marginTop: 8,
+                    textAlign: "center",
+                  }}
+                >
+                  {hostConfig.name} • {hostConfig.ip}
+                </Text>
+                {retryCount > 0 && (
+                  <View
                     style={{
-                      color: "#EF4444",
-                      fontSize: 12,
-                      fontWeight: "500",
-                      textAlign: "center",
+                      backgroundColor: "#0f0f0f",
+                      borderRadius: 8,
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      marginTop: 12,
+                      borderWidth: 1,
+                      borderColor: "#303032",
                     }}
                   >
-                    Retry {retryCount}/3
-                  </Text>
-                </View>
-              )}
+                    <Text
+                      style={{
+                        color: "#EF4444",
+                        fontSize: 12,
+                        fontWeight: "500",
+                        textAlign: "center",
+                      }}
+                    >
+                      Retry {retryCount}/3
+                    </Text>
+                  </View>
+                )}
+              </View>
             </View>
-          </View>
-        )}
+          )}
+        </View>
       </View>
     );
   },

@@ -17,7 +17,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useTerminalSessions } from "@/app/contexts/TerminalSessionsContext";
 import { useKeyboard } from "@/app/contexts/KeyboardContext";
-import Terminal, { TerminalHandle } from "@/app/Tabs/Sessions/Terminal";
+import { Terminal, TerminalHandle } from "@/app/Tabs/Sessions/Terminal";
 import TabBar from "@/app/Tabs/Sessions/Navigation/TabBar";
 import CustomKeyboard from "@/app/Tabs/Sessions/CustomKeyboard";
 import KeyboardBar from "@/app/Tabs/Sessions/KeyboardBar";
@@ -386,7 +386,6 @@ export default function Sessions() {
         />
       </View>
 
-      {/* Custom Keyboard */}
       {sessions.length > 0 && isCustomKeyboardVisible && (
         <View
           style={{
@@ -409,7 +408,35 @@ export default function Sessions() {
         </View>
       )}
 
-      {/* Hidden TextInput to maintain keyboard focus - small transparent input anchored at bottom */}
+      {sessions.length > 0 && !isCustomKeyboardVisible && (
+        <View
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: keyboardHeight > 0 ? keyboardHeight : 80,
+            backgroundColor: "#09090b",
+            justifyContent: "center",
+            alignItems: "center",
+            borderTopWidth: 1,
+            borderTopColor: "#303032",
+            zIndex: 1000,
+          }}
+        >
+          <Text
+            style={{
+              color: "#9CA3AF",
+              fontSize: 14,
+              textAlign: "center",
+              fontWeight: "500",
+            }}
+          >
+            Tap anywhere to bring back the keyboard
+          </Text>
+        </View>
+      )}
+
       {sessions.length > 0 && !isCustomKeyboardVisible && (
         <TextInput
           ref={hiddenInputRef}

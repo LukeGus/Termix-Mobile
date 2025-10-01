@@ -115,7 +115,6 @@ function Host({ host, status, isLast = false }: HostProps) {
         activeOpacity={0.7}
       >
         <View className="flex flex-row items-center">
-          {/* Avatar + status */}
           <View className="mr-3" style={{ width: 44, height: 44 }}>
             <View
               style={{
@@ -136,7 +135,7 @@ function Host({ host, status, isLast = false }: HostProps) {
                 {statusLabel}
               </Text>
             </View>
-            {/* Status dot with ripple */}
+
             <View
               style={{
                 position: "absolute",
@@ -185,7 +184,6 @@ function Host({ host, status, isLast = false }: HostProps) {
             </View>
           </View>
 
-          {/* Main content */}
           <View className="flex-1">
             <View className="flex-row items-center gap-2">
               <Text className="text-white font-semibold" numberOfLines={1}>
@@ -205,7 +203,6 @@ function Host({ host, status, isLast = false }: HostProps) {
           </TouchableOpacity>
         </View>
 
-        {/* Tags */}
         {host.tags && host.tags.length > 0 && (
           <View
             className="mt-2"
@@ -296,7 +293,6 @@ function Host({ host, status, isLast = false }: HostProps) {
         )}
       </TouchableOpacity>
 
-      {/* Context Menu Modal */}
       <Modal
         visible={showContextMenu}
         transparent={true}

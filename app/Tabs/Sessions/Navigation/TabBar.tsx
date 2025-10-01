@@ -142,7 +142,6 @@ export default function TabBar({
                   </Text>
                 </View>
 
-                {/* Close button */}
                 <TouchableOpacity
                   onPressIn={() => hiddenInputRef.current?.focus()}
                   onPress={(e) => {
