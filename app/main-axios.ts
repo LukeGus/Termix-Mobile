@@ -1924,10 +1924,11 @@ export async function getFoldersWithStats(): Promise<any> {
   try {
     const token = await getCookie("jwt");
 
-    const tryFetch = async (base: string) => {
-      const cleanBase = base.replace(/\/$/, "");
-      const url = `${cleanBase}/db/folders/with-stats`;
-      const res = await fetch(url, {
+    const tryFetch = async (baseUrl: string) => {
+      const cleanBase = baseUrl.replace(/\/$/, "");
+      const url = `${cleanBase}/ssh/folders`;
+
+      const response = await fetch(url, {
         method: "GET",
         headers: {
           Accept: "application/json",
@@ -1935,22 +1936,29 @@ export async function getFoldersWithStats(): Promise<any> {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       });
-      if (res.ok) return await res.json();
-      if (res.status === 404) return null;
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+
+      if (response.ok) {
+        return await response.json();
+      } else if (response.status === 404) {
+        return null;
+      } else {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
     };
 
-    // Prefer /ssh base first, then root
     const sshBase = getSshBase(8081);
     let data = await tryFetch(sshBase);
+
     if (data === null) {
       const rootBase = getRootBase(8081);
       data = await tryFetch(rootBase);
     }
-    return data;
-  } catch {
-    // Treat as optional; return null quietly
-    return null;
+    return data || [];
+  } catch (error) {
+    if (error instanceof Error && !error.message.includes("404")) {
+      console.warn("Error fetching folders:", error.message);
+    }
+    return [];
   }
 }
 
