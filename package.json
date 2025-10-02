@@ -23,6 +23,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "expo": "~54.0.10",
+    "expo-build-properties": "^1.0.9",
     "expo-constants": "~18.0.8",
     "expo-dev-client": "~6.0.12",
     "expo-font": "~14.0.8",
