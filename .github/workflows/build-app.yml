@@ -62,13 +62,11 @@ jobs:
           echo "Validating configuration..."
           eas build:configure --platform ${{ github.event.inputs.platform }}
 
-      - name: 👷 Prebuild
-        run: npx expo prebuild
-
       - name: 👷 Build app
         run: |
           eas build --local \
             --non-interactive \
+            --clear-cache \
             --platform=${{ github.event.inputs.platform }} \
             --profile=${{ github.event.inputs.profile }}
         env:

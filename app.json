@@ -55,7 +55,8 @@
         }
       ],
       "expo-dev-client",
-      "./plugins/withNetworkSecurityConfig.js"
+      "./plugins/withNetworkSecurityConfig.js",
+      "./plugins/withIOSNetworkConfig.js"
     ],
     "experiments": {
       "typedRoutes": true,
