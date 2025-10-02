@@ -62,39 +62,43 @@ jobs:
           echo "Validating configuration..."
           eas build:configure --platform ${{ github.event.inputs.platform }}
 
+      - name: 🔧 Prebuild with verification
+        run: |
+          echo "Running expo prebuild..."
+          npx expo prebuild --clean --platform ${{ github.event.inputs.platform }}
+          
+          echo "=== Verifying network security configurations ==="
+          
+          if [ "${{ github.event.inputs.platform }}" = "ios" ]; then
+            echo "Checking for Info.plist files..."
+            find ios -name "Info.plist" -type f
+            
+            echo -e "\nSearching for NSAppTransportSecurity in all Info.plist files..."
+            find ios -name "Info.plist" -type f -exec sh -c 'echo "=== {} ==="; grep -A 10 "NSAppTransportSecurity" "{}" || echo "NSAppTransportSecurity NOT FOUND"' \;
+          fi
+          
+          if [ "${{ github.event.inputs.platform }}" = "android" ]; then
+            echo "Checking AndroidManifest.xml..."
+            if [ -f "android/app/src/main/AndroidManifest.xml" ]; then
+              grep -i "networkSecurityConfig\|cleartextTraffic" android/app/src/main/AndroidManifest.xml || echo "Network config NOT FOUND in AndroidManifest"
+            fi
+            
+            echo -e "\nChecking network_security_config.xml..."
+            if [ -f "android/app/src/main/res/xml/network_security_config.xml" ]; then
+              cat android/app/src/main/res/xml/network_security_config.xml
+            else
+              echo "network_security_config.xml NOT FOUND"
+            fi
+          fi
+
       - name: 👷 Build app
         run: |
           eas build --local \
             --non-interactive \
-            --clear-cache \
             --platform=${{ github.event.inputs.platform }} \
             --profile=${{ github.event.inputs.profile }}
         env:
           EAS_SKIP_AUTO_FINGERPRINT: 1
-
-      - name: 🔍 Verify iOS Network Security Config
-        if: ${{ github.event.inputs.platform == 'ios' }}
-        run: |
-          echo "Checking Info.plist for NSAppTransportSecurity..."
-          if [ -f "ios/Termix/Info.plist" ]; then
-            cat ios/Termix/Info.plist | grep -A 10 "NSAppTransportSecurity" || echo "NSAppTransportSecurity NOT FOUND in Info.plist"
-          else
-            echo "Info.plist not found"
-          fi
-
-      - name: 🔍 Verify Android Network Security Config
-        if: ${{ github.event.inputs.platform == 'android' }}
-        run: |
-          echo "Checking AndroidManifest.xml..."
-          if [ -f "android/app/src/main/AndroidManifest.xml" ]; then
-            cat android/app/src/main/AndroidManifest.xml | grep -i "networkSecurityConfig\|cleartextTraffic" || echo "Network config NOT FOUND in AndroidManifest"
-          fi
-          echo "Checking network_security_config.xml..."
-          if [ -f "android/app/src/main/res/xml/network_security_config.xml" ]; then
-            cat android/app/src/main/res/xml/network_security_config.xml
-          else
-            echo "network_security_config.xml NOT FOUND"
-          fi
 
       - name: 📁 List build output
         run: |
