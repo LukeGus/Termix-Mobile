@@ -77,8 +77,14 @@ export default function LoginForm() {
         formData.password.trim(),
       );
 
+      if (response.requires_totp) {
+        setTempToken(response.temp_token || "");
+        setAuthMode("totp");
+        setIsLoading(false);
+        return;
+      }
+
       if (response.token) {
-        await setCookie("jwt", response.token);
         setAuthenticated(true);
         setFormData({ username: "", password: "", totpCode: "" });
         setShowLoginForm(false);
@@ -103,6 +109,11 @@ export default function LoginForm() {
       return;
     }
 
+    if (formData.totpCode.trim().length !== 6) {
+      Alert.alert("Error", "2FA code must be 6 digits");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -111,18 +122,33 @@ export default function LoginForm() {
         formData.totpCode.trim(),
       );
 
-      if (response.token) {
-        await setCookie("jwt", response.token);
+      if (response.success && response.token) {
         setAuthenticated(true);
         setFormData({ username: "", password: "", totpCode: "" });
         setShowLoginForm(false);
+        setAuthMode("login");
+        setTempToken("");
       } else {
         Alert.alert("2FA Failed", "Invalid 2FA code. Please try again.");
       }
     } catch (error: any) {
+      const errorCode = error?.response?.data?.code;
       const errorMessage =
-        error?.message || "Failed to verify 2FA code. Please try again.";
-      Alert.alert("2FA Failed", errorMessage);
+        error?.response?.data?.error ||
+        error?.message ||
+        "Failed to verify 2FA code. Please try again.";
+
+      if (errorCode === "SESSION_EXPIRED") {
+        Alert.alert(
+          "Session Expired",
+          "Your login session has expired. Please log in again.",
+        );
+        setAuthMode("login");
+        setTempToken("");
+        setFormData({ username: "", password: "", totpCode: "" });
+      } else {
+        Alert.alert("2FA Failed", errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -150,8 +176,14 @@ export default function LoginForm() {
         formData.password.trim(),
       );
 
+      if (loginResponse.requires_totp) {
+        setTempToken(loginResponse.temp_token || "");
+        setAuthMode("totp");
+        setIsLoading(false);
+        return;
+      }
+
       if (loginResponse.token) {
-        setCookie("jwt", loginResponse.token);
         setAuthenticated(true);
         setFormData({ username: "", password: "", totpCode: "" });
         setShowLoginForm(false);
@@ -296,6 +328,7 @@ export default function LoginForm() {
                     }
                     autoCapitalize="none"
                     autoComplete="username"
+                    editable={!isLoading}
                   />
                   <View className="absolute left-4 top-1/2 -translate-y-1/2">
                     <User size={20} color="#9CA3AF" />
@@ -327,6 +360,7 @@ export default function LoginForm() {
                     }
                     secureTextEntry={!showPassword}
                     autoComplete="new-password"
+                    editable={!isLoading}
                   />
                   <View className="absolute left-4 top-1/2 -translate-y-1/2">
                     <Lock size={20} color="#9CA3AF" />
@@ -334,6 +368,7 @@ export default function LoginForm() {
                   <TouchableOpacity
                     onPress={() => setShowPassword(!showPassword)}
                     className="absolute right-4 top-1/2 -translate-y-1/2"
+                    disabled={isLoading}
                   >
                     <Text className="text-gray-400 text-sm">
                       {showPassword ? "Hide" : "Show"}
@@ -383,7 +418,7 @@ export default function LoginForm() {
                   2FA Code
                 </Text>
                 <TextInput
-                  className="bg-dark-bg-input rounded-xl text-white border-2 border-dark-border text-center text-2xl tracking-widest"
+                  className="bg-dark-bg-input rounded-xl text-white border-2 border-dark-border"
                   style={{
                     height: 56,
                     textAlignVertical: "center",
@@ -392,27 +427,52 @@ export default function LoginForm() {
                     paddingBottom: 0,
                     paddingLeft: 16,
                     paddingRight: 16,
+                    textAlign: "center",
+                    fontSize: 24,
+                    letterSpacing: 8,
                   }}
                   placeholder="000000"
                   placeholderTextColor="#9CA3AF"
                   value={formData.totpCode}
-                  onChangeText={(value) => handleInputChange("totpCode", value)}
+                  onChangeText={(value) =>
+                    handleInputChange("totpCode", value.replace(/\D/g, ""))
+                  }
                   keyboardType="numeric"
                   maxLength={6}
                   autoComplete="one-time-code"
+                  editable={!isLoading}
                 />
+                <Text className="text-gray-400 text-xs mt-2 text-center">
+                  You can also use a backup code if available
+                </Text>
               </View>
             </View>
 
             <TouchableOpacity
               onPress={onTOTPSubmit}
-              disabled={isLoading}
+              disabled={isLoading || (formData.totpCode?.length || 0) < 6}
               className={`px-6 py-4 rounded-xl mt-6 ${
-                isLoading ? "bg-gray-600" : "bg-blue-600"
+                isLoading || (formData.totpCode?.length || 0) < 6
+                  ? "bg-gray-600"
+                  : "bg-blue-600"
               }`}
             >
               <Text className="text-white text-center font-semibold text-lg">
                 {isLoading ? "Verifying..." : "Verify Code"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                setAuthMode("login");
+                setTempToken("");
+                setFormData({ username: "", password: "", totpCode: "" });
+              }}
+              disabled={isLoading}
+              className="px-6 py-4 rounded-xl mt-3 bg-dark-bg-button border border-dark-border"
+            >
+              <Text className="text-white text-center font-semibold text-lg">
+                Cancel
               </Text>
             </TouchableOpacity>
           </>
@@ -484,19 +544,24 @@ export default function LoginForm() {
             </View>
           )}
 
-          <TouchableOpacity
-            onPress={
-              authMode === "login"
-                ? handleBackToServerConfig
-                : () => setAuthMode("login")
-            }
-            className="flex-row items-center justify-center px-6 py-4 rounded-xl bg-dark-bg-button border border-dark-border mt-6"
-          >
-            <ArrowLeft size={20} color="#ffffff" style={{ marginRight: 8 }} />
-            <Text className="text-white font-semibold text-lg">
-              {authMode === "login" ? "Back to Server" : "Back to Login"}
-            </Text>
-          </TouchableOpacity>
+          {authMode !== "totp" && (
+            <TouchableOpacity
+              onPress={
+                authMode === "login"
+                  ? handleBackToServerConfig
+                  : () => {
+                      setAuthMode("login");
+                      setFormData({ username: "", password: "", totpCode: "" });
+                    }
+              }
+              className="flex-row items-center justify-center px-6 py-4 rounded-xl bg-dark-bg-button border border-dark-border mt-6"
+            >
+              <ArrowLeft size={20} color="#ffffff" style={{ marginRight: 8 }} />
+              <Text className="text-white font-semibold text-lg">
+                {authMode === "login" ? "Back to Server" : "Back to Login"}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

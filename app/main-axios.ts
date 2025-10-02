@@ -67,6 +67,12 @@ interface AuthResponse {
   success?: boolean;
   is_admin?: boolean;
   username?: string;
+  userId?: string;
+  is_oidc?: boolean;
+  totp_enabled?: boolean;
+  data_unlocked?: boolean;
+  requires_totp?: boolean;
+  temp_token?: string;
 }
 
 interface UserInfo {
@@ -1355,10 +1361,17 @@ export async function loginUser(
   try {
     const response = await authApi.post("/users/login", { username, password });
 
+    if (response.data.requires_totp) {
+      return {
+        ...response.data,
+        token: response.data.temp_token || "",
+      };
+    }
+
     let token = null;
-    const setCookie = response.headers["set-cookie"];
-    if (setCookie && Array.isArray(setCookie)) {
-      for (const cookie of setCookie) {
+    const cookieHeader = response.headers["set-cookie"];
+    if (cookieHeader && Array.isArray(cookieHeader)) {
+      for (const cookie of cookieHeader) {
         if (cookie.startsWith("jwt=")) {
           token = cookie.split("jwt=")[1].split(";")[0];
           break;
@@ -1366,10 +1379,16 @@ export async function loginUser(
       }
     }
 
-    return {
+    const result = {
       ...response.data,
       token: token || response.data.token,
     };
+
+    if (result.token && !response.data.requires_totp) {
+      await AsyncStorage.setItem("jwt", result.token);
+    }
+
+    return result;
   } catch (error: any) {
     if (error?.response?.status === 404) {
       try {
@@ -1379,10 +1398,17 @@ export async function loginUser(
         });
         const response = await alt.post("/users/login", { username, password });
 
+        if (response.data.requires_totp) {
+          return {
+            ...response.data,
+            token: response.data.temp_token || "",
+          };
+        }
+
         let token = null;
-        const setCookie = response.headers["set-cookie"];
-        if (setCookie && Array.isArray(setCookie)) {
-          for (const cookie of setCookie) {
+        const cookieHeader = response.headers["set-cookie"];
+        if (cookieHeader && Array.isArray(cookieHeader)) {
+          for (const cookie of cookieHeader) {
             if (cookie.startsWith("jwt=")) {
               token = cookie.split("jwt=")[1].split(";")[0];
               break;
@@ -1390,10 +1416,16 @@ export async function loginUser(
           }
         }
 
-        return {
+        const result = {
           ...response.data,
           token: token || response.data.token,
         };
+
+        if (result.token && !response.data.requires_totp) {
+          await AsyncStorage.setItem("jwt", result.token);
+        }
+
+        return result;
       } catch (e) {
         handleApiError(e, "login user");
       }
@@ -1614,8 +1646,72 @@ export async function verifyTOTPLogin(
       temp_token,
       totp_code,
     });
-    return response.data;
-  } catch (error) {
+
+    let token = null;
+    const cookieHeader = response.headers["set-cookie"];
+    if (cookieHeader && Array.isArray(cookieHeader)) {
+      for (const cookie of cookieHeader) {
+        if (cookie.startsWith("jwt=")) {
+          token = cookie.split("jwt=")[1].split(";")[0];
+          break;
+        }
+      }
+    }
+
+    const result = {
+      ...response.data,
+      token: token || response.data.token,
+    };
+
+    if (result.token) {
+      await AsyncStorage.setItem("jwt", result.token);
+    }
+
+    return result;
+  } catch (error: any) {
+    if (error?.response?.status === 404 || error?.response?.status === 500) {
+      try {
+        const alt = axios.create({
+          baseURL: getSshBase(8081),
+          headers: { "Content-Type": "application/json" },
+        });
+
+        const token = await getCookie("jwt");
+        if (token) {
+          alt.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+        }
+
+        const response = await alt.post("/users/totp/verify-login", {
+          temp_token,
+          totp_code,
+        });
+
+        let extractedToken = null;
+        const cookieHeader = response.headers["set-cookie"];
+        if (cookieHeader && Array.isArray(cookieHeader)) {
+          for (const cookie of cookieHeader) {
+            if (cookie.startsWith("jwt=")) {
+              extractedToken = cookie.split("jwt=")[1].split(";")[0];
+              break;
+            }
+          }
+        }
+
+        const result = {
+          ...response.data,
+          token: extractedToken || response.data.token,
+        };
+
+        if (result.token) {
+          await AsyncStorage.setItem("jwt", result.token);
+        }
+
+        return result;
+      } catch (e) {
+        handleApiError(e, "verify TOTP login");
+        throw e;
+      }
+    }
     handleApiError(error as AxiosError, "verify TOTP login");
     throw error;
   }
