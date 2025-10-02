@@ -72,6 +72,30 @@ jobs:
         env:
           EAS_SKIP_AUTO_FINGERPRINT: 1
 
+      - name: 🔍 Verify iOS Network Security Config
+        if: ${{ github.event.inputs.platform == 'ios' }}
+        run: |
+          echo "Checking Info.plist for NSAppTransportSecurity..."
+          if [ -f "ios/Termix/Info.plist" ]; then
+            cat ios/Termix/Info.plist | grep -A 10 "NSAppTransportSecurity" || echo "NSAppTransportSecurity NOT FOUND in Info.plist"
+          else
+            echo "Info.plist not found"
+          fi
+
+      - name: 🔍 Verify Android Network Security Config
+        if: ${{ github.event.inputs.platform == 'android' }}
+        run: |
+          echo "Checking AndroidManifest.xml..."
+          if [ -f "android/app/src/main/AndroidManifest.xml" ]; then
+            cat android/app/src/main/AndroidManifest.xml | grep -i "networkSecurityConfig\|cleartextTraffic" || echo "Network config NOT FOUND in AndroidManifest"
+          fi
+          echo "Checking network_security_config.xml..."
+          if [ -f "android/app/src/main/res/xml/network_security_config.xml" ]; then
+            cat android/app/src/main/res/xml/network_security_config.xml
+          else
+            echo "network_security_config.xml NOT FOUND"
+          fi
+
       - name: 📁 List build output
         run: |
           echo "Searching for build artifacts in common locations:"

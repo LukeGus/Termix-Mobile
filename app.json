@@ -37,6 +37,8 @@
       "bundler": "metro"
     },
     "plugins": [
+      "./plugins/withNetworkSecurityConfig.js",
+      "./plugins/withIOSNetworkConfig.js",
       "expo-router",
       [
         "expo-splash-screen",
@@ -50,9 +52,7 @@
           }
         }
       ],
-      "expo-dev-client",
-      "./plugins/withNetworkSecurityConfig.js",
-      "./plugins/withIOSNetworkConfig.js"
+      "expo-dev-client"
     ],
     "experiments": {
       "typedRoutes": true,
