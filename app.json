@@ -19,7 +19,11 @@
         "tinted": "./assets/images/ios-tinted.png"
       },
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSAllowsLocalNetworking": true
+        }
       }
     },
     "android": {
@@ -29,16 +33,21 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#18181b"
-      },
-      "usesCleartextTraffic": true
+      }
     },
     "web": {
       "output": "static",
       "bundler": "metro"
     },
     "plugins": [
-      "./plugins/withNetworkSecurityConfig.js",
-      "./plugins/withIOSNetworkConfig.js",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
       "expo-router",
       [
         "expo-splash-screen",
