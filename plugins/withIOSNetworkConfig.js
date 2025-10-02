@@ -6,7 +6,10 @@ const withIOSNetworkConfig = (config) => {
       NSAllowsArbitraryLoads: true,
       NSAllowsLocalNetworking: true,
       NSAllowsArbitraryLoadsInWebContent: true,
+      NSAllowsArbitraryLoadsForMedia: true,
     };
+    
+    config.modResults.NSAppTransportSecurity.NSExceptionDomains = config.modResults.NSAppTransportSecurity.NSExceptionDomains || {};
     
     return config;
   });

@@ -9,7 +9,7 @@
     "githubUrl": "https://github.com/LukeGus/Termix-Mobile",
     "backgroundColor": "#18181b",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.karmaa.termix",
@@ -19,11 +19,7 @@
         "tinted": "./assets/images/ios-tinted.png"
       },
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
-        "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": true,
-          "NSAllowsLocalNetworking": true
-        }
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
