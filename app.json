@@ -9,7 +9,7 @@
     "githubUrl": "https://github.com/LukeGus/Termix-Mobile",
     "backgroundColor": "#18181b",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.karmaa.termix",
