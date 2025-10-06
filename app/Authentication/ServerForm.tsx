@@ -70,7 +70,9 @@ export default function ServerForm() {
       if (
         url.includes("localhost") ||
         url.includes("127.0.0.1") ||
-        /^\d+\.\d+\.\d+\.\d+/.test(url)
+        /^\d+\.\d+\.\d+\.\d+/.test(url) ||
+        /^100\.\d+\.\d+\.\d+/.test(url) ||
+        url.includes("tailscale")
       ) {
         url = `http://${url}`;
       } else {

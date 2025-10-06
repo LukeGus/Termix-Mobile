@@ -9,7 +9,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { RefreshCw } from "lucide-react-native";
 import Folder from "@/app/Tabs/Hosts/Navigation/Folder";
 import {
@@ -43,9 +43,14 @@ export default function Hosts() {
   const [serverStatuses, setServerStatuses] = useState<
     Record<number, ServerStatus>
   >({});
+  const isRefreshingRef = useRef(false);
 
-  const fetchData = async (isRefresh = false) => {
+  const fetchData = useCallback(async (isRefresh = false) => {
+    if (isRefreshingRef.current) return;
+    
     try {
+      isRefreshingRef.current = true;
+      
       if (isRefresh) {
         setRefreshing(true);
       } else {
@@ -122,16 +127,19 @@ export default function Hosts() {
     } finally {
       setLoading(false);
       setRefreshing(false);
+      isRefreshingRef.current = false;
     }
-  };
+  }, []);
 
-  const handleRefresh = () => {
-    fetchData(true);
-  };
+  const handleRefresh = useCallback(() => {
+    if (!isRefreshingRef.current) {
+      fetchData(true);
+    }
+  }, [fetchData]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const filteredFolders = folders
     .map((folder) => ({
@@ -178,11 +186,19 @@ export default function Hosts() {
           </Text>
           <TouchableOpacity
             onPress={handleRefresh}
-            disabled={refreshing}
-            className="bg-dark-bg-button p-2 rounded-md border-2 border-dark-border"
+            disabled={refreshing || loading}
+            className={`bg-dark-bg-button p-2 rounded-md border-2 border-dark-border ${
+              refreshing || loading ? "opacity-50" : ""
+            }`}
             activeOpacity={0.7}
           >
-            <RefreshCw size={20} color="white" />
+            <RefreshCw 
+              size={20} 
+              color="white" 
+              style={{ 
+                transform: [{ rotate: refreshing ? "180deg" : "0deg" }] 
+              }} 
+            />
           </TouchableOpacity>
         </View>
         <TextInput
@@ -202,6 +218,8 @@ export default function Hosts() {
               onRefresh={handleRefresh}
               tintColor="#ffffff"
               colors={["#ffffff"]}
+              progressBackgroundColor="transparent"
+              titleColor="#ffffff"
             />
           }
         >

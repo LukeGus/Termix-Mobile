@@ -323,7 +323,7 @@ export async function testServerConnection(
     const healthUrl = `${cleanUrl}/health`;
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     const response = await fetch(healthUrl, {
       method: "GET",
@@ -351,6 +351,9 @@ export async function testServerConnection(
       if (serverUrl.startsWith("https://")) {
         errorMessage =
           "SSL certificate verification failed (mobile app does not support self-signed certificates generated from Termix)";
+      } else if (serverUrl.includes("100.") || serverUrl.includes("tailscale")) {
+        errorMessage =
+          "Tailscale connection failed - ensure Tailscale is running and the server is accessible";
       } else {
         errorMessage =
           "Network error - check if server is running and accessible";
@@ -358,6 +361,9 @@ export async function testServerConnection(
     } else if (error.message?.includes("Failed to fetch")) {
       if (serverUrl.startsWith("https://")) {
         errorMessage = "Failed to establish secure connection";
+      } else if (serverUrl.includes("100.") || serverUrl.includes("tailscale")) {
+        errorMessage =
+          "Tailscale connection failed - check VPN connection and server accessibility";
       } else {
         errorMessage =
           "Failed to connect - check server URL and network connection";

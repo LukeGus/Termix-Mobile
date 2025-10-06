@@ -592,9 +592,14 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
     return (
       <View
         style={{
-          flex: 1,
+          flex: isVisible ? 1 : 0,
           width: "100%",
           height: "100%",
+          position: isVisible ? "relative" : "absolute",
+          top: isVisible ? 0 : 0,
+          left: isVisible ? 0 : 0,
+          right: isVisible ? 0 : 0,
+          bottom: isVisible ? 0 : 0,
         }}
       >
         <View
@@ -603,7 +608,7 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
             width: "100%",
             height: "100%",
             opacity: isVisible ? 1 : 0,
-            position: isVisible ? "relative" : "absolute",
+            position: "relative",
             zIndex: isVisible ? 1 : -1,
           }}
         >

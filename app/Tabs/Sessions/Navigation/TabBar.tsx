@@ -121,13 +121,13 @@ export default function TabBar({
                 className="flex-row items-center rounded-md"
                 style={{
                   borderWidth: 2,
-                  borderColor: "#303032",
-                  backgroundColor: isActive ? "#2a2a2a" : "#1a1a1a",
+                  borderColor: isActive ? "#4a4a4a" : "#303032",
+                  backgroundColor: isActive ? "#1a1a1a" : "#1a1a1a",
                   shadowColor: isActive ? "#000" : "transparent",
                   shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: isActive ? 0.1 : 0,
+                  shadowOpacity: isActive ? 0.15 : 0,
                   shadowRadius: 4,
-                  elevation: isActive ? 2 : 0,
+                  elevation: isActive ? 3 : 0,
                   minWidth: 120,
                   height: 44,
                 }}
@@ -155,8 +155,8 @@ export default function TabBar({
                   style={{
                     width: 36,
                     height: 44,
-                    borderLeftWidth: 1,
-                    borderLeftColor: "#303032",
+                    borderLeftWidth: 2,
+                    borderLeftColor: isActive ? "#4a4a4a" : "#303032",
                   }}
                 >
                   <X
