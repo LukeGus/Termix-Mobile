@@ -19,14 +19,14 @@ If you would like, you can support the project here!\
 
 # Overview
 
-Termix Mobile is the official mobile companion app for Termix, providing full remote control of your servers through SSH terminal management. Connect to your existing Termix server configuration and manage all your SSH hosts with professional terminal capabilities optimized for mobile devices.
+Termix Mobile is the official mobile companion app for Termix, providing full remote control of your servers through SSH terminal management. You can connect to your existing Termix server configuration and manage all your SSH hosts with professional terminal capabilities optimized for mobile devices.
 
 > **Requires a Termix server** - Install at [docs.termix.site/install](https://docs.termix.site/install)
 
 # Features
 
 - **SSH Terminal Access** - Full-featured SSH terminal with xterm.js integration and multi-session support
-- **Advanced Keyboard Features** - Dual keyboard modes with custom terminal keyboard optimized for terminal use
+- **Advanced Keyboard Features** - Dual keyboard modes with a custom terminal keyboard optimized for terminal use
 - **Host Management** - Folder-based organization with real-time server status and visual indicators
 - **Secure Authentication** - 2FA/TOTP multi-factor authentication with JWT token-based security
 - **Mobile-Optimized Interface** - Dark theme with responsive layout and gesture-supported design
