@@ -39,7 +39,7 @@ Termix Mobile is available for both [Android](https://docs.termix.site/install/c
 
 # Support
 
-If you need help with Termix Mobile, you can join the [Discord](https://discord.gg/jVQGdvHDrf) server and visit the support channel. You can also open an issue or open a pull request on the main [GitHub](https://github.com/LukeGus/Termix/issues) repo.
+If you need help with Termix Mobile, you can join the [Discord](https://discord.gg/jVQGdvHDrf) server and visit the support channel. You can also open an issue or open a pull request on the [GitHub](https://github.com/LukeGus/Termix-Mobile/issues) repo.
 
 # License
 
