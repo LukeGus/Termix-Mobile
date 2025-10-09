@@ -315,76 +315,7 @@ export async function saveServerConfig(config: ServerConfig): Promise<boolean> {
   }
 }
 
-export async function testServerConnection(
-  serverUrl: string,
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const cleanUrl = serverUrl.replace(/\/$/, "");
-    const healthUrl = `${cleanUrl}/health`;
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-    const response = await fetch(healthUrl, {
-      method: "GET",
-      signal: controller.signal,
-      headers: {
-        Accept: "application/json",
-        "User-Agent": "Termix-Mobile/1.0.0",
-      },
-    });
-
-    clearTimeout(timeoutId);
-
-    return {
-      success: response.ok,
-      error: response.ok
-        ? undefined
-        : `HTTP ${response.status}: ${response.statusText}`,
-    };
-  } catch (error: any) {
-    let errorMessage = error.message || "Connection test failed";
-
-    if (error.name === "AbortError") {
-      errorMessage = "Connection timeout - server not responding";
-    } else if (error.message?.includes("Network request failed")) {
-      if (serverUrl.startsWith("https://")) {
-        errorMessage =
-          "SSL certificate verification failed (mobile app does not support self-signed certificates generated from Termix)";
-      } else if (serverUrl.includes("100.") || serverUrl.includes("tailscale")) {
-        errorMessage =
-          "Tailscale connection failed - ensure Tailscale is running and the server is accessible";
-      } else {
-        errorMessage =
-          "Network error - check if server is running and accessible";
-      }
-    } else if (error.message?.includes("Failed to fetch")) {
-      if (serverUrl.startsWith("https://")) {
-        errorMessage = "Failed to establish secure connection";
-      } else if (serverUrl.includes("100.") || serverUrl.includes("tailscale")) {
-        errorMessage =
-          "Tailscale connection failed - check VPN connection and server accessibility";
-      } else {
-        errorMessage =
-          "Failed to connect - check server URL and network connection";
-      }
-    } else if (
-      serverUrl.startsWith("https://") &&
-      (error.message?.includes("SSL") ||
-        error.message?.includes("certificate") ||
-        error.message?.includes("handshake") ||
-        error.message?.includes("untrusted"))
-    ) {
-      errorMessage =
-        "SSL certificate verification failed (mobile app does not support self-signed certificates generated from Termix)";
-    }
-
-    return {
-      success: false,
-      error: errorMessage,
-    };
-  }
-}
 
 export async function initializeServerConfig(): Promise<void> {
   try {
