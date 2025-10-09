@@ -315,8 +315,6 @@ export async function saveServerConfig(config: ServerConfig): Promise<boolean> {
   }
 }
 
-
-
 export async function initializeServerConfig(): Promise<void> {
   try {
     const configStr = await AsyncStorage.getItem("serverConfig");

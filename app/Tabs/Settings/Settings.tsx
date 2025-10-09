@@ -38,10 +38,9 @@ export default function Settings() {
           <Text className="text-white font-semibold">Logout</Text>
         </TouchableOpacity>
 
-        <Text
-            className="text-white mt-5"
-        >
-          To delete your account, visit your self-hosted Termix instance and log in.
+        <Text className="text-white mt-5">
+          To delete your account, visit your self-hosted Termix instance and log
+          in.
         </Text>
       </View>
     </ScrollView>

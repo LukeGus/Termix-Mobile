@@ -14,8 +14,12 @@ import { WebView, WebViewNavigation } from "react-native-webview";
 import { WebViewSource } from "react-native-webview/lib/WebViewTypes";
 
 export default function LoginForm() {
-  const { setAuthenticated, setShowLoginForm, setShowServerManager, selectedServer } =
-    useAppContext();
+  const {
+    setAuthenticated,
+    setShowLoginForm,
+    setShowServerManager,
+    selectedServer,
+  } = useAppContext();
   const insets = useSafeAreaInsets();
   const webViewRef = useRef<WebView>(null);
   const [url, setUrl] = useState("");

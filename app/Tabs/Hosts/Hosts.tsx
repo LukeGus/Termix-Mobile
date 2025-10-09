@@ -47,10 +47,10 @@ export default function Hosts() {
 
   const fetchData = useCallback(async (isRefresh = false) => {
     if (isRefreshingRef.current) return;
-    
+
     try {
       isRefreshingRef.current = true;
-      
+
       if (isRefresh) {
         setRefreshing(true);
       } else {
@@ -192,12 +192,12 @@ export default function Hosts() {
             }`}
             activeOpacity={0.7}
           >
-            <RefreshCw 
-              size={20} 
-              color="white" 
-              style={{ 
-                transform: [{ rotate: refreshing ? "180deg" : "0deg" }] 
-              }} 
+            <RefreshCw
+              size={20}
+              color="white"
+              style={{
+                transform: [{ rotate: refreshing ? "180deg" : "0deg" }],
+              }}
             />
           </TouchableOpacity>
         </View>

@@ -73,7 +73,10 @@ export default function ServerForm() {
       setShowServerManager(false);
       setShowLoginForm(true);
     } catch (error: any) {
-      Alert.alert("Error", `Failed to save server: ${error?.message || "Unknown error"}`);
+      Alert.alert(
+        "Error",
+        `Failed to save server: ${error?.message || "Unknown error"}`,
+      );
     } finally {
       setIsLoading(false);
     }
@@ -86,7 +89,9 @@ export default function ServerForm() {
     >
       <View className="flex-1" style={{ paddingTop: insets.top }}>
         <View className="p-4 bg-dark-bg">
-          <Text className="text-white text-2xl font-bold text-center">Server Connection</Text>
+          <Text className="text-white text-2xl font-bold text-center">
+            Server Connection
+          </Text>
         </View>
 
         <ScrollView
