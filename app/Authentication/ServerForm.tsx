@@ -183,7 +183,7 @@ export default function ServerForm() {
             <View className="w-16 h-16 bg-dark-bg-button rounded-2xl items-center justify-center mb-4">
               <Server size={32} color="#ffffff" />
             </View>
-            <Text className="text-white text-3xl font-bold mb-2">Termix</Text>
+            <Text className="text-white text-3xl font-bold mb-2 text-center">Termix</Text>
             <Text className="text-gray-400 text-center">
               Configure your Termix server connection
             </Text>

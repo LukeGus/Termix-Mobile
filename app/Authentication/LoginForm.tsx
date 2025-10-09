@@ -1,569 +1,148 @@
 import {
-  TextInput,
   View,
   TouchableOpacity,
   Text,
   Alert,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
+  ActivityIndicator,
 } from "react-native";
 import { useAppContext } from "../AppContext";
-import { useState, useEffect } from "react";
-import {
-  loginUser,
-  setCookie,
-  getRegistrationAllowed,
-  verifyTOTPLogin,
-} from "../main-axios";
+import { useState, useEffect, useRef } from "react";
+import { setCookie, getCurrentServerUrl } from "../main-axios";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { User, Lock, ArrowLeft, Shield, UserPlus } from "lucide-react-native";
-
-type LoginDetails = {
-  username: string;
-  password: string;
-  totpCode?: string;
-};
-
-type AuthMode = "login" | "register" | "totp";
+import { ArrowLeft, RefreshCw } from "lucide-react-native";
+import { WebView, WebViewNavigation } from "react-native-webview";
+import { WebViewSource } from "react-native-webview/lib/WebViewTypes";
 
 export default function LoginForm() {
-  const {
-    setShowLoginForm,
-    setAuthenticated,
-    setShowServerManager,
-    selectedServer,
-  } = useAppContext();
+  const { setAuthenticated, setShowLoginForm, setShowServerManager, selectedServer } =
+    useAppContext();
   const insets = useSafeAreaInsets();
-  const [formData, setFormData] = useState<LoginDetails>({
-    username: "",
-    password: "",
-    totpCode: "",
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  const [authMode, setAuthMode] = useState<AuthMode>("login");
-  const [tempToken, setTempToken] = useState<string>("");
-  const [registrationAllowed, setRegistrationAllowed] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const webViewRef = useRef<WebView>(null);
+  const [url, setUrl] = useState("");
+  const [canGoBack, setCanGoBack] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [source, setSource] = useState<WebViewSource>({ uri: "" });
+  const [webViewKey, setWebViewKey] = useState(() => String(Date.now()));
 
   useEffect(() => {
-    const loadAuthConfig = async () => {
-      try {
-        const registration = await getRegistrationAllowed();
-        setRegistrationAllowed(registration.allowed);
-      } catch (error) {}
-    };
-    loadAuthConfig();
-  }, []);
-
-  const handleInputChange = (field: keyof LoginDetails, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const onLoginSubmit = async () => {
-    if (!formData.username.trim() || !formData.password.trim()) {
-      Alert.alert("Error", "Please fill in all fields");
-      return;
+    const serverUrl = getCurrentServerUrl();
+    if (serverUrl) {
+      setSource({ uri: serverUrl });
+      setUrl(serverUrl);
+    } else if (selectedServer?.ip) {
+      setSource({ uri: selectedServer.ip });
+      setUrl(selectedServer.ip);
     }
-
-    setIsLoading(true);
-
-    try {
-      const response = await loginUser(
-        formData.username.trim(),
-        formData.password.trim(),
-      );
-
-      if (response.requires_totp) {
-        setTempToken(response.temp_token || "");
-        setAuthMode("totp");
-        setIsLoading(false);
-        return;
-      }
-
-      if (response.token) {
-        setAuthenticated(true);
-        setFormData({ username: "", password: "", totpCode: "" });
-        setShowLoginForm(false);
-      } else {
-        Alert.alert(
-          "Login Failed",
-          "Invalid response from server. Please try again.",
-        );
-      }
-    } catch (error: any) {
-      const errorMessage =
-        error?.message || "Failed to connect. Please try again.";
-      Alert.alert("Login Failed", errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const onTOTPSubmit = async () => {
-    if (!formData.totpCode?.trim()) {
-      Alert.alert("Error", "Please enter your 2FA code");
-      return;
-    }
-
-    if (formData.totpCode.trim().length !== 6) {
-      Alert.alert("Error", "2FA code must be 6 digits");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const response = await verifyTOTPLogin(
-        tempToken,
-        formData.totpCode.trim(),
-      );
-
-      if (response.success && response.token) {
-        setAuthenticated(true);
-        setFormData({ username: "", password: "", totpCode: "" });
-        setShowLoginForm(false);
-        setAuthMode("login");
-        setTempToken("");
-      } else {
-        Alert.alert("2FA Failed", "Invalid 2FA code. Please try again.");
-      }
-    } catch (error: any) {
-      const errorCode = error?.response?.data?.code;
-      const errorMessage =
-        error?.response?.data?.error ||
-        error?.message ||
-        "Failed to verify 2FA code. Please try again.";
-
-      if (errorCode === "SESSION_EXPIRED") {
-        Alert.alert(
-          "Session Expired",
-          "Your login session has expired. Please log in again.",
-        );
-        setAuthMode("login");
-        setTempToken("");
-        setFormData({ username: "", password: "", totpCode: "" });
-      } else {
-        Alert.alert("2FA Failed", errorMessage);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const onRegisterSubmit = async () => {
-    if (!formData.username.trim() || !formData.password.trim()) {
-      Alert.alert("Error", "Please fill in all fields");
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      Alert.alert("Error", "Password must be at least 6 characters long");
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const { registerUser } = await import("../main-axios");
-      await registerUser(formData.username.trim(), formData.password.trim());
-
-      const loginResponse = await loginUser(
-        formData.username.trim(),
-        formData.password.trim(),
-      );
-
-      if (loginResponse.requires_totp) {
-        setTempToken(loginResponse.temp_token || "");
-        setAuthMode("totp");
-        setIsLoading(false);
-        return;
-      }
-
-      if (loginResponse.token) {
-        setAuthenticated(true);
-        setFormData({ username: "", password: "", totpCode: "" });
-        setShowLoginForm(false);
-      } else {
-        Alert.alert(
-          "Auto-Login Failed",
-          "Account created but automatic login failed. Please log in manually.",
-        );
-        setAuthMode("login");
-        setFormData({ username: "", password: "", totpCode: "" });
-      }
-    } catch (error: any) {
-      const errorMessage =
-        error?.message || "Failed to create account. Please try again.";
-      Alert.alert("Registration Failed", errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [selectedServer]);
 
   const handleBackToServerConfig = () => {
     setShowLoginForm(false);
     setShowServerManager(true);
   };
 
-  const renderAuthForm = () => {
-    switch (authMode) {
-      case "login":
-        return (
-          <>
-            <View className="space-y-4">
-              <View>
-                <Text className="text-gray-300 text-sm font-medium mb-1">
-                  Username
-                </Text>
-                <View className="relative">
-                  <TextInput
-                    className="bg-dark-bg-input rounded-xl text-white border-2 border-dark-border"
-                    style={{
-                      height: 56,
-                      textAlignVertical: "center",
-                      includeFontPadding: false,
-                      paddingTop: 0,
-                      paddingBottom: 0,
-                      paddingLeft: 48,
-                      paddingRight: 16,
-                    }}
-                    placeholder="Enter username..."
-                    placeholderTextColor="#9CA3AF"
-                    value={formData.username}
-                    onChangeText={(value) =>
-                      handleInputChange("username", value)
-                    }
-                    autoCapitalize="none"
-                    autoComplete="username"
-                  />
-                  <View className="absolute left-4 top-1/2 -translate-y-1/2">
-                    <User size={20} color="#9CA3AF" />
-                  </View>
-                </View>
-              </View>
+  const handleRefresh = () => {
+    webViewRef.current?.reload();
+  };
 
-              <View style={{ marginTop: 8 }}>
-                <Text className="text-gray-300 text-sm font-medium mb-1">
-                  Password
-                </Text>
-                <View className="relative">
-                  <TextInput
-                    className="bg-dark-bg-input rounded-xl text-white border-2 border-dark-border"
-                    style={{
-                      height: 56,
-                      textAlignVertical: "center",
-                      includeFontPadding: false,
-                      paddingTop: 0,
-                      paddingBottom: 0,
-                      paddingLeft: 48,
-                      paddingRight: 48,
-                    }}
-                    placeholder="Enter password..."
-                    placeholderTextColor="#9CA3AF"
-                    value={formData.password}
-                    onChangeText={(value) =>
-                      handleInputChange("password", value)
-                    }
-                    secureTextEntry={!showPassword}
-                    autoComplete="current-password"
-                  />
-                  <View className="absolute left-4 top-1/2 -translate-y-1/2">
-                    <Lock size={20} color="#9CA3AF" />
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2"
-                  >
-                    <Text className="text-gray-400 text-sm">
-                      {showPassword ? "Hide" : "Show"}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              onPress={onLoginSubmit}
-              disabled={isLoading}
-              className={`px-6 py-4 rounded-xl mt-6 ${
-                isLoading ? "bg-gray-600" : "bg-blue-600"
-              }`}
-            >
-              <Text className="text-white text-center font-semibold text-lg">
-                {isLoading ? "Logging in..." : "Login"}
-              </Text>
-            </TouchableOpacity>
-          </>
-        );
-
-      case "register":
-        return (
-          <>
-            <View className="space-y-4">
-              <View>
-                <Text className="text-gray-300 text-sm font-medium mb-1">
-                  Username
-                </Text>
-                <View className="relative">
-                  <TextInput
-                    className="bg-dark-bg-input rounded-xl text-white border-2 border-dark-border"
-                    style={{
-                      height: 56,
-                      textAlignVertical: "center",
-                      includeFontPadding: false,
-                      paddingTop: 0,
-                      paddingBottom: 0,
-                      paddingLeft: 48,
-                      paddingRight: 16,
-                    }}
-                    placeholder="Choose a username..."
-                    placeholderTextColor="#9CA3AF"
-                    value={formData.username}
-                    onChangeText={(value) =>
-                      handleInputChange("username", value)
-                    }
-                    autoCapitalize="none"
-                    autoComplete="username"
-                    editable={!isLoading}
-                  />
-                  <View className="absolute left-4 top-1/2 -translate-y-1/2">
-                    <User size={20} color="#9CA3AF" />
-                  </View>
-                </View>
-              </View>
-
-              <View style={{ marginTop: 8 }}>
-                <Text className="text-gray-300 text-sm font-medium mb-1">
-                  Password
-                </Text>
-                <View className="relative">
-                  <TextInput
-                    className="bg-dark-bg-input rounded-xl text-white border-2 border-dark-border"
-                    style={{
-                      height: 56,
-                      textAlignVertical: "center",
-                      includeFontPadding: false,
-                      paddingTop: 0,
-                      paddingBottom: 0,
-                      paddingLeft: 48,
-                      paddingRight: 48,
-                    }}
-                    placeholder="Choose a password..."
-                    placeholderTextColor="#9CA3AF"
-                    value={formData.password}
-                    onChangeText={(value) =>
-                      handleInputChange("password", value)
-                    }
-                    secureTextEntry={!showPassword}
-                    autoComplete="new-password"
-                    editable={!isLoading}
-                  />
-                  <View className="absolute left-4 top-1/2 -translate-y-1/2">
-                    <Lock size={20} color="#9CA3AF" />
-                  </View>
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2"
-                    disabled={isLoading}
-                  >
-                    <Text className="text-gray-400 text-sm">
-                      {showPassword ? "Hide" : "Show"}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-                <Text className="text-gray-400 text-xs mt-1">
-                  Password must be at least 6 characters long
-                </Text>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              onPress={onRegisterSubmit}
-              disabled={isLoading}
-              className={`px-6 py-4 rounded-xl mt-6 ${
-                isLoading ? "bg-gray-600" : "bg-blue-600"
-              }`}
-            >
-              <Text className="text-white text-center font-semibold text-lg">
-                {isLoading
-                  ? "Creating Account & Logging In..."
-                  : "Create Account"}
-              </Text>
-            </TouchableOpacity>
-          </>
-        );
-
-      case "totp":
-        return (
-          <>
-            <View className="space-y-4">
-              <View className="items-center mb-4">
-                <View className="w-16 h-16 bg-blue-600 rounded-2xl items-center justify-center mb-4">
-                  <Shield size={32} color="#ffffff" />
-                </View>
-                <Text className="text-white text-lg font-semibold mb-2">
-                  Two-Factor Authentication
-                </Text>
-                <Text className="text-gray-400 text-sm text-center">
-                  Enter the 6-digit code from your authenticator app
-                </Text>
-              </View>
-
-              <View>
-                <Text className="text-gray-300 text-sm font-medium mb-3">
-                  2FA Code
-                </Text>
-                <TextInput
-                  className="bg-dark-bg-input rounded-xl text-white border-2 border-dark-border"
-                  style={{
-                    height: 56,
-                    textAlignVertical: "center",
-                    includeFontPadding: false,
-                    paddingTop: 0,
-                    paddingBottom: 0,
-                    paddingLeft: 16,
-                    paddingRight: 16,
-                    textAlign: "center",
-                    fontSize: 24,
-                    letterSpacing: 8,
-                  }}
-                  placeholder="000000"
-                  placeholderTextColor="#9CA3AF"
-                  value={formData.totpCode}
-                  onChangeText={(value) =>
-                    handleInputChange("totpCode", value.replace(/\D/g, ""))
-                  }
-                  keyboardType="numeric"
-                  maxLength={6}
-                  autoComplete="one-time-code"
-                  editable={!isLoading}
-                />
-                <Text className="text-gray-400 text-xs mt-2 text-center">
-                  You can also use a backup code if available
-                </Text>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              onPress={onTOTPSubmit}
-              disabled={isLoading || (formData.totpCode?.length || 0) < 6}
-              className={`px-6 py-4 rounded-xl mt-6 ${
-                isLoading || (formData.totpCode?.length || 0) < 6
-                  ? "bg-gray-600"
-                  : "bg-blue-600"
-              }`}
-            >
-              <Text className="text-white text-center font-semibold text-lg">
-                {isLoading ? "Verifying..." : "Verify Code"}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => {
-                setAuthMode("login");
-                setTempToken("");
-                setFormData({ username: "", password: "", totpCode: "" });
-              }}
-              disabled={isLoading}
-              className="px-6 py-4 rounded-xl mt-3 bg-dark-bg-button border border-dark-border"
-            >
-              <Text className="text-white text-center font-semibold text-lg">
-                Cancel
-              </Text>
-            </TouchableOpacity>
-          </>
-        );
-
-      default:
-        return null;
+  const handleNavigationStateChange = (navState: WebViewNavigation) => {
+    setCanGoBack(navState.canGoBack);
+    setLoading(navState.loading);
+    if (!navState.loading) {
+      setUrl(navState.url);
     }
   };
 
+  const onMessage = async (event: any) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      if (data.type === "AUTH_SUCCESS" && data.token) {
+        await setCookie(data.token);
+        setAuthenticated(true);
+        setShowLoginForm(false);
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to process authentication token.");
+    }
+  };
+
+  const injectedJavaScript = `
+    (function() {
+      const checkAuth = () => {
+        const cookies = document.cookie.split('; ');
+        const tokenCookie = cookies.find(row => row.startsWith('jwt='));
+        if (tokenCookie) {
+          const token = tokenCookie.split('=')[1];
+          if(token) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'AUTH_SUCCESS', token: token }));
+            clearInterval(intervalId);
+          }
+        }
+      };
+      const intervalId = setInterval(checkAuth, 500);
+    })();
+  `;
+
+  if (!source.uri) {
+    return (
+      <View className="flex-1 justify-center items-center bg-dark-bg">
+        <ActivityIndicator size="large" color="#ffffff" />
+        <Text className="text-white mt-4">Loading server configuration...</Text>
+      </View>
+    );
+  }
+
   return (
-    <KeyboardAvoidingView
-      className="flex-1 bg-dark-bg"
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ flexGrow: 1 }}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View
-          className="flex-1 justify-center px-6"
-          style={{
-            paddingTop: insets.top + 20,
-            paddingBottom: insets.bottom + 20,
-          }}
+    <View className="flex-1 bg-dark-bg" style={{ paddingTop: insets.top }}>
+      <View className="flex-row items-center justify-between p-4 bg-dark-bg">
+        <TouchableOpacity
+          onPress={handleBackToServerConfig}
+          className="flex-row items-center"
         >
-          <View className="items-center mb-8">
-            <View className="w-16 h-16 bg-dark-bg-button rounded-2xl items-center justify-center mb-4">
-              <User size={32} color="#ffffff" />
-            </View>
-            <Text className="text-white text-3xl font-bold mb-2">
-              {authMode === "login"
-                ? "Welcome Back"
-                : authMode === "register"
-                  ? "Create Account"
-                  : authMode === "totp"
-                    ? "2FA Required"
-                    : "Login"}
-            </Text>
-            {selectedServer && (
-              <Text className="text-gray-400 text-sm text-center">
-                {selectedServer.ip}
-              </Text>
-            )}
-          </View>
-
-          <View className="bg-dark-bg-panel rounded-2xl p-6 border border-dark-border-panel">
-            {renderAuthForm()}
-          </View>
-
-          {authMode === "login" && (
-            <View className="mt-6" style={{ gap: 12 }}>
-              {registrationAllowed && (
-                <TouchableOpacity
-                  onPress={() => setAuthMode("register")}
-                  className="flex-row items-center justify-center px-6 py-4 rounded-xl bg-dark-bg-button border border-dark-border"
-                >
-                  <UserPlus
-                    size={20}
-                    color="#ffffff"
-                    style={{ marginRight: 8 }}
-                  />
-                  <Text className="text-white font-semibold text-lg">
-                    Create Account
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
-
-          {authMode !== "totp" && (
-            <TouchableOpacity
-              onPress={
-                authMode === "login"
-                  ? handleBackToServerConfig
-                  : () => {
-                      setAuthMode("login");
-                      setFormData({ username: "", password: "", totpCode: "" });
-                    }
-              }
-              className="flex-row items-center justify-center px-6 py-4 rounded-xl bg-dark-bg-button border border-dark-border mt-6"
-            >
-              <ArrowLeft size={20} color="#ffffff" style={{ marginRight: 8 }} />
-              <Text className="text-white font-semibold text-lg">
-                {authMode === "login" ? "Back to Server" : "Back to Login"}
-              </Text>
-            </TouchableOpacity>
-          )}
+          <ArrowLeft size={20} color="#ffffff" />
+          <Text className="text-white text-lg ml-2">Server</Text>
+        </TouchableOpacity>
+        <View className="flex-1 mx-4">
+          <Text className="text-gray-400 text-center" numberOfLines={1}>
+            {url.replace(/^https?:\/\//, "")}
+          </Text>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        <TouchableOpacity onPress={handleRefresh}>
+          <RefreshCw size={20} color="#ffffff" />
+        </TouchableOpacity>
+      </View>
+
+      <WebView
+        key={webViewKey}
+        ref={webViewRef}
+        source={source}
+        style={{ flex: 1, backgroundColor: "#18181b" }}
+        onNavigationStateChange={handleNavigationStateChange}
+        onMessage={onMessage}
+        injectedJavaScript={injectedJavaScript}
+        incognito={true}
+        cacheEnabled={false}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        startInLoadingState={true}
+        sharedCookiesEnabled={false}
+        thirdPartyCookiesEnabled={false}
+        renderLoading={() => (
+          <View
+            style={{
+              backgroundColor: "#18181b",
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <ActivityIndicator size="large" color="#ffffff" />
+          </View>
+        )}
+      />
+    </View>
   );
 }
