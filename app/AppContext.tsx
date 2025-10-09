@@ -102,7 +102,16 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         setShowUpdateScreen(shouldShowUpdateScreen);
 
         if (serverConfig || legacyServer) {
-          const authStatus = await checkAuthStatus();
+          let authStatus = false;
+          try {
+            const { getUserInfo } = await import("./main-axios");
+            const meRes = await getUserInfo();
+            if (meRes.username && meRes.data_unlocked) {
+              authStatus = true;
+            }
+          } catch (e) {
+            authStatus = false;
+          }
 
           let serverInfo = null;
           if (legacyServer) {
