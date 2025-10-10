@@ -42,3 +42,5 @@ app-example
 /ios
 /android
 /credentials.json
+/CLAUDE.md
+/.claude/settings.local.json
