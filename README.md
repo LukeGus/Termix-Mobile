@@ -19,19 +19,14 @@ If you would like, you can support the project here!\
 
 # Overview
 
-Termix Mobile is the official mobile companion app for Termix, providing full remote control of your servers through SSH terminal management. You can connect to your existing Termix server configuration and manage all your SSH hosts with professional terminal capabilities optimized for mobile devices.
-
-> **Requires a Termix server** - Install at [docs.termix.site/install](https://docs.termix.site/install)
+Termix Mobile is the official mobile companion app for Termix, providing full remote control of your servers through SSH. You can connect to your existing Termix server configuration and manage all your SSH hosts with terminal capabilities optimized for mobile devices.
 
 # Features
 
-- **SSH Terminal Access** - Full-featured SSH terminal with xterm.js integration and multi-session support
+- **SSH Terminal Access** - Full-featured SSH terminal with multi-session support
 - **Advanced Keyboard Features** - Dual keyboard modes with a custom terminal keyboard optimized for terminal use
-- **Host Management** - Folder-based organization with real-time server status and visual indicators
-- **Secure Authentication** - 2FA/TOTP multi-factor authentication with JWT token-based security
-- **Mobile-Optimized Interface** - Dark theme with responsive layout and gesture-supported design
-- **Real-time Communication** - WebSocket-based instant responsiveness with auto-reconnect
-- **Server Configuration** - Easy setup with auto connection testing and secure storage
+- **Host Management** - Folder-based organization with server statuses
+- **Server Configuration** - Easy setup with your existing Termix server
 
 # Installation
 
@@ -39,7 +34,9 @@ Termix Mobile is available for both [Android](https://docs.termix.site/install/c
 
 # Support
 
-If you need help with Termix Mobile, you can join the [Discord](https://discord.gg/jVQGdvHDrf) server and visit the support channel. You can also open an issue or open a pull request on the [GitHub](https://github.com/LukeGus/Termix-Mobile/issues) repo.
+If you need help or want to request a feature with Termix Mobile, visit the [Issues](https://github.com/Termix-SSH/Support/issues) page, log in, and press `New Issue`.
+Please be as detailed as possible in your issue, preferably written in English. You can also join the [Discord](https://discord.gg/jVQGdvHDrf) server and visit the support
+channel, however, response times may be longer.
 
 # License
 
