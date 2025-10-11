@@ -82,6 +82,53 @@ export default function LoginForm() {
 
   const injectedJavaScript = `
     (function() {
+      const style = document.createElement('style');
+      style.textContent = \`
+        /* Hide Install Mobile App button */
+        button:has-text("Install Mobile App"),
+        [class*="mobile-app"],
+        [class*="install-app"],
+        [id*="mobile-app"],
+        [id*="install-app"],
+        a[href*="app-store"],
+        a[href*="play-store"],
+        a[href*="google.com/store"],
+        a[href*="apple.com/app"],
+        button[aria-label*="Install"],
+        button[aria-label*="Mobile App"],
+        button[aria-label*="Download App"],
+        a[aria-label*="Install"],
+        a[aria-label*="Mobile App"],
+        a[aria-label*="Download App"] {
+          display: none !important;
+        }
+      \`;
+      document.head.appendChild(style);
+
+      const hideByText = () => {
+        const buttons = document.querySelectorAll('button, a');
+        buttons.forEach(btn => {
+          const text = btn.textContent?.toLowerCase() || '';
+          if (text.includes('install') && text.includes('mobile')) {
+            btn.style.display = 'none';
+          }
+          if (text.includes('download') && text.includes('app')) {
+            btn.style.display = 'none';
+          }
+          if (text.includes('get') && text.includes('app')) {
+            btn.style.display = 'none';
+          }
+        });
+      };
+
+      hideByText();
+      setTimeout(hideByText, 500);
+      setTimeout(hideByText, 1000);
+      setTimeout(hideByText, 2000);
+
+      const observer = new MutationObserver(hideByText);
+      observer.observe(document.body, { childList: true, subtree: true });
+
       let hasNotified = false;
 
       const checkAuth = () => {
