@@ -28,9 +28,7 @@ export default function LoginForm() {
   const [source, setSource] = useState<WebViewSource>({ uri: "" });
   const [webViewKey, setWebViewKey] = useState(() => String(Date.now()));
 
-  // Force WebView to reload with fresh state when LoginForm mounts
   useEffect(() => {
-    // Generate new key to force WebView remount and clear cached credentials
     setWebViewKey(String(Date.now()));
   }, []);
 
@@ -65,12 +63,8 @@ export default function LoginForm() {
   const onMessage = async (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
-      console.log("[LoginForm] Received message from WebView:", data.type);
-
       if (data.type === "AUTH_SUCCESS" && data.token) {
-        console.log("[LoginForm] JWT token received, length:", data.token.length);
         await setCookie("jwt", data.token);
-        console.log("[LoginForm] JWT token stored successfully with key 'jwt'");
         setAuthenticated(true);
         setShowLoginForm(false);
       }
@@ -133,10 +127,8 @@ export default function LoginForm() {
 
       const checkAuth = () => {
         try {
-          // 1. Check localStorage first (works in incognito mode)
           const localToken = localStorage.getItem('jwt');
           if (localToken && !hasNotified) {
-            console.log('[WebView] JWT token found in localStorage');
             hasNotified = true;
             window.ReactNativeWebView.postMessage(JSON.stringify({
               type: 'AUTH_SUCCESS',
@@ -146,10 +138,8 @@ export default function LoginForm() {
             return;
           }
 
-          // 2. Check sessionStorage as backup
           const sessionToken = sessionStorage.getItem('jwt');
           if (sessionToken && !hasNotified) {
-            console.log('[WebView] JWT token found in sessionStorage');
             hasNotified = true;
             window.ReactNativeWebView.postMessage(JSON.stringify({
               type: 'AUTH_SUCCESS',
@@ -159,7 +149,6 @@ export default function LoginForm() {
             return;
           }
 
-          // 3. Try to read from cookies (works if not HttpOnly)
           const cookies = document.cookie;
           if (cookies && cookies.length > 0) {
             const cookieArray = cookies.split('; ');
@@ -168,9 +157,7 @@ export default function LoginForm() {
             if (tokenCookie && !hasNotified) {
               const token = tokenCookie.split('=')[1];
               if (token && token.length > 0) {
-                console.log('[WebView] JWT token found in cookies');
                 hasNotified = true;
-                // Also store in localStorage for next time
                 try {
                   localStorage.setItem('jwt', token);
                 } catch (e) {}
@@ -190,10 +177,8 @@ export default function LoginForm() {
 
       const intervalId = setInterval(checkAuth, 500);
 
-      // Also check immediately
       checkAuth();
 
-      // Stop checking after 2 minutes to prevent infinite loops
       setTimeout(() => {
         clearInterval(intervalId);
       }, 120000);

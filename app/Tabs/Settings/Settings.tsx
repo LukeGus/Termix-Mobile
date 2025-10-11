@@ -15,10 +15,8 @@ export default function Settings() {
 
   const handleLogout = async () => {
     try {
-      // Clear authentication token only (keep server config)
       await clearAuth();
 
-      // Update app state to show login form (not server form)
       setAuthenticated(false);
       setShowLoginForm(true);
       setShowServerManager(false);
