@@ -45,16 +45,6 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#18181b"
-      },
-      "usesCleartextTraffic": true,
-      "networkSecurityConfig": {
-        "cleartextTrafficPermitted": true,
-        "domainConfig": [
-          {
-            "domains": ["100.64.0.0/10", "100.0.0.0/8"],
-            "cleartextTrafficPermitted": true
-          }
-        ]
       }
     },
     "web": {
@@ -62,14 +52,6 @@
       "bundler": "metro"
     },
     "plugins": [
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "usesCleartextTraffic": true
-          }
-        }
-      ],
       "expo-router",
       [
         "expo-splash-screen",

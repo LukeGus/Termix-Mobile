@@ -59,30 +59,76 @@ export default function LoginForm() {
   const onMessage = async (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
+      console.log("[LoginForm] Received message from WebView:", data.type);
+
       if (data.type === "AUTH_SUCCESS" && data.token) {
-        await setCookie(data.token);
+        console.log("[LoginForm] JWT token received, length:", data.token.length);
+        await setCookie("jwt", data.token);
+        console.log("[LoginForm] JWT token stored successfully with key 'jwt'");
         setAuthenticated(true);
         setShowLoginForm(false);
       }
     } catch (error) {
+      console.error("[LoginForm] Error processing auth token:", error);
       Alert.alert("Error", "Failed to process authentication token.");
     }
   };
 
   const injectedJavaScript = `
     (function() {
+      let hasNotified = false;
+
       const checkAuth = () => {
-        const cookies = document.cookie.split('; ');
-        const tokenCookie = cookies.find(row => row.startsWith('jwt='));
-        if (tokenCookie) {
-          const token = tokenCookie.split('=')[1];
-          if(token) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'AUTH_SUCCESS', token: token }));
+        try {
+          // Check for token in multiple places
+          const cookies = document.cookie;
+          console.log('[WebView] Checking cookies, length:', cookies.length);
+
+          if (!cookies) {
+            return;
+          }
+
+          const cookieArray = cookies.split('; ');
+          const tokenCookie = cookieArray.find(row => row.startsWith('jwt='));
+
+          if (tokenCookie && !hasNotified) {
+            const token = tokenCookie.split('=')[1];
+            if (token && token.length > 0) {
+              console.log('[WebView] JWT token found, length:', token.length);
+              hasNotified = true;
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'AUTH_SUCCESS',
+                token: token
+              }));
+              clearInterval(intervalId);
+            }
+          }
+
+          // Also check localStorage as backup
+          const localToken = localStorage.getItem('jwt');
+          if (localToken && !hasNotified) {
+            console.log('[WebView] JWT token found in localStorage');
+            hasNotified = true;
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'AUTH_SUCCESS',
+              token: localToken
+            }));
             clearInterval(intervalId);
           }
+        } catch (error) {
+          console.error('[WebView] Error in checkAuth:', error);
         }
       };
+
       const intervalId = setInterval(checkAuth, 500);
+
+      // Also check immediately
+      checkAuth();
+
+      // Stop checking after 2 minutes to prevent infinite loops
+      setTimeout(() => {
+        clearInterval(intervalId);
+      }, 120000);
     })();
   `;
 
@@ -123,13 +169,13 @@ export default function LoginForm() {
         onNavigationStateChange={handleNavigationStateChange}
         onMessage={onMessage}
         injectedJavaScript={injectedJavaScript}
-        incognito={true}
-        cacheEnabled={false}
+        incognito={false}
+        cacheEnabled={true}
         javaScriptEnabled={true}
         domStorageEnabled={true}
         startInLoadingState={true}
-        sharedCookiesEnabled={false}
-        thirdPartyCookiesEnabled={false}
+        sharedCookiesEnabled={true}
+        thirdPartyCookiesEnabled={true}
         renderLoading={() => (
           <View
             style={{
