@@ -12,6 +12,7 @@ import {
   isAuthenticated as checkAuthStatus,
   getLatestGitHubRelease,
   setAuthStateCallback,
+  clearServerConfig,
 } from "./main-axios";
 import Constants from "expo-constants";
 
@@ -153,11 +154,12 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    setAuthStateCallback((isAuthenticated: boolean) => {
+    setAuthStateCallback(async (isAuthenticated: boolean) => {
       if (!isAuthenticated) {
         setAuthenticated(false);
-        setShowLoginForm(true);
-        setShowServerManager(false);
+        setShowLoginForm(false);
+        setShowServerManager(true);
+        setSelectedServer(null);
       }
     });
   }, []);

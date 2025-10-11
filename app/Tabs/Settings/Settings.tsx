@@ -1,24 +1,30 @@
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppContext } from "@/app/AppContext";
-import { clearAuth } from "@/app/main-axios";
+import { clearAuth, clearServerConfig } from "@/app/main-axios";
 
 export default function Settings() {
   const {
     setAuthenticated,
     setShowLoginForm,
     setShowServerManager,
+    setSelectedServer,
     selectedServer,
   } = useAppContext();
   const insets = useSafeAreaInsets();
 
   const handleLogout = async () => {
     try {
+      // Clear authentication token only (keep server config)
       await clearAuth();
+
+      // Update app state to show login form (not server form)
       setAuthenticated(false);
       setShowLoginForm(true);
       setShowServerManager(false);
-    } catch (error) {}
+    } catch (error) {
+      console.error("[Settings] Error during logout:", error);
+    }
   };
 
   return (

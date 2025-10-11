@@ -28,6 +28,12 @@ export default function LoginForm() {
   const [source, setSource] = useState<WebViewSource>({ uri: "" });
   const [webViewKey, setWebViewKey] = useState(() => String(Date.now()));
 
+  // Force WebView to reload with fresh state when LoginForm mounts
+  useEffect(() => {
+    // Generate new key to force WebView remount and clear cached credentials
+    setWebViewKey(String(Date.now()));
+  }, []);
+
   useEffect(() => {
     const serverUrl = getCurrentServerUrl();
     if (serverUrl) {
@@ -80,31 +86,7 @@ export default function LoginForm() {
 
       const checkAuth = () => {
         try {
-          // Check for token in multiple places
-          const cookies = document.cookie;
-          console.log('[WebView] Checking cookies, length:', cookies.length);
-
-          if (!cookies) {
-            return;
-          }
-
-          const cookieArray = cookies.split('; ');
-          const tokenCookie = cookieArray.find(row => row.startsWith('jwt='));
-
-          if (tokenCookie && !hasNotified) {
-            const token = tokenCookie.split('=')[1];
-            if (token && token.length > 0) {
-              console.log('[WebView] JWT token found, length:', token.length);
-              hasNotified = true;
-              window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'AUTH_SUCCESS',
-                token: token
-              }));
-              clearInterval(intervalId);
-            }
-          }
-
-          // Also check localStorage as backup
+          // 1. Check localStorage first (works in incognito mode)
           const localToken = localStorage.getItem('jwt');
           if (localToken && !hasNotified) {
             console.log('[WebView] JWT token found in localStorage');
@@ -114,6 +96,45 @@ export default function LoginForm() {
               token: localToken
             }));
             clearInterval(intervalId);
+            return;
+          }
+
+          // 2. Check sessionStorage as backup
+          const sessionToken = sessionStorage.getItem('jwt');
+          if (sessionToken && !hasNotified) {
+            console.log('[WebView] JWT token found in sessionStorage');
+            hasNotified = true;
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'AUTH_SUCCESS',
+              token: sessionToken
+            }));
+            clearInterval(intervalId);
+            return;
+          }
+
+          // 3. Try to read from cookies (works if not HttpOnly)
+          const cookies = document.cookie;
+          if (cookies && cookies.length > 0) {
+            const cookieArray = cookies.split('; ');
+            const tokenCookie = cookieArray.find(row => row.startsWith('jwt='));
+
+            if (tokenCookie && !hasNotified) {
+              const token = tokenCookie.split('=')[1];
+              if (token && token.length > 0) {
+                console.log('[WebView] JWT token found in cookies');
+                hasNotified = true;
+                // Also store in localStorage for next time
+                try {
+                  localStorage.setItem('jwt', token);
+                } catch (e) {}
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  type: 'AUTH_SUCCESS',
+                  token: token
+                }));
+                clearInterval(intervalId);
+                return;
+              }
+            }
           }
         } catch (error) {
           console.error('[WebView] Error in checkAuth:', error);
@@ -169,13 +190,13 @@ export default function LoginForm() {
         onNavigationStateChange={handleNavigationStateChange}
         onMessage={onMessage}
         injectedJavaScript={injectedJavaScript}
-        incognito={false}
-        cacheEnabled={true}
+        incognito={true}
+        cacheEnabled={false}
         javaScriptEnabled={true}
         domStorageEnabled={true}
         startInLoadingState={true}
-        sharedCookiesEnabled={true}
-        thirdPartyCookiesEnabled={true}
+        sharedCookiesEnabled={false}
+        thirdPartyCookiesEnabled={false}
         renderLoading={() => (
           <View
             style={{

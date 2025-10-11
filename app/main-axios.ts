@@ -352,6 +352,21 @@ export async function clearAuth(): Promise<void> {
   } catch (error) {}
 }
 
+export async function clearServerConfig(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem("serverConfig");
+    await AsyncStorage.removeItem("server");
+    configuredServerUrl = null;
+    systemLogger.info("Server configuration cleared", {
+      operation: "clear_server_config",
+    });
+  } catch (error) {
+    systemLogger.error("Failed to clear server configuration", error, {
+      operation: "clear_server_config",
+    });
+  }
+}
+
 function getApiUrl(path: string, defaultPort: number): string {
   if (configuredServerUrl) {
     const baseUrl = configuredServerUrl.replace(/\/$/, "");
