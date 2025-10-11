@@ -1978,7 +1978,7 @@ export async function getFoldersWithStats(): Promise<any> {
         method: "GET",
         headers: {
           Accept: "application/json",
-          "User-Agent": "Termix-Mobile/1.0.0",
+          "User-Agent": "Termix-Mobile/1.1.0",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       });
