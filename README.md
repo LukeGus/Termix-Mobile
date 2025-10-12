@@ -1,8 +1,8 @@
 # Repo Stats
 
-![GitHub Repo stars](https://img.shields.io/github/stars/LukeGus/Termix-Mobile?style=flat&label=Stars)
-![GitHub forks](https://img.shields.io/github/forks/LukeGus/Termix-Mobile?style=flat&label=Forks)
-![GitHub Release](https://img.shields.io/github/v/release/LukeGus/Termix-Mobile?style=flat&label=Release)
+![GitHub Repo stars](https://img.shields.io/github/stars/Termix-SSH/Mobile?style=flat&label=Stars)
+![GitHub forks](https://img.shields.io/github/forks/Termix-SSH/Mobile?style=flat&label=Forks)
+![GitHub Release](https://img.shields.io/github/v/release/Termix-SSH/Mobile?style=flat&label=Release)
 <a href="https://discord.gg/jVQGdvHDrf"><img alt="Discord" src="https://img.shields.io/discord/1347374268253470720"></a>
 
 #### Top Technologies
