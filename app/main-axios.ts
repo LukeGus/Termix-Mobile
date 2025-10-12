@@ -1735,7 +1735,7 @@ export async function getLatestGitHubRelease(): Promise<{
 } | null> {
   try {
     const response = await axios.get(
-      "https://api.github.com/repos/LukeGus/Termix-Mobile/releases/latest",
+      "https://api.github.com/repos/Termix-SSH/Mobile/releases/latest",
     );
     const release = response.data;
 
