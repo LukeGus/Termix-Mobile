@@ -42,6 +42,15 @@ If you need help or want to request a feature with Termix Mobile, visit the [Iss
 Please be as detailed as possible in your issue, preferably written in English. You can also join the [Discord](https://discord.gg/jVQGdvHDrf) server and visit the support
 channel, however, response times may be longer.
 
+# Show-off
+
+<p align="center">
+  <img src="./repo-images/Image 1.png" width="200" alt="Termix Demo 1"/>
+  <img src="./repo-images/Image 2.png" width="200" alt="Termix Demo 2"/>
+  <img src="./repo-images/Image 3.png" width="200" alt="Termix Demo 3"/>
+  <img src="./repo-images/Image 4.png" width="200" alt="Termix Demo 4"/>
+</p>
+
 # License
 
 Distributed under the Apache License Version 2.0. See LICENSE for more information.
