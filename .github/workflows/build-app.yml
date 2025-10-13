@@ -8,6 +8,7 @@ on:
         options:
           - macos-26
           - ubuntu-latest
+          - blacksmith-4vcpu-ubuntu-2404
       platform:
         type: choice
         description: Platform to build for
