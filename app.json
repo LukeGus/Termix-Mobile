@@ -19,20 +19,28 @@
         "tinted": "./assets/images/ios-tinted.png"
       },
       "infoPlist": {
+        "CFBundleAllowMixedLocalizations": true,
         "ITSAppUsesNonExemptEncryption": false,
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
           "NSAllowsLocalNetworking": true,
+          "NSAllowsLocalNetworking": true,
           "NSExceptionDomains": {
             "100.64.0.0": {
               "NSExceptionAllowsInsecureHTTPLoads": true,
-              "NSExceptionMinimumTLSVersion": "1.0",
               "NSIncludesSubdomains": true
             },
             "100.0.0.0": {
               "NSExceptionAllowsInsecureHTTPLoads": true,
-              "NSExceptionMinimumTLSVersion": "1.0",
               "NSIncludesSubdomains": true
+            },
+            "xxx.xx.xx.xxx": {
+              "NSIncludesSubdomains": true,
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            },
+            "exp.direct": {
+              "NSIncludesSubdomains": true,
+              "NSExceptionAllowsInsecureHTTPLoads": true,
             }
           }
         }
@@ -42,6 +50,7 @@
       "edgeToEdgeEnabled": true,
       "package": "com.karmaa.termix",
       "icon": "./assets/images/icon.png",
+      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#18181b"
