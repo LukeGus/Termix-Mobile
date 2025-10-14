@@ -88,7 +88,6 @@ jobs:
       - name: 🚢 Submit to App Store
         if: ${{ github.event.inputs.action == 'submit' }}
         run: |
-          # Find the build file
           if [ "${{ github.event.inputs.platform }}" = "android" ]; then
             BUILD_FILE=$(find . -name "build-*.apk" -o -name "build-*.aab" | head -1)
           else
@@ -106,7 +105,6 @@ jobs:
       - name: 📤 Upload Build Artifacts
         if: ${{ github.event.inputs.action == 'file' }}
         run: |
-          # Find and upload the build file
           if [ "${{ github.event.inputs.platform }}" = "android" ]; then
             BUILD_FILE=$(find . -name "build-*.apk" -o -name "build-*.aab" | head -1)
           else
@@ -115,11 +113,9 @@ jobs:
           
           if [ -n "$BUILD_FILE" ]; then
             echo "Uploading file: $BUILD_FILE"
-            # Create a temporary directory and copy the file
             mkdir -p temp-upload
             cp "$BUILD_FILE" temp-upload/
           
-            # Upload using the upload-artifact action
             echo "::set-output name=file_path::temp-upload/$BUILD_FILE"
           else
             echo "No build file found to upload"
