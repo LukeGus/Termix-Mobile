@@ -4,6 +4,7 @@ import {
   Text,
   Alert,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { useAppContext } from "../AppContext";
 import { useState, useEffect, useRef } from "react";
@@ -12,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, RefreshCw } from "lucide-react-native";
 import { WebView, WebViewNavigation } from "react-native-webview";
 import { WebViewSource } from "react-native-webview/lib/WebViewTypes";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function LoginForm() {
   const {
@@ -29,7 +31,17 @@ export default function LoginForm() {
   const [webViewKey, setWebViewKey] = useState(() => String(Date.now()));
 
   useEffect(() => {
-    setWebViewKey(String(Date.now()));
+    const clearPersistedData = async () => {
+      try {
+        await AsyncStorage.removeItem("jwt");
+
+        setWebViewKey(String(Date.now()));
+      } catch (error) {
+        console.error("[LoginForm] Error clearing persisted data:", error);
+      }
+    };
+
+    clearPersistedData();
   }, []);
 
   useEffect(() => {
@@ -60,16 +72,38 @@ export default function LoginForm() {
     }
   };
 
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+
   const onMessage = async (event: any) => {
+    if (isAuthenticating) {
+      return;
+    }
+
     try {
       const data = JSON.parse(event.nativeEvent.data);
+
       if (data.type === "AUTH_SUCCESS" && data.token) {
+        setIsAuthenticating(true);
+
         await setCookie("jwt", data.token);
+
+        const savedToken = await AsyncStorage.getItem("jwt");
+        if (!savedToken) {
+          console.error("[LoginForm] Failed to verify saved token!");
+          setIsAuthenticating(false);
+          Alert.alert("Error", "Failed to save authentication token. Please try again.");
+          return;
+        }
+        console.log("[LoginForm] Token verified - readable from AsyncStorage");
+
+        await new Promise(resolve => setTimeout(resolve, 200));
+
         setAuthenticated(true);
         setShowLoginForm(false);
       }
     } catch (error) {
       console.error("[LoginForm] Error processing auth token:", error);
+      setIsAuthenticating(false);
       Alert.alert("Error", "Failed to process authentication token.");
     }
   };
@@ -124,29 +158,60 @@ export default function LoginForm() {
       observer.observe(document.body, { childList: true, subtree: true });
 
       let hasNotified = false;
+      let lastCheckedToken = null;
+
+      const notifyAuth = (token, source) => {
+        if (hasNotified || !token || token === lastCheckedToken) {
+          console.log('[WebView] Skipping notification - already notified or invalid token');
+          return;
+        }
+
+        console.log('[WebView] Preparing to notify React Native of successful auth from:', source);
+        hasNotified = true;
+        lastCheckedToken = token;
+
+        try {
+          localStorage.setItem('jwt', token);
+          console.log('[WebView] Saved token to localStorage');
+        } catch (e) {
+          console.error('[WebView] Failed to save to localStorage:', e);
+        }
+
+        try {
+          const message = JSON.stringify({
+            type: 'AUTH_SUCCESS',
+            token: token,
+            source: source,
+            timestamp: Date.now()
+          });
+
+          console.log('[WebView] Sending message to React Native:', message.substring(0, 100) + '...');
+
+          if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+            window.ReactNativeWebView.postMessage(message);
+            console.log('[WebView] Message sent successfully');
+          } else {
+            console.error('[WebView] ReactNativeWebView.postMessage not available!');
+          }
+        } catch (e) {
+          console.error('[WebView] Error sending message:', e);
+        }
+      };
 
       const checkAuth = () => {
         try {
           const localToken = localStorage.getItem('jwt');
-          if (localToken && !hasNotified) {
-            hasNotified = true;
-            window.ReactNativeWebView.postMessage(JSON.stringify({
-              type: 'AUTH_SUCCESS',
-              token: localToken
-            }));
-            clearInterval(intervalId);
-            return;
+          if (localToken && localToken.length > 20) {
+            console.log('[WebView] Found JWT in localStorage');
+            notifyAuth(localToken, 'localStorage');
+            return true;
           }
 
           const sessionToken = sessionStorage.getItem('jwt');
-          if (sessionToken && !hasNotified) {
-            hasNotified = true;
-            window.ReactNativeWebView.postMessage(JSON.stringify({
-              type: 'AUTH_SUCCESS',
-              token: sessionToken
-            }));
-            clearInterval(intervalId);
-            return;
+          if (sessionToken && sessionToken.length > 20) {
+            console.log('[WebView] Found JWT in sessionStorage');
+            notifyAuth(sessionToken, 'sessionStorage');
+            return true;
           }
 
           const cookies = document.cookie;
@@ -154,30 +219,56 @@ export default function LoginForm() {
             const cookieArray = cookies.split('; ');
             const tokenCookie = cookieArray.find(row => row.startsWith('jwt='));
 
-            if (tokenCookie && !hasNotified) {
+            if (tokenCookie) {
               const token = tokenCookie.split('=')[1];
-              if (token && token.length > 0) {
-                hasNotified = true;
-                try {
-                  localStorage.setItem('jwt', token);
-                } catch (e) {}
-                window.ReactNativeWebView.postMessage(JSON.stringify({
-                  type: 'AUTH_SUCCESS',
-                  token: token
-                }));
-                clearInterval(intervalId);
-                return;
+              if (token && token.length > 20) {
+                console.log('[WebView] Found JWT in cookies');
+                notifyAuth(token, 'cookie');
+                return true;
               }
             }
           }
         } catch (error) {
           console.error('[WebView] Error in checkAuth:', error);
         }
+        return false;
       };
 
-      const intervalId = setInterval(checkAuth, 500);
+      console.log('[WebView] Authentication monitoring initialized');
+
+      const originalSetItem = localStorage.setItem;
+      localStorage.setItem = function(key, value) {
+        originalSetItem.apply(this, arguments);
+        if (key === 'jwt' && value && value.length > 20 && !hasNotified) {
+          checkAuth();
+        }
+      };
+
+      const originalSessionSetItem = sessionStorage.setItem;
+      sessionStorage.setItem = function(key, value) {
+        originalSessionSetItem.apply(this, arguments);
+        if (key === 'jwt' && value && value.length > 20 && !hasNotified) {
+          checkAuth();
+        }
+      };
+
+      const intervalId = setInterval(() => {
+        if (hasNotified) {
+          clearInterval(intervalId);
+          return;
+        }
+        if (checkAuth()) {
+          clearInterval(intervalId);
+        }
+      }, 300);
 
       checkAuth();
+
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && !hasNotified) {
+          checkAuth();
+        }
+      });
 
       setTimeout(() => {
         clearInterval(intervalId);
@@ -221,14 +312,38 @@ export default function LoginForm() {
         style={{ flex: 1, backgroundColor: "#18181b" }}
         onNavigationStateChange={handleNavigationStateChange}
         onMessage={onMessage}
+        onConsoleMessage={(event) => {
+          console.log('[WebView Console]', event.nativeEvent.message);
+        }}
         injectedJavaScript={injectedJavaScript}
+        injectedJavaScriptBeforeContentLoaded={`
+          console.log('[WebView] Running before content loaded script...');
+          if (typeof document !== 'undefined') {
+            try {
+              const cookies = document.cookie.split(";");
+              console.log('[WebView] Found', cookies.length, 'cookies to clear');
+              cookies.forEach(function(c) {
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+              });
+              console.log('[WebView] Cookies cleared successfully');
+            } catch(e) {
+              console.error('[WebView] Error clearing cookies:', e);
+            }
+          }
+          console.log('[WebView] Before content loaded script completed');
+        `}
         incognito={true}
         cacheEnabled={false}
+        cacheMode="LOAD_NO_CACHE"
         javaScriptEnabled={true}
         domStorageEnabled={true}
         startInLoadingState={true}
         sharedCookiesEnabled={false}
         thirdPartyCookiesEnabled={false}
+        {...(Platform.OS === 'android' && {
+          mixedContentMode: 'always',
+          allowFileAccess: false,
+        })}
         renderLoading={() => (
           <View
             style={{

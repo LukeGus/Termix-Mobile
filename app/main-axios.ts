@@ -127,6 +127,7 @@ export async function getCookie(name: string): Promise<string | undefined> {
     const token = await AsyncStorage.getItem(name);
     return token || undefined;
   } catch (error) {
+    console.error(`[getCookie] Error reading ${name} from AsyncStorage:`, error);
     return undefined;
   }
 }
@@ -149,6 +150,7 @@ function createApiInstance(
     (config as any).requestId = requestId;
 
     const token = await getCookie("jwt");
+
     const method = config.method?.toUpperCase() || "UNKNOWN";
     const url = config.url || "UNKNOWN";
     const fullUrl = `${config.baseURL}${url}`;
@@ -407,7 +409,7 @@ function initializeApiInstances() {
     "FILE_MANAGER",
   );
 
-  statsApi = createApiInstance(getApiUrl("/ssh", 8085), "STATS");
+  statsApi = createApiInstance(getApiUrl("", 8085), "STATS");
 
   authApi = createApiInstance(getApiUrl("", 8081), "AUTH");
 }
@@ -539,10 +541,17 @@ function handleApiError(error: unknown, operation: string): never {
         `Auth failed: ${method} ${url} - ${message}`,
         errorContext,
       );
-      AsyncStorage.removeItem("jwt");
-      if (authStateCallback) {
+
+      const isCriticalEndpoint =
+        url.includes('/db/host') ||
+        url.includes('/users/me') ||
+        url.includes('/login') ||
+        url.includes('/websocket');
+
+      if (isCriticalEndpoint && authStateCallback) {
         authStateCallback(false);
       }
+
       throw new ApiError(
         "Authentication required. Please log in again.",
         401,

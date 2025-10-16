@@ -24,7 +24,6 @@
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
           "NSAllowsLocalNetworking": true,
-          "NSAllowsLocalNetworking": true,
           "NSExceptionDomains": {
             "100.64.0.0": {
               "NSExceptionAllowsInsecureHTTPLoads": true,
@@ -40,9 +39,15 @@
             },
             "exp.direct": {
               "NSIncludesSubdomains": true,
-              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            },
+            "localhost": {
+              "NSIncludesSubdomains": true,
+              "NSExceptionAllowsInsecureHTTPLoads": true
             }
-          }
+          },
+          "NSExceptionAllowsInsecureHTTPLoads": true,
+          "NSAllowsArbitraryLoadsInWebContent": true
         }
       }
     },
@@ -50,7 +55,6 @@
       "edgeToEdgeEnabled": true,
       "package": "com.karmaa.termix",
       "icon": "./assets/images/icon.png",
-      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#18181b"
@@ -71,6 +75,15 @@
           "dark": {
             "image": "./assets/images/splash-icon.png",
             "backgroundColor": "#18181b"
+          }
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "newArchEnabled": true,
+            "usesCleartextTraffic": true
           }
         }
       ],
