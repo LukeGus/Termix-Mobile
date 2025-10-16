@@ -21,7 +21,6 @@ on:
         options:
           - production
           - preview
-          - development
       action:
         type: choice
         description: What to do with the built app
