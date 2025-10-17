@@ -299,10 +299,14 @@ export default function LoginForm() {
         ref={webViewRef}
         source={source}
         style={{ flex: 1, backgroundColor: "#18181b" }}
+        containerStyle={{ backgroundColor: "#18181b" }}
         onNavigationStateChange={handleNavigationStateChange}
         onMessage={onMessage}
         injectedJavaScript={injectedJavaScript}
         injectedJavaScriptBeforeContentLoaded={`
+          document.body.style.backgroundColor = '#18181b';
+          document.documentElement.style.backgroundColor = '#18181b';
+
           if (typeof document !== 'undefined') {
             try {
               const cookies = document.cookie.split(";");
@@ -330,9 +334,13 @@ export default function LoginForm() {
         startInLoadingState={true}
         sharedCookiesEnabled={false}
         thirdPartyCookiesEnabled={false}
+        opaque={false}
         {...(Platform.OS === 'android' && {
           mixedContentMode: 'always',
           allowFileAccess: false,
+        })}
+        {...(Platform.OS === 'ios' && {
+          allowsBackForwardNavigationGestures: false,
         })}
         renderLoading={() => (
           <View
