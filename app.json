@@ -23,7 +23,8 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
-          "NSAllowsLocalNetworking": true
+          "NSAllowsLocalNetworking": true,
+          "NSAllowsArbitraryLoadsInWebContent": true
         }
       }
     },
