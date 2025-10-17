@@ -23,30 +23,7 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
-          "NSAllowsLocalNetworking": true,
-          "NSAllowsArbitraryLoadsInWebContent": true,
-          "NSExceptionDomains": {
-            "100.64.0.0": {
-              "NSExceptionAllowsInsecureHTTPLoads": true,
-              "NSIncludesSubdomains": true
-            },
-            "100.0.0.0": {
-              "NSExceptionAllowsInsecureHTTPLoads": true,
-              "NSIncludesSubdomains": true
-            },
-            "xxx.xx.xx.xxx": {
-              "NSIncludesSubdomains": true,
-              "NSExceptionAllowsInsecureHTTPLoads": true
-            },
-            "exp.direct": {
-              "NSIncludesSubdomains": true,
-              "NSExceptionAllowsInsecureHTTPLoads": true
-            },
-            "localhost": {
-              "NSIncludesSubdomains": true,
-              "NSExceptionAllowsInsecureHTTPLoads": true
-            }
-          }
+          "NSAllowsLocalNetworking": true
         }
       }
     },
