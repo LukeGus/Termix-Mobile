@@ -8,7 +8,7 @@ import {
 } from "react-native";
 import { useAppContext } from "../AppContext";
 import { useState, useEffect, useRef } from "react";
-import { setCookie, getCurrentServerUrl } from "../main-axios";
+import { setCookie, getCurrentServerUrl, initializeServerConfig } from "../main-axios";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, RefreshCw } from "lucide-react-native";
 import { WebView, WebViewNavigation } from "react-native-webview";
@@ -89,12 +89,12 @@ export default function LoginForm() {
 
         const savedToken = await AsyncStorage.getItem("jwt");
         if (!savedToken) {
-          console.error("[LoginForm] Failed to verify saved token!");
           setIsAuthenticating(false);
           Alert.alert("Error", "Failed to save authentication token. Please try again.");
           return;
         }
-        console.log("[LoginForm] Token verified - readable from AsyncStorage");
+
+        await initializeServerConfig();
 
         await new Promise(resolve => setTimeout(resolve, 200));
 
@@ -162,17 +162,14 @@ export default function LoginForm() {
 
       const notifyAuth = (token, source) => {
         if (hasNotified || !token || token === lastCheckedToken) {
-          console.log('[WebView] Skipping notification - already notified or invalid token');
           return;
         }
 
-        console.log('[WebView] Preparing to notify React Native of successful auth from:', source);
         hasNotified = true;
         lastCheckedToken = token;
 
         try {
           localStorage.setItem('jwt', token);
-          console.log('[WebView] Saved token to localStorage');
         } catch (e) {
           console.error('[WebView] Failed to save to localStorage:', e);
         }
@@ -185,11 +182,8 @@ export default function LoginForm() {
             timestamp: Date.now()
           });
 
-          console.log('[WebView] Sending message to React Native:', message.substring(0, 100) + '...');
-
           if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
             window.ReactNativeWebView.postMessage(message);
-            console.log('[WebView] Message sent successfully');
           } else {
             console.error('[WebView] ReactNativeWebView.postMessage not available!');
           }
@@ -202,14 +196,12 @@ export default function LoginForm() {
         try {
           const localToken = localStorage.getItem('jwt');
           if (localToken && localToken.length > 20) {
-            console.log('[WebView] Found JWT in localStorage');
             notifyAuth(localToken, 'localStorage');
             return true;
           }
 
           const sessionToken = sessionStorage.getItem('jwt');
           if (sessionToken && sessionToken.length > 20) {
-            console.log('[WebView] Found JWT in sessionStorage');
             notifyAuth(sessionToken, 'sessionStorage');
             return true;
           }
@@ -222,7 +214,6 @@ export default function LoginForm() {
             if (tokenCookie) {
               const token = tokenCookie.split('=')[1];
               if (token && token.length > 20) {
-                console.log('[WebView] Found JWT in cookies');
                 notifyAuth(token, 'cookie');
                 return true;
               }
@@ -233,8 +224,6 @@ export default function LoginForm() {
         }
         return false;
       };
-
-      console.log('[WebView] Authentication monitoring initialized');
 
       const originalSetItem = localStorage.setItem;
       localStorage.setItem = function(key, value) {
@@ -312,25 +301,26 @@ export default function LoginForm() {
         style={{ flex: 1, backgroundColor: "#18181b" }}
         onNavigationStateChange={handleNavigationStateChange}
         onMessage={onMessage}
-        onConsoleMessage={(event) => {
-          console.log('[WebView Console]', event.nativeEvent.message);
-        }}
         injectedJavaScript={injectedJavaScript}
         injectedJavaScriptBeforeContentLoaded={`
-          console.log('[WebView] Running before content loaded script...');
           if (typeof document !== 'undefined') {
             try {
               const cookies = document.cookie.split(";");
-              console.log('[WebView] Found', cookies.length, 'cookies to clear');
               cookies.forEach(function(c) {
                 document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
               });
-              console.log('[WebView] Cookies cleared successfully');
-            } catch(e) {
-              console.error('[WebView] Error clearing cookies:', e);
-            }
+            } catch(e) {}
           }
-          console.log('[WebView] Before content loaded script completed');
+          try {
+            if (typeof localStorage !== 'undefined') {
+              localStorage.removeItem('jwt');
+            }
+          } catch(e) {}
+          try {
+            if (typeof sessionStorage !== 'undefined') {
+              sessionStorage.removeItem('jwt');
+            }
+          } catch(e) {}
         `}
         incognito={true}
         cacheEnabled={false}

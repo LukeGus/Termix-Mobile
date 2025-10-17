@@ -24,6 +24,7 @@
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
           "NSAllowsLocalNetworking": true,
+          "NSAllowsArbitraryLoadsInWebContent": true,
           "NSExceptionDomains": {
             "100.64.0.0": {
               "NSExceptionAllowsInsecureHTTPLoads": true,
@@ -45,9 +46,7 @@
               "NSIncludesSubdomains": true,
               "NSExceptionAllowsInsecureHTTPLoads": true
             }
-          },
-          "NSExceptionAllowsInsecureHTTPLoads": true,
-          "NSAllowsArbitraryLoadsInWebContent": true
+          }
         }
       }
     },
