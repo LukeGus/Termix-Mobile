@@ -24,7 +24,9 @@
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
           "NSAllowsLocalNetworking": true,
-          "NSAllowsArbitraryLoadsInWebContent": true
+          "NSAllowsArbitraryLoadsInWebContent": true,
+          "NSAllowsArbitraryLoadsForMedia": true,
+          "NSExceptionAllowsInsecureHTTPLoads": true
         }
       }
     },
