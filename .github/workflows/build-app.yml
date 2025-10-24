@@ -2,25 +2,13 @@ name: Build App
 on:
   workflow_dispatch:
     inputs:
-      os:
-        type: choice
-        description: OS to build on. Ubuntu is faster, MacOS supports iOS builds
-        options:
-          - macos-26
-          - ubuntu-latest
-          - blacksmith-4vcpu-ubuntu-2404
       platform:
         type: choice
         description: Platform to build for
         options:
+          - both
           - ios
           - android
-      profile:
-        type: choice
-        description: Build profile to use
-        options:
-          - production
-          - preview
       action:
         type: choice
         description: What to do with the built app
@@ -31,9 +19,10 @@ on:
         required: true
 jobs:
   build:
-    runs-on: ${{ github.event.inputs.os }}
+    runs-on: ${{ matrix.platform == 'ios' && 'macos-26' || 'blacksmith-4vcpu-ubuntu-2404' }}
     strategy:
       matrix:
+        platform: ${{ github.event.inputs.platform == 'both' && fromJSON('["ios", "android"]') || fromJSON(format('["{0}"]', github.event.inputs.platform)) }}
         node: [20.x]
     steps:
       - name: 🏗 Setup repo
@@ -60,15 +49,25 @@ jobs:
           echo "EAS configuration:"
           cat eas.json
           echo "Validating configuration..."
-          eas build:configure --platform ${{ github.event.inputs.platform }}
+          eas build:configure --platform ${{ matrix.platform }}
 
       - name: 👷 Build app
         run: |
+          # Determine profile based on action
+          if [ "${{ github.event.inputs.action }}" = "submit" ]; then
+            PROFILE="production"
+          else
+            PROFILE="preview"
+          fi
+
+          echo "Building for platform: ${{ matrix.platform }}"
+          echo "Using profile: $PROFILE"
+
           eas build --local \
             --non-interactive \
             --clear-cache \
-            --platform=${{ github.event.inputs.platform }} \
-            --profile=${{ github.event.inputs.profile }}
+            --platform=${{ matrix.platform }} \
+            --profile=$PROFILE
         env:
           EAS_SKIP_AUTO_FINGERPRINT: 1
 
@@ -80,21 +79,22 @@ jobs:
           # Create a directory to collect all artifacts
           mkdir -p build-artifacts
 
-          # Find and copy all APK files
-          if [ "${{ github.event.inputs.platform }}" = "android" ]; then
-            echo "Searching for Android APK files..."
-            find android/app/build/outputs -type f -name "*.apk" 2>/dev/null | while read file; do
+          # Find and copy all APK/AAB files
+          if [ "${{ matrix.platform }}" = "android" ]; then
+            echo "Searching for Android build files..."
+            find android/app/build/outputs -type f \( -name "*.apk" -o -name "*.aab" \) 2>/dev/null | while read file; do
               echo "Found: $file"
               cp "$file" build-artifacts/
             done
 
-            # List all found APK files with architecture info
+            # List all found Android build files
             echo "=== Android Build Artifacts ==="
             ls -lh build-artifacts/*.apk 2>/dev/null || echo "No APK files found"
+            ls -lh build-artifacts/*.aab 2>/dev/null || echo "No AAB files found"
           fi
 
           # Find and copy all IPA files
-          if [ "${{ github.event.inputs.platform }}" = "ios" ]; then
+          if [ "${{ matrix.platform }}" = "ios" ]; then
             echo "Searching for iOS IPA files..."
             find . -type f -name "*.ipa" -not -path "*/node_modules/*" 2>/dev/null | while read file; do
               echo "Found: $file"
@@ -113,11 +113,15 @@ jobs:
       - name: 🚢 Submit to App Store
         if: ${{ github.event.inputs.action == 'submit' }}
         run: |
-          if [ "${{ github.event.inputs.platform }}" = "android" ]; then
-            # For Android submission, prefer arm64-v8a (most common architecture)
-            BUILD_FILE=$(find build-artifacts -name "*arm64-v8a*.apk" | head -1)
+          if [ "${{ matrix.platform }}" = "android" ]; then
+            # For Android production submission, use AAB (App Bundle)
+            BUILD_FILE=$(find build-artifacts -name "*.aab" | head -1)
 
-            # If no arm64 build found, use any available APK
+            # Fallback to APK if AAB not found (shouldn't happen in production)
+            if [ -z "$BUILD_FILE" ]; then
+              BUILD_FILE=$(find build-artifacts -name "*arm64-v8a*.apk" | head -1)
+            fi
+
             if [ -z "$BUILD_FILE" ]; then
               BUILD_FILE=$(find build-artifacts -name "*.apk" | head -1)
             fi
@@ -128,44 +132,44 @@ jobs:
 
           if [ -n "$BUILD_FILE" ]; then
             echo "Submitting file: $BUILD_FILE"
-            eas submit -p ${{ github.event.inputs.platform }} --profile ${{ github.event.inputs.profile }} --path "$BUILD_FILE"
+            eas submit -p ${{ matrix.platform }} --profile production --path "$BUILD_FILE"
           else
             echo "No build file found to submit"
             exit 1
           fi
 
       - name: 📤 Upload arm64-v8a APK
-        if: ${{ github.event.inputs.action == 'file' && github.event.inputs.platform == 'android' }}
+        if: ${{ github.event.inputs.action == 'file' && matrix.platform == 'android' }}
         uses: actions/upload-artifact@v4
         with:
-          name: android-${{ github.event.inputs.profile }}-arm64-v8a
+          name: android-preview-arm64-v8a
           path: build-artifacts/*arm64-v8a*.apk
           retention-days: 30
           if-no-files-found: warn
 
       - name: 📤 Upload armeabi-v7a APK
-        if: ${{ github.event.inputs.action == 'file' && github.event.inputs.platform == 'android' }}
+        if: ${{ github.event.inputs.action == 'file' && matrix.platform == 'android' }}
         uses: actions/upload-artifact@v4
         with:
-          name: android-${{ github.event.inputs.profile }}-armeabi-v7a
+          name: android-preview-armeabi-v7a
           path: build-artifacts/*armeabi-v7a*.apk
           retention-days: 30
           if-no-files-found: warn
 
       - name: 📤 Upload x86_64 APK
-        if: ${{ github.event.inputs.action == 'file' && github.event.inputs.platform == 'android' }}
+        if: ${{ github.event.inputs.action == 'file' && matrix.platform == 'android' }}
         uses: actions/upload-artifact@v4
         with:
-          name: android-${{ github.event.inputs.profile }}-x86_64
+          name: android-preview-x86_64
           path: build-artifacts/*x86_64*.apk
           retention-days: 30
           if-no-files-found: warn
 
       - name: 📤 Upload iOS IPA
-        if: ${{ github.event.inputs.action == 'file' && github.event.inputs.platform == 'ios' }}
+        if: ${{ github.event.inputs.action == 'file' && matrix.platform == 'ios' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ios-${{ github.event.inputs.profile }}-ipa
+          name: ios-preview-ipa
           path: build-artifacts/*.ipa
           retention-days: 30
           if-no-files-found: warn
