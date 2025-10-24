@@ -72,27 +72,60 @@ jobs:
         env:
           EAS_SKIP_AUTO_FINGERPRINT: 1
 
-      - name: 📁 List build output
+      - name: 📁 Detect and catalog build artifacts
+        id: detect-artifacts
         run: |
-          echo "Searching for build artifacts in common locations:"
-          echo "1. Checking ./app-build directory:"
-          ls -la ./app-build/ 2>/dev/null || echo "app-build directory not found"
-          echo "2. Checking android/app/build/outputs:"
-          find android/app/build/outputs -type f -name "*.apk" -o -name "*.aab" 2>/dev/null || echo "No Android build files found"
-          echo "3. Checking ios/build:"
-          find ios/build -type f -name "*.ipa" -o -name "*.app" 2>/dev/null || echo "No iOS build files found"
-          echo "4. Searching entire workspace for build artifacts:"
-          find . -type f \( -name "*.apk" -o -name "*.aab" -o -name "*.ipa" -o -name "*.app" \) 2>/dev/null | head -10
+          echo "Searching for build artifacts..."
+
+          # Create a directory to collect all artifacts
+          mkdir -p build-artifacts
+
+          # Find and copy all APK files
+          if [ "${{ github.event.inputs.platform }}" = "android" ]; then
+            echo "Searching for Android APK files..."
+            find android/app/build/outputs -type f -name "*.apk" 2>/dev/null | while read file; do
+              echo "Found: $file"
+              cp "$file" build-artifacts/
+            done
+
+            # List all found APK files with architecture info
+            echo "=== Android Build Artifacts ==="
+            ls -lh build-artifacts/*.apk 2>/dev/null || echo "No APK files found"
+          fi
+
+          # Find and copy all IPA files
+          if [ "${{ github.event.inputs.platform }}" = "ios" ]; then
+            echo "Searching for iOS IPA files..."
+            find . -type f -name "*.ipa" -not -path "*/node_modules/*" 2>/dev/null | while read file; do
+              echo "Found: $file"
+              cp "$file" build-artifacts/
+            done
+
+            echo "=== iOS Build Artifacts ==="
+            ls -lh build-artifacts/*.ipa 2>/dev/null || echo "No IPA files found"
+          fi
+
+          # Count total artifacts
+          ARTIFACT_COUNT=$(ls -1 build-artifacts/ 2>/dev/null | wc -l)
+          echo "Total artifacts found: $ARTIFACT_COUNT"
+          echo "artifact_count=$ARTIFACT_COUNT" >> $GITHUB_OUTPUT
 
       - name: 🚢 Submit to App Store
         if: ${{ github.event.inputs.action == 'submit' }}
         run: |
           if [ "${{ github.event.inputs.platform }}" = "android" ]; then
-            BUILD_FILE=$(find . -name "build-*.apk" -o -name "build-*.aab" | head -1)
+            # For Android submission, prefer arm64-v8a (most common architecture)
+            BUILD_FILE=$(find build-artifacts -name "*arm64-v8a*.apk" | head -1)
+
+            # If no arm64 build found, use any available APK
+            if [ -z "$BUILD_FILE" ]; then
+              BUILD_FILE=$(find build-artifacts -name "*.apk" | head -1)
+            fi
           else
-            BUILD_FILE=$(find . -name "build-*.ipa" -o -name "build-*.app" | head -1)
+            # For iOS, use the IPA file
+            BUILD_FILE=$(find build-artifacts -name "*.ipa" | head -1)
           fi
-          
+
           if [ -n "$BUILD_FILE" ]; then
             echo "Submitting file: $BUILD_FILE"
             eas submit -p ${{ github.event.inputs.platform }} --profile ${{ github.event.inputs.profile }} --path "$BUILD_FILE"
@@ -101,32 +134,38 @@ jobs:
             exit 1
           fi
 
-      - name: 📤 Upload Build Artifacts
-        if: ${{ github.event.inputs.action == 'file' }}
-        run: |
-          if [ "${{ github.event.inputs.platform }}" = "android" ]; then
-            BUILD_FILE=$(find . -name "build-*.apk" -o -name "build-*.aab" | head -1)
-          else
-            BUILD_FILE=$(find . -name "build-*.ipa" -o -name "build-*.app" | head -1)
-          fi
-          
-          if [ -n "$BUILD_FILE" ]; then
-            echo "Uploading file: $BUILD_FILE"
-            mkdir -p temp-upload
-            cp "$BUILD_FILE" temp-upload/
-          
-            echo "::set-output name=file_path::temp-upload/$BUILD_FILE"
-          else
-            echo "No build file found to upload"
-            exit 1
-          fi
-        id: find-build-file
-
-      - name: 📤 Upload Build Artifacts
-        if: ${{ github.event.inputs.action == 'file' }}
+      - name: 📤 Upload arm64-v8a APK
+        if: ${{ github.event.inputs.action == 'file' && github.event.inputs.platform == 'android' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.event.inputs.platform }}-${{ github.event.inputs.profile }}-build
-          path: temp-upload/
+          name: android-${{ github.event.inputs.profile }}-arm64-v8a
+          path: build-artifacts/*arm64-v8a*.apk
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: 📤 Upload armeabi-v7a APK
+        if: ${{ github.event.inputs.action == 'file' && github.event.inputs.platform == 'android' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-${{ github.event.inputs.profile }}-armeabi-v7a
+          path: build-artifacts/*armeabi-v7a*.apk
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: 📤 Upload x86_64 APK
+        if: ${{ github.event.inputs.action == 'file' && github.event.inputs.platform == 'android' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-${{ github.event.inputs.profile }}-x86_64
+          path: build-artifacts/*x86_64*.apk
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: 📤 Upload iOS IPA
+        if: ${{ github.event.inputs.action == 'file' && github.event.inputs.platform == 'ios' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-${{ github.event.inputs.profile }}-ipa
+          path: build-artifacts/*.ipa
           retention-days: 30
           if-no-files-found: warn
