@@ -44,3 +44,7 @@ app-example
 /credentials.json
 /CLAUDE.md
 /.claude/settings.local.json
+/.idea/copilot.data.migration.agent.xml
+/.idea/copilot.data.migration.ask.xml
+/.idea/copilot.data.migration.ask2agent.xml
+/.idea/copilot.data.migration.edit.xml

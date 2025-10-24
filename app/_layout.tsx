@@ -2,6 +2,7 @@ import { Stack } from "expo-router";
 import { AppProvider, useAppContext } from "./AppContext";
 import { TerminalSessionsProvider } from "./contexts/TerminalSessionsContext";
 import { KeyboardProvider } from "./contexts/KeyboardContext";
+import { KeyboardCustomizationProvider } from "./contexts/KeyboardCustomizationContext";
 import ServerForm from "./Authentication/ServerForm";
 import LoginForm from "./Authentication/LoginForm";
 import { View, Text, ActivityIndicator } from "react-native";
@@ -67,21 +68,23 @@ export default function RootLayout() {
         <AppProvider>
           <TerminalSessionsProvider>
             <KeyboardProvider>
-              <RootLayoutContent />
-              <Toaster
-                theme="dark"
-                position="top-center"
-                toastOptions={{
-                  style: {
-                    backgroundColor: "#18181b",
-                    borderWidth: 1,
-                    borderColor: "#27272a",
-                  },
-                }}
-                richColors={false}
-                closeButton={true}
-                duration={4000}
-              />
+              <KeyboardCustomizationProvider>
+                <RootLayoutContent />
+                <Toaster
+                  theme="dark"
+                  position="top-center"
+                  toastOptions={{
+                    style: {
+                      backgroundColor: "#18181b",
+                      borderWidth: 1,
+                      borderColor: "#27272a",
+                    },
+                  }}
+                  richColors={false}
+                  closeButton={true}
+                  duration={4000}
+                />
+              </KeyboardCustomizationProvider>
             </KeyboardProvider>
           </TerminalSessionsProvider>
         </AppProvider>

@@ -11,7 +11,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "com.karmaa.termix",
       "icon": {
         "dark": "./assets/images/ios-dark.png",
@@ -68,6 +68,7 @@
           }
         }
       ],
+      "./plugins/withNetworkSecurityConfig.js",
       "expo-dev-client"
     ],
     "experiments": {

@@ -48,16 +48,23 @@ export default function ServerForm() {
   };
 
   const handleConnect = async () => {
-    if (!formData.ip.trim()) {
+    const serverUrl = formData.ip.trim();
+    if (!serverUrl) {
       Alert.alert("Error", "Please enter a server address");
+      return;
+    }
+
+    if (!/^https?:\/\//.test(serverUrl)) {
+      Alert.alert(
+        "Error",
+        "Server address must start with http:// or https://"
+      );
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const serverUrl = formData.ip.trim();
-
       const serverConfig = {
         serverUrl,
         lastUpdated: new Date().toISOString(),
@@ -75,7 +82,7 @@ export default function ServerForm() {
     } catch (error: any) {
       Alert.alert(
         "Error",
-        `Failed to save server: ${error?.message || "Unknown error"}`,
+        `Failed to save server: ${error?.message || "Unknown error"}`
       );
     } finally {
       setIsLoading(false);
@@ -115,7 +122,7 @@ export default function ServerForm() {
                     paddingLeft: 48,
                     paddingRight: 16,
                   }}
-                  placeholder="your-server.com"
+                  placeholder="http://127.0.0.1:8080"
                   placeholderTextColor="#9CA3AF"
                   value={formData.ip}
                   onChangeText={(value) => handleInputChange("ip", value)}

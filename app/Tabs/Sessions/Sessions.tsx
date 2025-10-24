@@ -11,6 +11,7 @@ import {
   TextInput,
   TouchableWithoutFeedback,
   Pressable,
+  Dimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
@@ -47,6 +48,9 @@ export default function Sessions() {
     ctrl: false,
     alt: false,
   });
+  const [screenDimensions, setScreenDimensions] = useState(
+    Dimensions.get("window"),
+  );
 
   useEffect(() => {
     const map: Record<string, React.RefObject<TerminalHandle>> = {
@@ -105,6 +109,29 @@ export default function Sessions() {
   }, [isKeyboardVisible, sessions.length, isCustomKeyboardVisible]);
 
   useEffect(() => {
+    const subscription = Dimensions.addEventListener("change", ({ window }) => {
+      setScreenDimensions(window);
+      // Reset keyboard height tracking on dimension changes
+      setHasRecordedKeyboardHeight(false);
+      setLastKeyboardHeight(0);
+
+      // Refit terminal and refocus input after dimension change
+      setTimeout(() => {
+        const activeRef = activeSessionId
+          ? terminalRefs.current[activeSessionId]
+          : null;
+        activeRef?.current?.fit();
+
+        if (sessions.length > 0 && !isCustomKeyboardVisible) {
+          hiddenInputRef.current?.focus();
+        }
+      }, 300);
+    });
+
+    return () => subscription?.remove();
+  }, [setLastKeyboardHeight, activeSessionId, sessions.length, isCustomKeyboardVisible]);
+
+  useEffect(() => {
     if (keyboardHeight > 0 && !hasRecordedKeyboardHeight) {
       setLastKeyboardHeight(keyboardHeight);
       setHasRecordedKeyboardHeight(true);
@@ -120,7 +147,7 @@ export default function Sessions() {
         activeRef.current?.fit();
       }, 0);
     }
-  }, [keyboardHeight, activeSessionId]);
+  }, [keyboardHeight, activeSessionId, screenDimensions]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -409,13 +436,13 @@ export default function Sessions() {
       )}
 
       {sessions.length > 0 && !isCustomKeyboardVisible && (
-        <View
+        <Pressable
           style={{
             position: "absolute",
             bottom: 0,
             left: 0,
             right: 0,
-            height: keyboardHeight > 0 ? keyboardHeight : 80,
+            height: keyboardHeight > 0 ? keyboardHeight : Math.max(80, screenDimensions.height * 0.1),
             backgroundColor: "#09090b",
             justifyContent: "center",
             alignItems: "center",
@@ -423,18 +450,22 @@ export default function Sessions() {
             borderTopColor: "#303032",
             zIndex: 1000,
           }}
+          onPress={() => {
+            hiddenInputRef.current?.focus();
+          }}
         >
           <Text
             style={{
               color: "#9CA3AF",
-              fontSize: 14,
+              fontSize: Math.min(14, screenDimensions.width / 30),
               textAlign: "center",
               fontWeight: "500",
+              paddingHorizontal: 20,
             }}
           >
             Tap anywhere to bring back the keyboard
           </Text>
-        </View>
+        </Pressable>
       )}
 
       {sessions.length > 0 && !isCustomKeyboardVisible && (

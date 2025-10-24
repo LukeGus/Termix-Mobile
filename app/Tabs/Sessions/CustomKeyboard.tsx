@@ -1,7 +1,9 @@
 import React from "react";
-import { View, StyleSheet, ScrollView, Clipboard } from "react-native";
+import { View, StyleSheet, ScrollView, Clipboard, Text } from "react-native";
 import { TerminalHandle } from "./Terminal";
 import KeyboardKey from "./KeyboardKey";
+import { useKeyboardCustomization } from "@/app/contexts/KeyboardCustomizationContext";
+import { KeyConfig } from "@/types/keyboard";
 
 interface CustomKeyboardProps {
   terminalRef: React.RefObject<TerminalHandle | null>;
@@ -14,43 +16,75 @@ export default function CustomKeyboard({
   isVisible,
   keyboardHeight,
 }: CustomKeyboardProps) {
+  const { config } = useKeyboardCustomization();
+
   if (!isVisible) return null;
 
   const sendKey = (key: string) => {
     terminalRef.current?.sendInput(key);
   };
 
-  const sendSpecialKey = (key: string) => {
-    switch (key) {
-      case "Enter":
+  const handleKeyPress = (keyConfig: KeyConfig) => {
+    const { value, id } = keyConfig;
+
+    // Handle special actions
+    switch (id) {
+      case "paste":
+        handlePaste();
+        break;
+      case "enter":
         sendKey("\r");
         break;
-      case "Backspace":
-        sendKey("\b");
+      case "space":
+        sendKey(" ");
         break;
-      case "Home":
+      case "backspace":
+        sendKey("\x08");
+        break;
+      case "escape":
+        sendKey("\x1b");
+        break;
+      case "tab":
+      case "complete":
+        sendKey("\t");
+        break;
+      case "arrowUp":
+      case "history":
+        sendKey("\x1b[A");
+        break;
+      case "arrowDown":
+        sendKey("\x1b[B");
+        break;
+      case "arrowLeft":
+        sendKey("\x1b[D");
+        break;
+      case "arrowRight":
+        sendKey("\x1b[C");
+        break;
+      case "home":
         sendKey("\x1b[H");
         break;
-      case "End":
+      case "end":
         sendKey("\x1b[F");
         break;
-      case "PageUp":
+      case "pageUp":
         sendKey("\x1b[5~");
         break;
-      case "PageDown":
+      case "pageDown":
         sendKey("\x1b[6~");
         break;
-      case "Delete":
+      case "delete":
         sendKey("\x1b[3~");
         break;
-      case "Insert":
+      case "insert":
         sendKey("\x1b[2~");
         break;
-      case "Clear":
+      case "clear":
         sendKey("\x0c");
         break;
       default:
-        sendKey(key);
+        // Send the value directly for all other keys
+        sendKey(value);
     }
   };
 
@@ -63,6 +97,35 @@ export default function CustomKeyboard({
     } catch (error) {}
   };
 
+  const { rows } = config.fullKeyboard;
+  const { compactMode, keySize } = config.settings;
+  const visibleRows = rows.filter((row) => row.visible);
+
+  // Determine key gap based on compact mode and key size
+  const getKeyGap = () => {
+    if (compactMode) return 2;
+    if (keySize === "small") return 3;
+    if (keySize === "large") return 5;
+    return 4; // medium
+  };
+
+  const getKeyStyle = (keyConfig: KeyConfig) => {
+    const baseStyle: any = {};
+
+    // Handle width
+    if (keyConfig.width === "narrow" || keyConfig.category === "number") {
+      baseStyle.flex = 1;
+      baseStyle.minWidth = 0;
+      baseStyle.paddingHorizontal = 4;
+    } else if (keyConfig.width === "wide") {
+      baseStyle.minWidth = 80;
+    } else if (keyConfig.width === "full") {
+      baseStyle.flex = 1;
+    }
+
+    return baseStyle;
+  };
+
   return (
     <View style={[styles.keyboard, { height: keyboardHeight }]}>
       <ScrollView
@@ -71,183 +134,50 @@ export default function CustomKeyboard({
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.keyRow}>
-          <KeyboardKey label="F1" onPress={() => sendKey("\x1bOP")} />
-          <KeyboardKey label="F2" onPress={() => sendKey("\x1bOQ")} />
-          <KeyboardKey label="F3" onPress={() => sendKey("\x1bOR")} />
-          <KeyboardKey label="F4" onPress={() => sendKey("\x1bOS")} />
-          <KeyboardKey label="F5" onPress={() => sendKey("\x1b[15~")} />
-          <KeyboardKey label="F6" onPress={() => sendKey("\x1b[17~")} />
-          <KeyboardKey label="F7" onPress={() => sendKey("\x1b[18~")} />
-          <KeyboardKey label="F8" onPress={() => sendKey("\x1b[19~")} />
-          <KeyboardKey label="F9" onPress={() => sendKey("\x1b[20~")} />
-          <KeyboardKey label="F10" onPress={() => sendKey("\x1b[21~")} />
-          <KeyboardKey label="F11" onPress={() => sendKey("\x1b[23~")} />
-          <KeyboardKey label="F12" onPress={() => sendKey("\x1b[24~")} />
-        </View>
+        {visibleRows.map((row, rowIndex) => (
+          <View key={row.id}>
+            {/* Row label (optional, for visual organization) */}
+            {row.label && visibleRows.length > 1 && rowIndex === 0 && (
+              <View style={styles.rowLabelContainer}>
+                <Text style={styles.rowLabel}>{row.label}</Text>
+              </View>
+            )}
 
-        <View style={styles.separator} />
+            {/* Keys in this row */}
+            <View
+              style={[
+                row.category === "number" ? styles.numberRow : styles.keyRow,
+                { gap: getKeyGap() },
+                compactMode && styles.compactRow,
+              ]}
+            >
+              {row.keys.map((key, keyIndex) => (
+                <KeyboardKey
+                  key={`${row.id}-${key.id}-${keyIndex}`}
+                  label={key.label}
+                  onPress={() => handleKeyPress(key)}
+                  style={getKeyStyle(key)}
+                  keySize={config.settings.keySize}
+                  hapticFeedback={config.settings.hapticFeedback}
+                />
+              ))}
+            </View>
 
-        <View style={styles.keyRow}>
-          <KeyboardKey
-            label="Insert"
-            onPress={() => sendSpecialKey("Insert")}
-          />
-          <KeyboardKey label="Home" onPress={() => sendSpecialKey("Home")} />
-          <KeyboardKey
-            label="PageUp"
-            onPress={() => sendSpecialKey("PageUp")}
-          />
-          <KeyboardKey
-            label="Delete"
-            onPress={() => sendSpecialKey("Delete")}
-          />
-          <KeyboardKey label="End" onPress={() => sendSpecialKey("End")} />
-          <KeyboardKey
-            label="PageDown"
-            onPress={() => sendSpecialKey("PageDown")}
-          />
-        </View>
+            {/* Separator between rows */}
+            {rowIndex < visibleRows.length - 1 && (
+              <View style={[styles.separator, compactMode && styles.compactSeparator]} />
+            )}
+          </View>
+        ))}
 
-        <View style={styles.separator} />
-
-        <View style={styles.keyRow}>
-          <KeyboardKey label="Paste" onPress={handlePaste} />
-          <KeyboardKey label="Clear" onPress={() => sendSpecialKey("Clear")} />
-          <KeyboardKey label="History" onPress={() => sendKey("\x1b[A")} />
-          <KeyboardKey label="Complete" onPress={() => sendKey("\t")} />
-          <KeyboardKey label="Suspend" onPress={() => sendKey("\x1a")} />
-        </View>
-
-        <View style={styles.separator} />
-
-        <View style={styles.numberRow}>
-          <KeyboardKey
-            label="1"
-            onPress={() => sendKey("1")}
-            style={styles.numberKey}
-          />
-          <KeyboardKey
-            label="2"
-            onPress={() => sendKey("2")}
-            style={styles.numberKey}
-          />
-          <KeyboardKey
-            label="3"
-            onPress={() => sendKey("3")}
-            style={styles.numberKey}
-          />
-          <KeyboardKey
-            label="4"
-            onPress={() => sendKey("4")}
-            style={styles.numberKey}
-          />
-          <KeyboardKey
-            label="5"
-            onPress={() => sendKey("5")}
-            style={styles.numberKey}
-          />
-          <KeyboardKey
-            label="6"
-            onPress={() => sendKey("6")}
-            style={styles.numberKey}
-          />
-          <KeyboardKey
-            label="7"
-            onPress={() => sendKey("7")}
-            style={styles.numberKey}
-          />
-          <KeyboardKey
-            label="8"
-            onPress={() => sendKey("8")}
-            style={styles.numberKey}
-          />
-          <KeyboardKey
-            label="9"
-            onPress={() => sendKey("9")}
-            style={styles.numberKey}
-          />
-          <KeyboardKey
-            label="0"
-            onPress={() => sendKey("0")}
-            style={styles.numberKey}
-          />
-        </View>
-
-        <View style={styles.separator} />
-
-        <View style={styles.keyRow}>
-          <KeyboardKey label="`" onPress={() => sendKey("`")} />
-          <KeyboardKey label="~" onPress={() => sendKey("~")} />
-          <KeyboardKey label="!" onPress={() => sendKey("!")} />
-          <KeyboardKey label="@" onPress={() => sendKey("@")} />
-          <KeyboardKey label="#" onPress={() => sendKey("#")} />
-          <KeyboardKey label="$" onPress={() => sendKey("$")} />
-          <KeyboardKey label="%" onPress={() => sendKey("%")} />
-          <KeyboardKey label="^" onPress={() => sendKey("^")} />
-          <KeyboardKey label="&" onPress={() => sendKey("&")} />
-          <KeyboardKey label="*" onPress={() => sendKey("*")} />
-          <KeyboardKey label="(" onPress={() => sendKey("(")} />
-          <KeyboardKey label=")" onPress={() => sendKey(")")} />
-        </View>
-
-        <View style={styles.separator} />
-
-        <View style={styles.keyRow}>
-          <KeyboardKey label="-" onPress={() => sendKey("-")} />
-          <KeyboardKey label="_" onPress={() => sendKey("_")} />
-          <KeyboardKey label="=" onPress={() => sendKey("=")} />
-          <KeyboardKey label="+" onPress={() => sendKey("+")} />
-          <KeyboardKey label="[" onPress={() => sendKey("[")} />
-          <KeyboardKey label="{" onPress={() => sendKey("{")} />
-          <KeyboardKey label="]" onPress={() => sendKey("]")} />
-          <KeyboardKey label="}" onPress={() => sendKey("}")} />
-          <KeyboardKey label="\\" onPress={() => sendKey("\\")} />
-          <KeyboardKey label="|" onPress={() => sendKey("|")} />
-          <KeyboardKey label=";" onPress={() => sendKey(";")} />
-          <KeyboardKey label=":" onPress={() => sendKey(":")} />
-        </View>
-
-        <View style={styles.separator} />
-
-        <View style={styles.keyRow}>
-          <KeyboardKey label="'" onPress={() => sendKey("'")} />
-          <KeyboardKey label='"' onPress={() => sendKey('"')} />
-          <KeyboardKey label="," onPress={() => sendKey(",")} />
-          <KeyboardKey label="<" onPress={() => sendKey("<")} />
-          <KeyboardKey label="." onPress={() => sendKey(".")} />
-          <KeyboardKey label=">" onPress={() => sendKey(">")} />
-          <KeyboardKey label="/" onPress={() => sendKey("/")} />
-          <KeyboardKey label="?" onPress={() => sendKey("?")} />
-        </View>
-
-        <View style={styles.separator} />
-
-        <View style={styles.keyRow}>
-          <KeyboardKey label="Enter" onPress={() => sendSpecialKey("Enter")} />
-          <KeyboardKey label="Space" onPress={() => sendKey(" ")} />
-          <KeyboardKey
-            label="Backspace"
-            onPress={() => sendSpecialKey("Backspace")}
-          />
-        </View>
-
-        <View style={styles.separator} />
-
-        <View style={styles.keyRow}>
-          <KeyboardKey label="Ctrl+C" onPress={() => sendKey("\x03")} />
-          <KeyboardKey label="Ctrl+D" onPress={() => sendKey("\x04")} />
-          <KeyboardKey label="Ctrl+Z" onPress={() => sendKey("\x1a")} />
-          <KeyboardKey label="Ctrl+L" onPress={() => sendKey("\x0c")} />
-          <KeyboardKey label="Ctrl+A" onPress={() => sendKey("\x01")} />
-          <KeyboardKey label="Ctrl+E" onPress={() => sendKey("\x05")} />
-          <KeyboardKey label="Ctrl+K" onPress={() => sendKey("\x0b")} />
-          <KeyboardKey label="Ctrl+U" onPress={() => sendKey("\x15")} />
-          <KeyboardKey label="Ctrl+W" onPress={() => sendKey("\x17")} />
-          <KeyboardKey label="Ctrl+R" onPress={() => sendKey("\x12")} />
-          <KeyboardKey label="Ctrl+Y" onPress={() => sendKey("\x19")} />
-          <KeyboardKey label="Alt+F" onPress={() => sendKey("\x1bf")} />
-        </View>
+        {/* Hint text at the bottom */}
+        {config.settings.showHints && (
+          <View style={styles.hintContainer}>
+            <Text style={styles.hintText}>
+              Customize in Settings
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -267,29 +197,50 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     flexGrow: 1,
   },
+  rowLabelContainer: {
+    marginBottom: 4,
+    marginTop: 4,
+  },
+  rowLabel: {
+    fontSize: 11,
+    color: "#888",
+    fontWeight: "600",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
   keyRow: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 0,
-    gap: 4,
     flexWrap: "wrap",
   },
   numberRow: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 0,
-    gap: 3,
     flexWrap: "nowrap",
   },
-  numberKey: {
-    flex: 1,
-    minWidth: 0,
-    paddingHorizontal: 4,
+  compactRow: {
+    marginBottom: -2,
   },
   separator: {
     height: 1,
     backgroundColor: "#404040",
     marginVertical: 8,
     marginHorizontal: 0,
+  },
+  compactSeparator: {
+    marginVertical: 4,
+  },
+  hintContainer: {
+    paddingHorizontal: 8,
+    paddingTop: 8,
+    paddingBottom: 4,
+    alignItems: "center",
+  },
+  hintText: {
+    fontSize: 10,
+    color: "#666",
+    fontStyle: "italic",
   },
 });

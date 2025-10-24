@@ -72,6 +72,30 @@ export default function LoginForm() {
     }
   };
 
+  const handleError = (syntheticEvent: any) => {
+    const { nativeEvent } = syntheticEvent;
+    console.error("[LoginForm] WebView error:", nativeEvent);
+
+    if (nativeEvent.description?.includes("SSL") ||
+        nativeEvent.description?.includes("certificate") ||
+        nativeEvent.description?.includes("ERR_CERT")) {
+      Alert.alert(
+        "SSL Certificate Error",
+        "Unable to verify the server's SSL certificate. Please ensure:\n\n" +
+        "1. Your self-signed certificate's root CA is installed in Android Settings > Security > Encryption & Credentials > Install a certificate\n" +
+        "2. The certificate is installed as a 'CA certificate'\n" +
+        "3. You've rebuilt the app after installing the certificate\n\n" +
+        "Error: " + (nativeEvent.description || "Unknown SSL error"),
+        [{ text: "OK" }]
+      );
+    }
+  };
+
+  const handleHttpError = (syntheticEvent: any) => {
+    const { nativeEvent } = syntheticEvent;
+    console.warn("[LoginForm] HTTP error:", nativeEvent.statusCode, nativeEvent.url);
+  };
+
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   const onMessage = async (event: any) => {
@@ -302,6 +326,8 @@ export default function LoginForm() {
         containerStyle={{ backgroundColor: "#18181b" }}
         onNavigationStateChange={handleNavigationStateChange}
         onMessage={onMessage}
+        onError={handleError}
+        onHttpError={handleHttpError}
         injectedJavaScript={injectedJavaScript}
         injectedJavaScriptBeforeContentLoaded={`
           document.body.style.backgroundColor = '#18181b';
