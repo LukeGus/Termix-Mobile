@@ -7,8 +7,9 @@ import DraggableFlatList, {
 
 export type UnifiedListItem =
   | { type: 'header'; id: string; title: string; subtitle?: string; onAddPress?: () => void; addButtonLabel?: string }
-  | { type: 'draggable-key'; id: string; data: any; section: string; renderItem: (item: any, onRemove: () => void, drag: () => void, isActive: boolean) => React.ReactNode }
+  | { type: 'draggable-key'; id: string; data: any; section: string; rowId?: string; renderItem: (item: any, onRemove: () => void, drag: () => void, isActive: boolean) => React.ReactNode }
   | { type: 'draggable-row'; id: string; data: any; renderItem: (item: any, drag: () => void, isActive: boolean) => React.ReactNode }
+  | { type: 'row-keys-header'; id: string; rowId: string; onAddPress?: () => void }
   | { type: 'button'; id: string; label: string; onPress: () => void; variant?: 'danger' | 'normal' }
   | { type: 'spacer'; id: string; height: number };
 
@@ -53,15 +54,20 @@ export default function UnifiedDraggableList({
 
     // Draggable Key Item
     if (item.type === 'draggable-key') {
+      // Check if this key is part of an expanded row
+      const isRowKey = item.rowId !== undefined;
+
       return (
         <ScaleDecorator>
           <View style={{ opacity: isActive ? 0.5 : 1 }}>
-            {item.renderItem(
-              item.data,
-              () => onRemoveKey?.(item.id, item.section),
-              drag,
-              isActive
-            )}
+            <View className={isRowKey ? "bg-[#1a1a1a] px-4 border-l border-r border-[#303032]" : ""}>
+              {item.renderItem(
+                item.data,
+                () => onRemoveKey?.(item.id, item.section),
+                drag,
+                isActive
+              )}
+            </View>
           </View>
         </ScaleDecorator>
       );
@@ -75,6 +81,27 @@ export default function UnifiedDraggableList({
             {item.renderItem(item.data, drag, isActive)}
           </View>
         </ScaleDecorator>
+      );
+    }
+
+    // Row Keys Header (inside expanded row)
+    if (item.type === 'row-keys-header') {
+      return (
+        <View className="px-4 pb-2 pt-4 border-t border-l border-r border-[#303032] bg-[#1a1a1a] -mt-px">
+          <View className="flex-row items-center justify-between mb-2">
+            <Text className="text-white text-sm font-semibold">
+              Keys in this row
+            </Text>
+            {item.onAddPress && (
+              <TouchableOpacity
+                onPress={item.onAddPress}
+                className="bg-green-600 rounded px-3 py-1.5"
+              >
+                <Text className="text-white text-xs font-semibold">+ Add Key</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
       );
     }
 
@@ -101,6 +128,15 @@ export default function UnifiedDraggableList({
 
     // Spacer
     if (item.type === 'spacer') {
+      // Check if this is a row closing spacer
+      const isRowClose = item.id.startsWith('row-close-');
+
+      if (isRowClose) {
+        return (
+          <View className="bg-[#1a1a1a] border-l border-r border-b border-[#303032] rounded-b-lg mb-3" style={{ height: item.height }} />
+        );
+      }
+
       return <View style={{ height: item.height }} />;
     }
 

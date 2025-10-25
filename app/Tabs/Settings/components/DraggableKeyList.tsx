@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { KeyConfig } from "@/types/keyboard";
+import { GripVertical } from "lucide-react-native"
 
 interface RenderKeyItemProps {
   item: KeyConfig;
@@ -28,15 +29,7 @@ export function renderKeyItem({ item, onRemove, drag, isActive }: RenderKeyItemP
           alignItems: 'center',
         }}
       >
-        <Text
-          style={{
-            fontSize: 20,
-            color: '#9CA3AF',
-            lineHeight: 20,
-          }}
-        >
-          ⋮⋮
-        </Text>
+          <GripVertical color={"#D3D3D3"}/>
       </TouchableOpacity>
 
       {/* Key Preview */}

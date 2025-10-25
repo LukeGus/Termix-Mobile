@@ -1,11 +1,8 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, Switch } from "react-native";
-import DraggableFlatList, {
-  RenderItemParams,
-  ScaleDecorator,
-} from "react-native-draggable-flatlist";
 import { KeyboardRow, KeyConfig } from "@/types/keyboard";
 import { renderKeyItem } from "./DraggableKeyList";
+import {GripVertical} from "lucide-react-native";
 
 interface RenderRowItemProps {
   item: KeyboardRow;
@@ -33,7 +30,7 @@ export function renderRowItem({
   const isExpanded = expandedRowId === item.id;
 
   return (
-    <View className="bg-[#1a1a1a] border border-[#303032] rounded-lg mb-3">
+    <View className={`bg-[#1a1a1a] border border-[#303032] rounded-lg ${isExpanded ? 'mb-0 rounded-b-none' : 'mb-3'}`}>
       {/* Row Header */}
       <View className="flex-row items-center p-3">
         {/* Drag Handle */}
@@ -57,7 +54,7 @@ export function renderRowItem({
               lineHeight: 20,
             }}
           >
-            ⋮⋮
+              <GripVertical color={"#D3D3D3"}/>
           </Text>
         </TouchableOpacity>
 
@@ -92,51 +89,6 @@ export function renderRowItem({
           />
         </View>
       </View>
-
-      {/* Expanded Content - Keys in Row */}
-      {isExpanded && (
-        <View className="px-4 pb-4 border-t border-[#303032] pt-4">
-          <View className="flex-row items-center justify-between mb-3">
-            <Text className="text-white text-sm font-semibold">
-              Keys in this row
-            </Text>
-            {onAddKeyToRow && (
-              <TouchableOpacity
-                onPress={() => onAddKeyToRow(item.id)}
-                className="bg-green-600 rounded px-3 py-1.5"
-              >
-                <Text className="text-white text-xs font-semibold">+ Add Key</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Render keys in this row */}
-          {item.keys.length === 0 ? (
-            <View className="py-6 px-4 bg-[#1a1a1a] border border-[#303032] rounded-lg">
-              <Text className="text-gray-500 text-center text-sm">No keys in this row</Text>
-            </View>
-          ) : (
-            <DraggableFlatList
-              data={item.keys}
-              onDragEnd={({ data: newKeys }) => onReorderKeys(item.id, newKeys)}
-              keyExtractor={(key) => key.id}
-              renderItem={({ item: key, drag, isActive }: RenderItemParams<KeyConfig>) => (
-                <ScaleDecorator>
-                  <View style={{ opacity: isActive ? 0.5 : 1 }}>
-                    {renderKeyItem({
-                      item: key,
-                      onRemove: () => onRemoveKey(item.id, key.id),
-                      drag,
-                      isActive,
-                    })}
-                  </View>
-                </ScaleDecorator>
-              )}
-              scrollEnabled={false}
-            />
-          )}
-        </View>
-      )}
     </View>
   );
 }

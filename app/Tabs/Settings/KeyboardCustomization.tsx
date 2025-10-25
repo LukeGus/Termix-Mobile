@@ -215,6 +215,7 @@ export default function KeyboardCustomization() {
     });
 
     config.fullKeyboard.rows.forEach((row) => {
+      // Add the row itself
       items.push({
         type: 'draggable-row',
         id: `row-${row.id}`,
@@ -232,6 +233,44 @@ export default function KeyboardCustomization() {
             onToggleExpand: toggleExpand,
           }),
       });
+
+      // If this row is expanded, add its keys to the main list
+      if (expandedRowId === row.id) {
+        items.push({
+          type: 'row-keys-header',
+          id: `keys-header-${row.id}`,
+          rowId: row.id,
+          onAddPress: () => openKeySelector('row', row.id),
+        });
+
+        if (row.keys.length === 0) {
+          // Add empty state
+          items.push({
+            type: 'spacer',
+            id: `empty-state-${row.id}`,
+            height: 60,
+          });
+        } else {
+          row.keys.forEach((key) => {
+            items.push({
+              type: 'draggable-key',
+              id: `row-${row.id}-key-${key.id}`,
+              data: key,
+              section: 'row',
+              rowId: row.id,
+              renderItem: (item, onRemove, drag, isActive) =>
+                renderKeyItem({ item, onRemove, drag, isActive }),
+            });
+          });
+        }
+
+        // Add closing spacer for visual separation
+        items.push({
+          type: 'spacer',
+          id: `row-close-${row.id}`,
+          height: 12,
+        });
+      }
     });
 
     items.push({ type: 'spacer', id: 'spacer-3', height: 20 });
@@ -267,11 +306,32 @@ export default function KeyboardCustomization() {
 
   // Handle drag end for Full Keyboard
   const handleFullKeyboardDragEnd = (newData: UnifiedListItem[]) => {
+    // Extract rows
     const rows = newData
       .filter((item) => item.type === 'draggable-row')
       .map((item) => (item as any).data);
 
     reorderRows(rows);
+
+    // Extract and update keys within each row
+    const rowKeysMap = new Map<string, KeyConfig[]>();
+
+    newData
+      .filter((item) => item.type === 'draggable-key' && (item as any).rowId)
+      .forEach((item) => {
+        const keyItem = item as any;
+        const rowId = keyItem.rowId;
+
+        if (!rowKeysMap.has(rowId)) {
+          rowKeysMap.set(rowId, []);
+        }
+        rowKeysMap.get(rowId)!.push(keyItem.data);
+      });
+
+    // Update each row's keys
+    rowKeysMap.forEach((keys, rowId) => {
+      reorderKeysInRow(rowId, keys);
+    });
   };
 
   const renderPresets = () => (
@@ -336,6 +396,18 @@ export default function KeyboardCustomization() {
       <UnifiedDraggableList
         data={fullKeyboardData}
         onDragEnd={handleFullKeyboardDragEnd}
+        onRemoveKey={(itemId, section) => {
+          // Handle removing keys from rows
+          if (section === 'row') {
+            // Extract rowId and keyId from the item id format: row-{rowId}-key-{keyId}
+            const match = itemId.match(/^row-(.+)-key-(.+)$/);
+            if (match) {
+              const rowId = match[1];
+              const keyId = match[2];
+              removeKeyFromRow(rowId, keyId);
+            }
+          }
+        }}
       />
     </View>
   );
