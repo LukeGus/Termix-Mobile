@@ -10,12 +10,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const STORAGE_KEY = "terminalCustomization";
 
 export interface TerminalCustomization {
-  fontSize: number; // Base font size (will be adjusted based on screen width)
+  fontSize: number;
 }
 
 const getDefaultConfig = (): TerminalCustomization => {
   return {
-    fontSize: 16, // Default base font size
+    fontSize: 16,
   };
 };
 
@@ -33,10 +33,10 @@ const TerminalCustomizationContext = createContext<
 export const TerminalCustomizationProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
-  const [config, setConfig] = useState<TerminalCustomization>(getDefaultConfig());
+  const [config, setConfig] =
+    useState<TerminalCustomization>(getDefaultConfig());
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load configuration from AsyncStorage on mount
   useEffect(() => {
     const loadConfig = async () => {
       try {
@@ -55,7 +55,6 @@ export const TerminalCustomizationProvider: React.FC<{
     loadConfig();
   }, []);
 
-  // Save configuration to AsyncStorage
   const saveConfig = useCallback(async (newConfig: TerminalCustomization) => {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newConfig));
@@ -65,7 +64,6 @@ export const TerminalCustomizationProvider: React.FC<{
     }
   }, []);
 
-  // Update font size
   const updateFontSize = useCallback(
     async (fontSize: number) => {
       const newConfig = {
@@ -74,10 +72,9 @@ export const TerminalCustomizationProvider: React.FC<{
       };
       await saveConfig(newConfig);
     },
-    [config, saveConfig]
+    [config, saveConfig],
   );
 
-  // Reset to default
   const resetToDefault = useCallback(async () => {
     await saveConfig(getDefaultConfig());
   }, [saveConfig]);
@@ -100,7 +97,7 @@ export const useTerminalCustomization = () => {
   const context = useContext(TerminalCustomizationContext);
   if (!context) {
     throw new Error(
-      "useTerminalCustomization must be used within a TerminalCustomizationProvider"
+      "useTerminalCustomization must be used within a TerminalCustomizationProvider",
     );
   }
   return context;

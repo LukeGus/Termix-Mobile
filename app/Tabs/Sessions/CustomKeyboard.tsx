@@ -27,7 +27,6 @@ export default function CustomKeyboard({
   const handleKeyPress = (keyConfig: KeyConfig) => {
     const { value, id } = keyConfig;
 
-    // Handle special actions
     switch (id) {
       case "paste":
         handlePaste();
@@ -83,7 +82,6 @@ export default function CustomKeyboard({
         sendKey("\x0c");
         break;
       default:
-        // Send the value directly for all other keys
         sendKey(value);
     }
   };
@@ -101,18 +99,16 @@ export default function CustomKeyboard({
   const { compactMode, keySize } = config.settings;
   const visibleRows = rows.filter((row) => row.visible);
 
-  // Determine key gap based on compact mode and key size
   const getKeyGap = () => {
     if (compactMode) return 2;
     if (keySize === "small") return 3;
     if (keySize === "large") return 5;
-    return 4; // medium
+    return 4;
   };
 
   const getKeyStyle = (keyConfig: KeyConfig) => {
     const baseStyle: any = {};
 
-    // Handle width
     if (keyConfig.width === "narrow" || keyConfig.category === "number") {
       baseStyle.flex = 1;
       baseStyle.minWidth = 0;
@@ -136,14 +132,12 @@ export default function CustomKeyboard({
       >
         {visibleRows.map((row, rowIndex) => (
           <View key={row.id}>
-            {/* Row label (optional, for visual organization) */}
-            {row.label && visibleRows.length > 1 && rowIndex === 0 && (
+            {row.label && (
               <View style={styles.rowLabelContainer}>
                 <Text style={styles.rowLabel}>{row.label}</Text>
               </View>
             )}
 
-            {/* Keys in this row */}
             <View
               style={[
                 row.category === "number" ? styles.numberRow : styles.keyRow,
@@ -163,19 +157,20 @@ export default function CustomKeyboard({
               ))}
             </View>
 
-            {/* Separator between rows */}
             {rowIndex < visibleRows.length - 1 && (
-              <View style={[styles.separator, compactMode && styles.compactSeparator]} />
+              <View
+                style={[
+                  styles.separator,
+                  compactMode && styles.compactSeparator,
+                ]}
+              />
             )}
           </View>
         ))}
 
-        {/* Hint text at the bottom */}
         {config.settings.showHints && (
           <View style={styles.hintContainer}>
-            <Text style={styles.hintText}>
-              Customize in Settings
-            </Text>
+            <Text style={styles.hintText}>Customize in Settings</Text>
           </View>
         )}
       </ScrollView>

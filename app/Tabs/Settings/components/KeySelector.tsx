@@ -16,7 +16,7 @@ interface KeySelectorProps {
   visible: boolean;
   onClose: () => void;
   onSelectKey: (key: KeyConfig) => void;
-  excludeKeys?: string[]; // Key IDs to exclude (already added)
+  excludeKeys?: string[];
   title?: string;
 }
 
@@ -41,33 +41,30 @@ export default function KeySelector({
   title = "Add Key",
 }: KeySelectorProps) {
   const insets = useSafeAreaInsets();
-  const [selectedCategory, setSelectedCategory] = useState<KeyCategory | "all">("all");
+  const [selectedCategory, setSelectedCategory] = useState<KeyCategory | "all">(
+    "all",
+  );
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Get all keys as array
   const allKeysArray = useMemo(() => Object.values(ALL_KEYS), []);
 
-  // Filter keys based on category and search
   const filteredKeys = useMemo(() => {
     let keys = allKeysArray;
 
-    // Filter by category
     if (selectedCategory !== "all") {
       keys = keys.filter((key) => key.category === selectedCategory);
     }
 
-    // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       keys = keys.filter(
         (key) =>
           key.label.toLowerCase().includes(query) ||
           key.id.toLowerCase().includes(query) ||
-          key.description?.toLowerCase().includes(query)
+          key.description?.toLowerCase().includes(query),
       );
     }
 
-    // Exclude already added keys
     keys = keys.filter((key) => !excludeKeys.includes(key.id));
 
     return keys;
@@ -75,7 +72,6 @@ export default function KeySelector({
 
   const handleSelectKey = (key: KeyConfig) => {
     onSelectKey(key);
-    // Don't close modal, allow adding multiple keys
   };
 
   return (
@@ -86,7 +82,6 @@ export default function KeySelector({
       onRequestClose={onClose}
     >
       <View className="flex-1 bg-[#18181b]">
-        {/* Header */}
         <View
           className="bg-[#1a1a1a] border-b border-[#303032] px-4"
           style={{ paddingTop: insets.top + 12, paddingBottom: 12 }}
@@ -94,12 +89,13 @@ export default function KeySelector({
           <View className="flex-row items-center justify-between">
             <Text className="text-white text-lg font-semibold">{title}</Text>
             <TouchableOpacity onPress={onClose}>
-              <Text className="text-green-500 text-base font-semibold">Done</Text>
+              <Text className="text-green-500 text-base font-semibold">
+                Done
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Search */}
         <View className="bg-[#1a1a1a] border-b border-[#303032] px-4 py-3">
           <TextInput
             className="bg-[#27272a] border border-[#3f3f46] rounded-lg px-4 py-2 text-white"
@@ -112,7 +108,6 @@ export default function KeySelector({
           />
         </View>
 
-        {/* Category Tabs */}
         <View className="bg-[#1a1a1a] border-b border-[#303032]">
           <ScrollView
             horizontal
@@ -127,7 +122,9 @@ export default function KeySelector({
             >
               <Text
                 className={`text-sm font-semibold ${
-                  selectedCategory === "all" ? "text-green-500" : "text-gray-400"
+                  selectedCategory === "all"
+                    ? "text-green-500"
+                    : "text-gray-400"
                 }`}
               >
                 All
@@ -138,12 +135,16 @@ export default function KeySelector({
                 key={cat.id}
                 onPress={() => setSelectedCategory(cat.id)}
                 className={`px-4 py-3 mr-2 ${
-                  selectedCategory === cat.id ? "border-b-2 border-green-500" : ""
+                  selectedCategory === cat.id
+                    ? "border-b-2 border-green-500"
+                    : ""
                 }`}
               >
                 <Text
                   className={`text-sm font-semibold ${
-                    selectedCategory === cat.id ? "text-green-500" : "text-gray-400"
+                    selectedCategory === cat.id
+                      ? "text-green-500"
+                      : "text-gray-400"
                   }`}
                 >
                   {cat.label}
@@ -153,12 +154,13 @@ export default function KeySelector({
           </ScrollView>
         </View>
 
-        {/* Keys List */}
         <ScrollView className="flex-1 px-4 py-4">
           {filteredKeys.length === 0 ? (
             <View className="py-8">
               <Text className="text-gray-400 text-center">
-                {searchQuery ? "No keys found matching your search" : "No keys available"}
+                {searchQuery
+                  ? "No keys found matching your search"
+                  : "No keys available"}
               </Text>
             </View>
           ) : (
@@ -172,16 +174,24 @@ export default function KeySelector({
                   <View className="flex-1 mr-4">
                     <View className="flex-row items-center gap-2 mb-1">
                       <View className="bg-[#27272a] border border-[#3f3f46] rounded px-3 py-1.5">
-                        <Text className="text-white text-sm font-mono">{key.label}</Text>
+                        <Text className="text-white text-sm font-mono">
+                          {key.label}
+                        </Text>
                       </View>
-                      <Text className="text-gray-500 text-xs">{key.category}</Text>
+                      <Text className="text-gray-500 text-xs">
+                        {key.category}
+                      </Text>
                     </View>
                     {key.description && (
-                      <Text className="text-gray-400 text-xs mt-1">{key.description}</Text>
+                      <Text className="text-gray-400 text-xs mt-1">
+                        {key.description}
+                      </Text>
                     )}
                   </View>
                   <View className="bg-green-600 rounded-lg px-4 py-2">
-                    <Text className="text-white text-sm font-semibold">Add</Text>
+                    <Text className="text-white text-sm font-semibold">
+                      Add
+                    </Text>
                   </View>
                 </TouchableOpacity>
               ))}

@@ -127,7 +127,10 @@ export async function getCookie(name: string): Promise<string | undefined> {
     const token = await AsyncStorage.getItem(name);
     return token || undefined;
   } catch (error) {
-    console.error(`[getCookie] Error reading ${name} from AsyncStorage:`, error);
+    console.error(
+      `[getCookie] Error reading ${name} from AsyncStorage:`,
+      error,
+    );
     return undefined;
   }
 }
@@ -543,10 +546,10 @@ function handleApiError(error: unknown, operation: string): never {
       );
 
       const isCriticalEndpoint =
-        url.includes('/db/host') ||
-        url.includes('/users/me') ||
-        url.includes('/login') ||
-        url.includes('/websocket');
+        url.includes("/db/host") ||
+        url.includes("/users/me") ||
+        url.includes("/login") ||
+        url.includes("/websocket");
 
       if (isCriticalEndpoint && authStateCallback) {
         authStateCallback(false);

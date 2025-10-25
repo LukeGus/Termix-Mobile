@@ -111,11 +111,9 @@ export default function Sessions() {
   useEffect(() => {
     const subscription = Dimensions.addEventListener("change", ({ window }) => {
       setScreenDimensions(window);
-      // Reset keyboard height tracking on dimension changes
       setHasRecordedKeyboardHeight(false);
       setLastKeyboardHeight(0);
 
-      // Refit terminal and refocus input after dimension change
       setTimeout(() => {
         const activeRef = activeSessionId
           ? terminalRefs.current[activeSessionId]
@@ -129,7 +127,12 @@ export default function Sessions() {
     });
 
     return () => subscription?.remove();
-  }, [setLastKeyboardHeight, activeSessionId, sessions.length, isCustomKeyboardVisible]);
+  }, [
+    setLastKeyboardHeight,
+    activeSessionId,
+    sessions.length,
+    isCustomKeyboardVisible,
+  ]);
 
   useEffect(() => {
     if (keyboardHeight > 0 && !hasRecordedKeyboardHeight) {
@@ -442,7 +445,10 @@ export default function Sessions() {
             bottom: 0,
             left: 0,
             right: 0,
-            height: keyboardHeight > 0 ? keyboardHeight : Math.max(80, screenDimensions.height * 0.1),
+            height:
+              keyboardHeight > 0
+                ? keyboardHeight
+                : Math.max(80, screenDimensions.height * 0.1),
             backgroundColor: "#09090b",
             justifyContent: "center",
             alignItems: "center",

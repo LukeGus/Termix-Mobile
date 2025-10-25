@@ -29,7 +29,6 @@ export default function KeyboardBar({
   const sendSpecialKey = (keyConfig: KeyConfig) => {
     const { value, id } = keyConfig;
 
-    // Handle special cases
     switch (id) {
       case "escape":
         sendKey("\x1b");
@@ -86,7 +85,8 @@ export default function KeyboardBar({
   }, [ctrlPressed, altPressed]);
 
   const renderKey = (keyConfig: KeyConfig, index: number) => {
-    const isModifier = keyConfig.isModifier || keyConfig.id === "ctrl" || keyConfig.id === "alt";
+    const isModifier =
+      keyConfig.isModifier || keyConfig.id === "ctrl" || keyConfig.id === "alt";
     const isCtrl = keyConfig.id === "ctrl";
     const isAlt = keyConfig.id === "alt";
 
@@ -121,7 +121,6 @@ export default function KeyboardBar({
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Pinned keys section */}
         {hasPinnedKeys && (
           <>
             {pinnedKeys.map((key, index) => renderKey(key, index))}
@@ -129,16 +128,12 @@ export default function KeyboardBar({
           </>
         )}
 
-        {/* Regular keys from configuration */}
         {keys.map((key, index) => renderKey(key, index))}
       </ScrollView>
 
-      {/* Hint text */}
       {config.settings.showHints && (
         <View style={styles.hintContainer}>
-          <Text style={styles.hintText}>
-            Customize in Settings
-          </Text>
+          <Text style={styles.hintText}>Customize in Settings</Text>
         </View>
       )}
     </View>

@@ -58,7 +58,6 @@ jobs:
 
       - name: Build app
         run: |
-          # Determine profile based on action
           if [ "${{ github.event.inputs.action }}" = "submit" ]; then
             PROFILE="production"
           else
@@ -68,10 +67,8 @@ jobs:
           echo "Building for platform: ${{ matrix.platform }}"
           echo "Using profile: $PROFILE"
 
-          # Create artifacts directory before build
           mkdir -p build-artifacts
 
-          # Get version from app.json
           VERSION=$(node -p "require('./app.json').expo.version")
           echo "App version: $VERSION"
 
@@ -81,11 +78,9 @@ jobs:
             --platform=${{ matrix.platform }} \
             --profile=$PROFILE
 
-          # Immediately copy artifacts after EAS build
           if [ "${{ matrix.platform }}" = "android" ]; then
             echo "Searching for Android build artifacts..."
 
-            # EAS writes final artifact to project root as build-*.apk
             APK_FILE=$(find . -maxdepth 1 -type f -name "build-*.apk" 2>/dev/null | head -1)
 
             if [ -n "$APK_FILE" ]; then
@@ -93,7 +88,6 @@ jobs:
               cp "$APK_FILE" "build-artifacts/termix_android_universal_${VERSION}.apk"
               echo "Copied to build-artifacts/termix_android_universal_${VERSION}.apk"
             else
-              # Fallback: search in /tmp
               echo "Trying /tmp search..."
               APK_FILE=$(find /tmp -type f -name "app-release.apk" 2>/dev/null | grep "eas-build-local-nodejs" | head -1)
 
@@ -106,16 +100,13 @@ jobs:
               fi
             fi
 
-            # Search for AAB if production build
             if [ "$PROFILE" = "production" ]; then
-              # Check project root first
               AAB_FILE=$(find . -maxdepth 1 -type f -name "build-*.aab" 2>/dev/null | head -1)
 
               if [ -n "$AAB_FILE" ]; then
                 echo "Found AAB in project root: $AAB_FILE"
                 cp "$AAB_FILE" "build-artifacts/termix_android_${VERSION}.aab"
               else
-                # Fallback: search in /tmp
                 AAB_FILE=$(find /tmp -type f -name "app-release.aab" 2>/dev/null | grep "eas-build-local-nodejs" | head -1)
                 if [ -n "$AAB_FILE" ]; then
                   echo "Found AAB in /tmp: $AAB_FILE"
@@ -126,7 +117,6 @@ jobs:
           elif [ "${{ matrix.platform }}" = "ios" ]; then
             echo "Searching for iOS build artifacts..."
 
-            # Check project root first for build-*.ipa
             IPA_FILE=$(find . -maxdepth 1 -type f -name "build-*.ipa" 2>/dev/null | head -1)
 
             if [ -n "$IPA_FILE" ]; then
@@ -134,7 +124,6 @@ jobs:
               cp "$IPA_FILE" "build-artifacts/termix_ios_${VERSION}.ipa"
               echo "Copied to build-artifacts/termix_ios_${VERSION}.ipa"
             else
-              # Fallback: search for any .ipa
               IPA_FILE=$(find . -type f -name "*.ipa" -not -path "*/node_modules/*" 2>/dev/null | head -1)
 
               if [ -n "$IPA_FILE" ]; then
@@ -158,7 +147,6 @@ jobs:
             echo "Contents of build-artifacts/:"
             ls -lh build-artifacts/ 2>/dev/null || echo "Directory exists but is empty"
 
-            # Count artifacts
             ARTIFACT_COUNT=$(ls -1 build-artifacts/ 2>/dev/null | wc -l)
             echo ""
             echo "Total artifacts: $ARTIFACT_COUNT"
@@ -173,11 +161,9 @@ jobs:
       - name: Submit to App Store
         if: ${{ github.event.inputs.action == 'submit' }}
         run: |
-          # Get version from app.json
           VERSION=$(node -p "require('./app.json').expo.version")
 
           if [ "${{ matrix.platform }}" = "android" ]; then
-            # For Android production submission, use AAB (required by Google Play)
             BUILD_FILE="build-artifacts/termix_android_${VERSION}.aab"
             if [ -f "$BUILD_FILE" ]; then
               echo "Using AAB for Play Store submission: $BUILD_FILE"
@@ -187,7 +173,6 @@ jobs:
               exit 1
             fi
           else
-            # For iOS, use the IPA file
             BUILD_FILE="build-artifacts/termix_ios_${VERSION}.ipa"
           fi
 
@@ -222,10 +207,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.TERMIX_RELEASE_TOKEN }}
         run: |
-          # Get version from app.json
           VERSION=$(node -p "require('./app.json').expo.version")
 
-          # Get the latest release from Termix-SSH/Termix
           echo "Fetching latest release from Termix-SSH/Termix..."
           LATEST_RELEASE=$(gh release list --repo Termix-SSH/Termix --limit 1 --json tagName,name,isLatest -q '.[0]')
 
@@ -241,7 +224,6 @@ jobs:
           echo "Latest release: $RELEASE_NAME ($RELEASE_TAG)"
           echo "Release URL: $RELEASE_URL"
 
-          # Upload artifacts to the release
           if [ "${{ matrix.platform }}" = "android" ]; then
             APK_FILE="build-artifacts/termix_android_universal_${VERSION}.apk"
             if [ -f "$APK_FILE" ]; then

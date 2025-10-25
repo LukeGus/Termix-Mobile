@@ -6,12 +6,7 @@ import {
   FullKeyboardConfig,
 } from "@/types/keyboard";
 
-// ============================================================================
-// ALL AVAILABLE KEYS
-// ============================================================================
-
 export const ALL_KEYS: Record<string, KeyConfig> = {
-  // Modifiers
   escape: {
     id: "escape",
     label: "Esc",
@@ -43,7 +38,6 @@ export const ALL_KEYS: Record<string, KeyConfig> = {
     description: "Alt modifier (toggle)",
   },
 
-  // Arrows
   arrowUp: {
     id: "arrowUp",
     label: "↑",
@@ -73,7 +67,6 @@ export const ALL_KEYS: Record<string, KeyConfig> = {
     description: "Right arrow",
   },
 
-  // Navigation
   home: {
     id: "home",
     label: "Home",
@@ -117,7 +110,6 @@ export const ALL_KEYS: Record<string, KeyConfig> = {
     description: "Delete key",
   },
 
-  // Function keys
   f1: { id: "f1", label: "F1", value: "\x1bOP", category: "function" },
   f2: { id: "f2", label: "F2", value: "\x1bOQ", category: "function" },
   f3: { id: "f3", label: "F3", value: "\x1bOR", category: "function" },
@@ -131,22 +123,85 @@ export const ALL_KEYS: Record<string, KeyConfig> = {
   f11: { id: "f11", label: "F11", value: "\x1b[23~", category: "function" },
   f12: { id: "f12", label: "F12", value: "\x1b[24~", category: "function" },
 
-  // Numbers
-  num0: { id: "num0", label: "0", value: "0", category: "number", width: "narrow" },
-  num1: { id: "num1", label: "1", value: "1", category: "number", width: "narrow" },
-  num2: { id: "num2", label: "2", value: "2", category: "number", width: "narrow" },
-  num3: { id: "num3", label: "3", value: "3", category: "number", width: "narrow" },
-  num4: { id: "num4", label: "4", value: "4", category: "number", width: "narrow" },
-  num5: { id: "num5", label: "5", value: "5", category: "number", width: "narrow" },
-  num6: { id: "num6", label: "6", value: "6", category: "number", width: "narrow" },
-  num7: { id: "num7", label: "7", value: "7", category: "number", width: "narrow" },
-  num8: { id: "num8", label: "8", value: "8", category: "number", width: "narrow" },
-  num9: { id: "num9", label: "9", value: "9", category: "number", width: "narrow" },
+  num0: {
+    id: "num0",
+    label: "0",
+    value: "0",
+    category: "number",
+    width: "narrow",
+  },
+  num1: {
+    id: "num1",
+    label: "1",
+    value: "1",
+    category: "number",
+    width: "narrow",
+  },
+  num2: {
+    id: "num2",
+    label: "2",
+    value: "2",
+    category: "number",
+    width: "narrow",
+  },
+  num3: {
+    id: "num3",
+    label: "3",
+    value: "3",
+    category: "number",
+    width: "narrow",
+  },
+  num4: {
+    id: "num4",
+    label: "4",
+    value: "4",
+    category: "number",
+    width: "narrow",
+  },
+  num5: {
+    id: "num5",
+    label: "5",
+    value: "5",
+    category: "number",
+    width: "narrow",
+  },
+  num6: {
+    id: "num6",
+    label: "6",
+    value: "6",
+    category: "number",
+    width: "narrow",
+  },
+  num7: {
+    id: "num7",
+    label: "7",
+    value: "7",
+    category: "number",
+    width: "narrow",
+  },
+  num8: {
+    id: "num8",
+    label: "8",
+    value: "8",
+    category: "number",
+    width: "narrow",
+  },
+  num9: {
+    id: "num9",
+    label: "9",
+    value: "9",
+    category: "number",
+    width: "narrow",
+  },
 
-  // Common symbols
   tilde: { id: "tilde", label: "~", value: "~", category: "symbol" },
   backtick: { id: "backtick", label: "`", value: "`", category: "symbol" },
-  exclamation: { id: "exclamation", label: "!", value: "!", category: "symbol" },
+  exclamation: {
+    id: "exclamation",
+    label: "!",
+    value: "!",
+    category: "symbol",
+  },
   at: { id: "at", label: "@", value: "@", category: "symbol" },
   hash: { id: "hash", label: "#", value: "#", category: "symbol" },
   dollar: { id: "dollar", label: "$", value: "$", category: "symbol" },
@@ -155,35 +210,96 @@ export const ALL_KEYS: Record<string, KeyConfig> = {
   ampersand: { id: "ampersand", label: "&", value: "&", category: "symbol" },
   asterisk: { id: "asterisk", label: "*", value: "*", category: "symbol" },
 
-  // Operators
   minus: { id: "minus", label: "-", value: "-", category: "operator" },
-  underscore: { id: "underscore", label: "_", value: "_", category: "operator" },
+  underscore: {
+    id: "underscore",
+    label: "_",
+    value: "_",
+    category: "operator",
+  },
   equals: { id: "equals", label: "=", value: "=", category: "operator" },
   plus: { id: "plus", label: "+", value: "+", category: "operator" },
   pipe: { id: "pipe", label: "|", value: "|", category: "operator" },
-  backslash: { id: "backslash", label: "\\", value: "\\", category: "operator" },
+  backslash: {
+    id: "backslash",
+    label: "\\",
+    value: "\\",
+    category: "operator",
+  },
   slash: { id: "slash", label: "/", value: "/", category: "operator" },
   question: { id: "question", label: "?", value: "?", category: "operator" },
 
-  // Brackets
-  parenLeft: { id: "parenLeft", label: "(", value: "(", category: "punctuation" },
-  parenRight: { id: "parenRight", label: ")", value: ")", category: "punctuation" },
-  bracketLeft: { id: "bracketLeft", label: "[", value: "[", category: "punctuation" },
-  bracketRight: { id: "bracketRight", label: "]", value: "]", category: "punctuation" },
-  braceLeft: { id: "braceLeft", label: "{", value: "{", category: "punctuation" },
-  braceRight: { id: "braceRight", label: "}", value: "}", category: "punctuation" },
-  angleBracketLeft: { id: "angleBracketLeft", label: "<", value: "<", category: "punctuation" },
-  angleBracketRight: { id: "angleBracketRight", label: ">", value: ">", category: "punctuation" },
+  parenLeft: {
+    id: "parenLeft",
+    label: "(",
+    value: "(",
+    category: "punctuation",
+  },
+  parenRight: {
+    id: "parenRight",
+    label: ")",
+    value: ")",
+    category: "punctuation",
+  },
+  bracketLeft: {
+    id: "bracketLeft",
+    label: "[",
+    value: "[",
+    category: "punctuation",
+  },
+  bracketRight: {
+    id: "bracketRight",
+    label: "]",
+    value: "]",
+    category: "punctuation",
+  },
+  braceLeft: {
+    id: "braceLeft",
+    label: "{",
+    value: "{",
+    category: "punctuation",
+  },
+  braceRight: {
+    id: "braceRight",
+    label: "}",
+    value: "}",
+    category: "punctuation",
+  },
+  angleBracketLeft: {
+    id: "angleBracketLeft",
+    label: "<",
+    value: "<",
+    category: "punctuation",
+  },
+  angleBracketRight: {
+    id: "angleBracketRight",
+    label: ">",
+    value: ">",
+    category: "punctuation",
+  },
 
-  // Punctuation
-  semicolon: { id: "semicolon", label: ";", value: ";", category: "punctuation" },
+  semicolon: {
+    id: "semicolon",
+    label: ";",
+    value: ";",
+    category: "punctuation",
+  },
   colon: { id: "colon", label: ":", value: ":", category: "punctuation" },
-  singleQuote: { id: "singleQuote", label: "'", value: "'", category: "punctuation" },
-  doubleQuote: { id: "doubleQuote", label: '"', value: '"', category: "punctuation" },
+  singleQuote: {
+    id: "singleQuote",
+    label: "'",
+    value: "'",
+    category: "punctuation",
+  },
+  doubleQuote: {
+    id: "doubleQuote",
+    label: '"',
+    value: '"',
+    category: "punctuation",
+  },
   comma: { id: "comma", label: ",", value: ",", category: "punctuation" },
   period: { id: "period", label: ".", value: ".", category: "punctuation" },
 
-  // Actions
   enter: {
     id: "enter",
     label: "Enter",
@@ -215,7 +331,6 @@ export const ALL_KEYS: Record<string, KeyConfig> = {
     description: "Clear screen",
   },
 
-  // Shortcuts - Common Ctrl combinations
   ctrlC: {
     id: "ctrlC",
     label: "^C",
@@ -329,7 +444,6 @@ export const ALL_KEYS: Record<string, KeyConfig> = {
     description: "Ctrl+F (forward char)",
   },
 
-  // Alt combinations
   altF: {
     id: "altF",
     label: "Alt+F",
@@ -352,7 +466,6 @@ export const ALL_KEYS: Record<string, KeyConfig> = {
     description: "Alt+D (delete word)",
   },
 
-  // Special actions
   paste: {
     id: "paste",
     label: "Paste",
@@ -376,11 +489,6 @@ export const ALL_KEYS: Record<string, KeyConfig> = {
   },
 };
 
-// ============================================================================
-// PRESET LAYOUTS
-// ============================================================================
-
-// Default preset - current full-featured layout
 const defaultTopBar: TopBarConfig = {
   pinnedKeys: [],
   keys: [
@@ -551,7 +659,6 @@ const defaultFullKeyboard: FullKeyboardConfig = {
   ],
 };
 
-// Minimal preset - essentials only
 const minimalTopBar: TopBarConfig = {
   pinnedKeys: [],
   keys: [
@@ -611,17 +718,10 @@ const minimalFullKeyboard: FullKeyboardConfig = {
       category: "shortcut",
       label: "Shortcuts",
       visible: true,
-      keys: [
-        ALL_KEYS.ctrlC,
-        ALL_KEYS.ctrlD,
-        ALL_KEYS.ctrlL,
-        ALL_KEYS.ctrlZ,
-      ],
+      keys: [ALL_KEYS.ctrlC, ALL_KEYS.ctrlD, ALL_KEYS.ctrlL, ALL_KEYS.ctrlZ],
     },
   ],
 };
-
-// Developer preset - symbol-heavy for coding
 const developerTopBar: TopBarConfig = {
   pinnedKeys: [],
   keys: [
@@ -746,7 +846,6 @@ const developerFullKeyboard: FullKeyboardConfig = {
   ],
 };
 
-// System Admin preset - navigation and function keys
 const sysadminTopBar: TopBarConfig = {
   pinnedKeys: [],
   keys: [
@@ -846,7 +945,6 @@ const sysadminFullKeyboard: FullKeyboardConfig = {
   ],
 };
 
-// Compact preset - more keys per row, smaller spacing
 const compactTopBar: TopBarConfig = {
   pinnedKeys: [],
   keys: [
@@ -988,10 +1086,6 @@ const compactFullKeyboard: FullKeyboardConfig = {
   ],
 };
 
-// ============================================================================
-// PRESET DEFINITIONS
-// ============================================================================
-
 export const PRESET_DEFINITIONS: PresetDefinition[] = [
   {
     id: "default",
@@ -1010,7 +1104,8 @@ export const PRESET_DEFINITIONS: PresetDefinition[] = [
   {
     id: "developer",
     name: "Developer",
-    description: "Optimized for coding with easy access to symbols and brackets",
+    description:
+      "Optimized for coding with easy access to symbols and brackets",
     topBar: developerTopBar,
     fullKeyboard: developerFullKeyboard,
   },
@@ -1030,17 +1125,14 @@ export const PRESET_DEFINITIONS: PresetDefinition[] = [
   },
 ];
 
-// Helper to get preset by ID
 export function getPresetById(id: string): PresetDefinition | undefined {
   return PRESET_DEFINITIONS.find((preset) => preset.id === id);
 }
 
-// Helper to get all keys by category
 export function getKeysByCategory(category: string): KeyConfig[] {
   return Object.values(ALL_KEYS).filter((key) => key.category === category);
 }
 
-// Helper to get key by ID
 export function getKeyById(id: string): KeyConfig | undefined {
   return ALL_KEYS[id];
 }

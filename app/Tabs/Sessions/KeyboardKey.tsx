@@ -42,7 +42,6 @@ export default function KeyboardKey({
     }
   };
 
-  // Get size-specific styles
   const sizeStyles = getSizeStyles(keySize);
 
   return (
@@ -64,7 +63,6 @@ export default function KeyboardKey({
   );
 }
 
-// Size-specific styles
 function getSizeStyles(size: KeySize) {
   switch (size) {
     case "small":

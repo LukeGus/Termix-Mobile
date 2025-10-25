@@ -8,7 +8,11 @@ import {
 } from "react-native";
 import { useAppContext } from "../AppContext";
 import { useState, useEffect, useRef } from "react";
-import { setCookie, getCurrentServerUrl, initializeServerConfig } from "../main-axios";
+import {
+  setCookie,
+  getCurrentServerUrl,
+  initializeServerConfig,
+} from "../main-axios";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, RefreshCw } from "lucide-react-native";
 import { WebView, WebViewNavigation } from "react-native-webview";
@@ -76,24 +80,31 @@ export default function LoginForm() {
     const { nativeEvent } = syntheticEvent;
     console.error("[LoginForm] WebView error:", nativeEvent);
 
-    if (nativeEvent.description?.includes("SSL") ||
-        nativeEvent.description?.includes("certificate") ||
-        nativeEvent.description?.includes("ERR_CERT")) {
+    if (
+      nativeEvent.description?.includes("SSL") ||
+      nativeEvent.description?.includes("certificate") ||
+      nativeEvent.description?.includes("ERR_CERT")
+    ) {
       Alert.alert(
         "SSL Certificate Error",
         "Unable to verify the server's SSL certificate. Please ensure:\n\n" +
-        "1. Your self-signed certificate's root CA is installed in Android Settings > Security > Encryption & Credentials > Install a certificate\n" +
-        "2. The certificate is installed as a 'CA certificate'\n" +
-        "3. You've rebuilt the app after installing the certificate\n\n" +
-        "Error: " + (nativeEvent.description || "Unknown SSL error"),
-        [{ text: "OK" }]
+          "1. Your self-signed certificate's root CA is installed in Android Settings > Security > Encryption & Credentials > Install a certificate\n" +
+          "2. The certificate is installed as a 'CA certificate'\n" +
+          "3. You've rebuilt the app after installing the certificate\n\n" +
+          "Error: " +
+          (nativeEvent.description || "Unknown SSL error"),
+        [{ text: "OK" }],
       );
     }
   };
 
   const handleHttpError = (syntheticEvent: any) => {
     const { nativeEvent } = syntheticEvent;
-    console.warn("[LoginForm] HTTP error:", nativeEvent.statusCode, nativeEvent.url);
+    console.warn(
+      "[LoginForm] HTTP error:",
+      nativeEvent.statusCode,
+      nativeEvent.url,
+    );
   };
 
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -114,13 +125,16 @@ export default function LoginForm() {
         const savedToken = await AsyncStorage.getItem("jwt");
         if (!savedToken) {
           setIsAuthenticating(false);
-          Alert.alert("Error", "Failed to save authentication token. Please try again.");
+          Alert.alert(
+            "Error",
+            "Failed to save authentication token. Please try again.",
+          );
           return;
         }
 
         await initializeServerConfig();
 
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 200));
 
         setAuthenticated(true);
         setShowLoginForm(false);
@@ -136,7 +150,6 @@ export default function LoginForm() {
     (function() {
       const style = document.createElement('style');
       style.textContent = \`
-        /* Hide Install Mobile App button */
         button:has-text("Install Mobile App"),
         [class*="mobile-app"],
         [class*="install-app"],
@@ -361,11 +374,11 @@ export default function LoginForm() {
         sharedCookiesEnabled={false}
         thirdPartyCookiesEnabled={false}
         opaque={false}
-        {...(Platform.OS === 'android' && {
-          mixedContentMode: 'always',
+        {...(Platform.OS === "android" && {
+          mixedContentMode: "always",
           allowFileAccess: false,
         })}
-        {...(Platform.OS === 'ios' && {
+        {...(Platform.OS === "ios" && {
           allowsBackForwardNavigationGestures: false,
         })}
         renderLoading={() => (

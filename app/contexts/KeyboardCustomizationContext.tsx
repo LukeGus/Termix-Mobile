@@ -13,12 +13,14 @@ import {
   PresetType,
   KeyboardSettings,
 } from "@/types/keyboard";
-import { PRESET_DEFINITIONS, getPresetById } from "@/app/Tabs/Sessions/KeyDefinitions";
+import {
+  PRESET_DEFINITIONS,
+  getPresetById,
+} from "@/app/Tabs/Sessions/KeyDefinitions";
 
 const STORAGE_KEY = "keyboardCustomization";
 const DEFAULT_PRESET_ID: PresetType = "default";
 
-// Default configuration
 const getDefaultConfig = (): KeyboardCustomization => {
   const defaultPreset = getPresetById(DEFAULT_PRESET_ID);
   if (!defaultPreset) {
@@ -51,10 +53,8 @@ interface KeyboardCustomizationContextType {
   config: KeyboardCustomization;
   isLoading: boolean;
 
-  // Preset management
   setPreset: (presetId: PresetType) => Promise<void>;
 
-  // Top bar management
   addPinnedKey: (key: KeyConfig) => Promise<void>;
   removePinnedKey: (keyId: string) => Promise<void>;
   reorderPinnedKeys: (keys: KeyConfig[]) => Promise<void>;
@@ -62,7 +62,6 @@ interface KeyboardCustomizationContextType {
   removeTopBarKey: (keyId: string) => Promise<void>;
   reorderTopBarKeys: (keys: KeyConfig[]) => Promise<void>;
 
-  // Full keyboard management
   addRow: (row: KeyboardRow) => Promise<void>;
   removeRow: (rowId: string) => Promise<void>;
   reorderRows: (rows: KeyboardRow[]) => Promise<void>;
@@ -72,15 +71,12 @@ interface KeyboardCustomizationContextType {
   removeKeyFromRow: (rowId: string, keyId: string) => Promise<void>;
   reorderKeysInRow: (rowId: string, keys: KeyConfig[]) => Promise<void>;
 
-  // Settings management
   updateSettings: (settings: Partial<KeyboardSettings>) => Promise<void>;
 
-  // Reset
   resetToDefault: () => Promise<void>;
   resetTopBar: () => Promise<void>;
   resetFullKeyboard: () => Promise<void>;
 
-  // Export/Import
   exportConfig: () => string;
   importConfig: (jsonString: string) => Promise<void>;
 }
@@ -92,10 +88,10 @@ const KeyboardCustomizationContext = createContext<
 export const KeyboardCustomizationProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
-  const [config, setConfig] = useState<KeyboardCustomization>(getDefaultConfig());
+  const [config, setConfig] =
+    useState<KeyboardCustomization>(getDefaultConfig());
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load configuration from AsyncStorage on mount
   useEffect(() => {
     const loadConfig = async () => {
       try {
@@ -114,7 +110,6 @@ export const KeyboardCustomizationProvider: React.FC<{
     loadConfig();
   }, []);
 
-  // Save configuration to AsyncStorage whenever it changes
   const saveConfig = useCallback(async (newConfig: KeyboardCustomization) => {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newConfig));
@@ -124,7 +119,6 @@ export const KeyboardCustomizationProvider: React.FC<{
     }
   }, []);
 
-  // Preset management
   const setPreset = useCallback(
     async (presetId: PresetType) => {
       const preset = getPresetById(presetId);
@@ -137,7 +131,7 @@ export const KeyboardCustomizationProvider: React.FC<{
         preset: presetId,
         version: 1,
         topBar: {
-          pinnedKeys: [], // Keep pinned keys empty when switching presets
+          pinnedKeys: [],
           keys: [...preset.topBar.keys],
         },
         fullKeyboard: {
@@ -151,10 +145,9 @@ export const KeyboardCustomizationProvider: React.FC<{
 
       await saveConfig(newConfig);
     },
-    [config.settings, saveConfig]
+    [config.settings, saveConfig],
   );
 
-  // Top bar - pinned keys
   const addPinnedKey = useCallback(
     async (key: KeyConfig) => {
       const newConfig = {
@@ -167,7 +160,7 @@ export const KeyboardCustomizationProvider: React.FC<{
       };
       await saveConfig(newConfig);
     },
-    [config, saveConfig]
+    [config, saveConfig],
   );
 
   const removePinnedKey = useCallback(
@@ -182,7 +175,7 @@ export const KeyboardCustomizationProvider: React.FC<{
       };
       await saveConfig(newConfig);
     },
-    [config, saveConfig]
+    [config, saveConfig],
   );
 
   const reorderPinnedKeys = useCallback(
@@ -197,10 +190,9 @@ export const KeyboardCustomizationProvider: React.FC<{
       };
       await saveConfig(newConfig);
     },
-    [config, saveConfig]
+    [config, saveConfig],
   );
 
-  // Top bar - regular keys
   const addTopBarKey = useCallback(
     async (key: KeyConfig) => {
       const newConfig = {
@@ -213,7 +205,7 @@ export const KeyboardCustomizationProvider: React.FC<{
       };
       await saveConfig(newConfig);
     },
-    [config, saveConfig]
+    [config, saveConfig],
   );
 
   const removeTopBarKey = useCallback(
@@ -228,7 +220,7 @@ export const KeyboardCustomizationProvider: React.FC<{
       };
       await saveConfig(newConfig);
     },
-    [config, saveConfig]
+    [config, saveConfig],
   );
 
   const reorderTopBarKeys = useCallback(
@@ -243,10 +235,9 @@ export const KeyboardCustomizationProvider: React.FC<{
       };
       await saveConfig(newConfig);
     },
-    [config, saveConfig]
+    [config, saveConfig],
   );
 
-  // Full keyboard - rows
   const addRow = useCallback(
     async (row: KeyboardRow) => {
       const newConfig = {
@@ -258,7 +249,7 @@ export const KeyboardCustomizationProvider: React.FC<{
       };
       await saveConfig(newConfig);
     },
-    [config, saveConfig]
+    [config, saveConfig],
   );
 
   const removeRow = useCallback(
@@ -272,7 +263,7 @@ export const KeyboardCustomizationProvider: React.FC<{
       };
       await saveConfig(newConfig);
     },
-    [config, saveConfig]
+    [config, saveConfig],
   );
 
   const reorderRows = useCallback(
@@ -286,7 +277,7 @@ export const KeyboardCustomizationProvider: React.FC<{
       };
       await saveConfig(newConfig);
     },
-    [config, saveConfig]
+    [config, saveConfig],
   );
 
   const updateRow = useCallback(
@@ -296,13 +287,13 @@ export const KeyboardCustomizationProvider: React.FC<{
         preset: "custom" as PresetType,
         fullKeyboard: {
           rows: config.fullKeyboard.rows.map((row) =>
-            row.id === rowId ? { ...row, ...updates } : row
+            row.id === rowId ? { ...row, ...updates } : row,
           ),
         },
       };
       await saveConfig(newConfig);
     },
-    [config, saveConfig]
+    [config, saveConfig],
   );
 
   const toggleRowVisibility = useCallback(
@@ -312,16 +303,15 @@ export const KeyboardCustomizationProvider: React.FC<{
         preset: "custom" as PresetType,
         fullKeyboard: {
           rows: config.fullKeyboard.rows.map((row) =>
-            row.id === rowId ? { ...row, visible: !row.visible } : row
+            row.id === rowId ? { ...row, visible: !row.visible } : row,
           ),
         },
       };
       await saveConfig(newConfig);
     },
-    [config, saveConfig]
+    [config, saveConfig],
   );
 
-  // Full keyboard - keys in rows
   const addKeyToRow = useCallback(
     async (rowId: string, key: KeyConfig) => {
       const newConfig = {
@@ -329,15 +319,13 @@ export const KeyboardCustomizationProvider: React.FC<{
         preset: "custom" as PresetType,
         fullKeyboard: {
           rows: config.fullKeyboard.rows.map((row) =>
-            row.id === rowId
-              ? { ...row, keys: [...row.keys, key] }
-              : row
+            row.id === rowId ? { ...row, keys: [...row.keys, key] } : row,
           ),
         },
       };
       await saveConfig(newConfig);
     },
-    [config, saveConfig]
+    [config, saveConfig],
   );
 
   const removeKeyFromRow = useCallback(
@@ -349,13 +337,13 @@ export const KeyboardCustomizationProvider: React.FC<{
           rows: config.fullKeyboard.rows.map((row) =>
             row.id === rowId
               ? { ...row, keys: row.keys.filter((k) => k.id !== keyId) }
-              : row
+              : row,
           ),
         },
       };
       await saveConfig(newConfig);
     },
-    [config, saveConfig]
+    [config, saveConfig],
   );
 
   const reorderKeysInRow = useCallback(
@@ -365,16 +353,15 @@ export const KeyboardCustomizationProvider: React.FC<{
         preset: "custom" as PresetType,
         fullKeyboard: {
           rows: config.fullKeyboard.rows.map((row) =>
-            row.id === rowId ? { ...row, keys } : row
+            row.id === rowId ? { ...row, keys } : row,
           ),
         },
       };
       await saveConfig(newConfig);
     },
-    [config, saveConfig]
+    [config, saveConfig],
   );
 
-  // Settings
   const updateSettings = useCallback(
     async (settings: Partial<KeyboardSettings>) => {
       const newConfig = {
@@ -386,16 +373,17 @@ export const KeyboardCustomizationProvider: React.FC<{
       };
       await saveConfig(newConfig);
     },
-    [config, saveConfig]
+    [config, saveConfig],
   );
 
-  // Reset functions
   const resetToDefault = useCallback(async () => {
     await saveConfig(getDefaultConfig());
   }, [saveConfig]);
 
   const resetTopBar = useCallback(async () => {
-    const defaultPreset = getPresetById(config.preset === "custom" ? DEFAULT_PRESET_ID : config.preset);
+    const defaultPreset = getPresetById(
+      config.preset === "custom" ? DEFAULT_PRESET_ID : config.preset,
+    );
     if (!defaultPreset) return;
 
     const newConfig = {
@@ -409,7 +397,9 @@ export const KeyboardCustomizationProvider: React.FC<{
   }, [config, saveConfig]);
 
   const resetFullKeyboard = useCallback(async () => {
-    const defaultPreset = getPresetById(config.preset === "custom" ? DEFAULT_PRESET_ID : config.preset);
+    const defaultPreset = getPresetById(
+      config.preset === "custom" ? DEFAULT_PRESET_ID : config.preset,
+    );
     if (!defaultPreset) return;
 
     const newConfig = {
@@ -424,7 +414,6 @@ export const KeyboardCustomizationProvider: React.FC<{
     await saveConfig(newConfig);
   }, [config, saveConfig]);
 
-  // Export/Import
   const exportConfig = useCallback(() => {
     return JSON.stringify(config, null, 2);
   }, [config]);
@@ -434,7 +423,6 @@ export const KeyboardCustomizationProvider: React.FC<{
       try {
         const imported = JSON.parse(jsonString) as KeyboardCustomization;
 
-        // Validate structure (basic validation)
         if (!imported.topBar || !imported.fullKeyboard || !imported.settings) {
           throw new Error("Invalid configuration structure");
         }
@@ -445,7 +433,7 @@ export const KeyboardCustomizationProvider: React.FC<{
         throw error;
       }
     },
-    [saveConfig]
+    [saveConfig],
   );
 
   const value: KeyboardCustomizationContextType = {
@@ -485,7 +473,7 @@ export const useKeyboardCustomization = () => {
   const context = useContext(KeyboardCustomizationContext);
   if (!context) {
     throw new Error(
-      "useKeyboardCustomization must be used within a KeyboardCustomizationProvider"
+      "useKeyboardCustomization must be used within a KeyboardCustomizationProvider",
     );
   }
   return context;

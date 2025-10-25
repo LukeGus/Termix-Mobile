@@ -57,7 +57,7 @@ export default function ServerForm() {
     if (!/^https?:\/\//.test(serverUrl)) {
       Alert.alert(
         "Error",
-        "Server address must start with http:// or https://"
+        "Server address must start with http:// or https://",
       );
       return;
     }
@@ -82,7 +82,7 @@ export default function ServerForm() {
     } catch (error: any) {
       Alert.alert(
         "Error",
-        `Failed to save server: ${error?.message || "Unknown error"}`
+        `Failed to save server: ${error?.message || "Unknown error"}`,
       );
     } finally {
       setIsLoading(false);

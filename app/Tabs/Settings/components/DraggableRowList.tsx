@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity, Switch } from "react-native";
 import { KeyboardRow, KeyConfig } from "@/types/keyboard";
 import { renderKeyItem } from "./DraggableKeyList";
-import {GripVertical} from "lucide-react-native";
+import { GripVertical } from "lucide-react-native";
 
 interface RenderRowItemProps {
   item: KeyboardRow;
@@ -30,10 +30,10 @@ export function renderRowItem({
   const isExpanded = expandedRowId === item.id;
 
   return (
-    <View className={`bg-[#1a1a1a] border border-[#303032] rounded-lg ${isExpanded ? 'mb-0 rounded-b-none' : 'mb-3'}`}>
-      {/* Row Header */}
+    <View
+      className={`bg-[#1a1a1a] border border-[#303032] rounded-lg ${isExpanded ? "mb-0 rounded-b-none" : "mb-3"}`}
+    >
       <View className="flex-row items-center p-3">
-        {/* Drag Handle */}
         <TouchableOpacity
           onLongPress={drag}
           delayLongPress={200}
@@ -43,44 +43,42 @@ export function renderRowItem({
           style={{
             width: 40,
             height: 40,
-            justifyContent: 'center',
-            alignItems: 'center',
+            justifyContent: "center",
+            alignItems: "center",
           }}
         >
           <Text
             style={{
               fontSize: 20,
-              color: '#9CA3AF',
+              color: "#9CA3AF",
               lineHeight: 20,
             }}
           >
-              <GripVertical color={"#D3D3D3"}/>
+            <GripVertical color={"#D3D3D3"} />
           </Text>
         </TouchableOpacity>
 
-        {/* Tappable Row Content - Tap to expand */}
         <TouchableOpacity
           onPress={() => onToggleExpand(item.id)}
           disabled={isActive}
           className="flex-1 flex-row items-center"
           activeOpacity={0.6}
         >
-          {/* Row Info */}
           <View className="flex-1">
-            <Text className="text-white text-base font-semibold">{item.label}</Text>
+            <Text className="text-white text-base font-semibold">
+              {item.label}
+            </Text>
             <Text className="text-gray-400 text-xs mt-0.5">
               {item.keys.length} keys • {item.category}
             </Text>
           </View>
 
-          {/* Expand Indicator */}
           <Text className="text-gray-400 text-base ml-3">
             {isExpanded ? "▼" : "▶"}
           </Text>
         </TouchableOpacity>
 
-        {/* Visibility Toggle */}
-        <View className="ml-3" style={{ justifyContent: 'center' }}>
+        <View className="ml-3" style={{ justifyContent: "center" }}>
           <Switch
             value={item.visible}
             onValueChange={() => onToggleVisibility(item.id)}
@@ -93,7 +91,6 @@ export function renderRowItem({
   );
 }
 
-// Export a hook for managing expanded state
 export function useRowExpansion() {
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
 
