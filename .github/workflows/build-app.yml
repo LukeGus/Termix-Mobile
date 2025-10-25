@@ -5,6 +5,7 @@ on:
       platform:
         type: choice
         description: Platform to build for
+        required: true
         options:
           - both
           - ios
@@ -12,12 +13,12 @@ on:
       action:
         type: choice
         description: What to do with the built app
+        required: true
         options:
           - release
           - submit
           - file
           - none
-        required: true
 jobs:
   build:
     runs-on: ${{ matrix.platform == 'ios' && 'macos-26' || 'blacksmith-4vcpu-ubuntu-2404' }}
