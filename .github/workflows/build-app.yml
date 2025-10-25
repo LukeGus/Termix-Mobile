@@ -114,26 +114,67 @@ jobs:
               echo "✗ android/app/build directory does NOT exist"
             fi
 
-            # Also search the entire workspace for APKs (last resort)
-            echo "Searching entire workspace for .apk files..."
+            # Also search the entire workspace for APKs (EAS often outputs to project root)
+            echo "Searching entire workspace for .apk and .aab files..."
             find . -name "*.apk" -type f -not -path "*/node_modules/*" -not -path "*/.gradle/*" 2>/dev/null | head -20
+            find . -name "*.aab" -type f -not -path "*/node_modules/*" -not -path "*/.gradle/*" 2>/dev/null | head -20
 
             echo "=== Copying Android Build Files ==="
-            # Copy all APK files found
+            # Copy all APK files found (search multiple locations)
             APK_COUNT=0
-            find android/app/build/outputs -name "*.apk" -type f 2>/dev/null | while read file; do
-              filename=$(basename "$file")
-              echo "Copying: $file -> build-artifacts/$filename"
-              cp "$file" "build-artifacts/$filename"
-              APK_COUNT=$((APK_COUNT + 1))
-            done
-            echo "Copied $APK_COUNT APK files"
 
-            # Copy AAB files
-            find android/app/build/outputs -name "*.aab" -type f 2>/dev/null | while read file; do
-              echo "Copying AAB: $file -> build-artifacts/Termix-Android.aab"
-              cp "$file" "build-artifacts/Termix-Android.aab"
-            done
+            # First try standard Gradle output location
+            if find android/app/build/outputs -name "*.apk" -type f 2>/dev/null | grep -q .; then
+              echo "Found APKs in android/app/build/outputs"
+              find android/app/build/outputs -name "*.apk" -type f 2>/dev/null | while read file; do
+                filename=$(basename "$file")
+                echo "Copying: $file -> build-artifacts/$filename"
+                cp "$file" "build-artifacts/$filename"
+                APK_COUNT=$((APK_COUNT + 1))
+              done
+            fi
+
+            # Also check project root (EAS local builds often output here)
+            if find . -maxdepth 1 -name "*.apk" -type f 2>/dev/null | grep -q .; then
+              echo "Found APKs in project root"
+              find . -maxdepth 1 -name "*.apk" -type f 2>/dev/null | while read file; do
+                filename=$(basename "$file")
+                echo "Copying from root: $file -> build-artifacts/$filename"
+                cp "$file" "build-artifacts/$filename"
+                APK_COUNT=$((APK_COUNT + 1))
+              done
+            fi
+
+            # Search for any Termix-Android*.apk anywhere in workspace
+            if find . -name "Termix-Android*.apk" -type f -not -path "*/node_modules/*" -not -path "*/.gradle/*" -not -path "*/build-artifacts/*" 2>/dev/null | grep -q .; then
+              echo "Found Termix-Android APKs in workspace"
+              find . -name "Termix-Android*.apk" -type f -not -path "*/node_modules/*" -not -path "*/.gradle/*" -not -path "*/build-artifacts/*" 2>/dev/null | while read file; do
+                filename=$(basename "$file")
+                echo "Copying from workspace: $file -> build-artifacts/$filename"
+                cp "$file" "build-artifacts/$filename"
+                APK_COUNT=$((APK_COUNT + 1))
+              done
+            fi
+
+            echo "Total APK files copied: $APK_COUNT"
+
+            # Copy AAB files (check multiple locations)
+            if find android/app/build/outputs -name "*.aab" -type f 2>/dev/null | grep -q .; then
+              echo "Found AAB in android/app/build/outputs"
+              find android/app/build/outputs -name "*.aab" -type f 2>/dev/null | while read file; do
+                echo "Copying AAB: $file -> build-artifacts/Termix-Android.aab"
+                cp "$file" "build-artifacts/Termix-Android.aab"
+              done
+            fi
+
+            # Check project root for AAB
+            if find . -maxdepth 1 -name "*.aab" -type f 2>/dev/null | grep -q .; then
+              echo "Found AAB in project root"
+              find . -maxdepth 1 -name "*.aab" -type f 2>/dev/null | while read file; do
+                echo "Copying AAB from root: $file -> build-artifacts/Termix-Android.aab"
+                cp "$file" "build-artifacts/Termix-Android.aab"
+              done
+            fi
 
             # List what we actually got
             echo "=== Final Build Artifacts Directory ==="
