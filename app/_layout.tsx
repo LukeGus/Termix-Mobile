@@ -25,7 +25,7 @@ function RootLayoutContent() {
   if (isLoading) {
     return (
       <View className="flex-1 bg-dark-bg justify-center items-center">
-        <ActivityIndicator size="large" color="#ffffff" />
+        <ActivityIndicator size="large" color="#22c55e" />
         <Text className="text-white text-lg mt-4">Initializing...</Text>
       </View>
     );

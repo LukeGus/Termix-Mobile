@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
-  ScrollView,
   TouchableOpacity,
   Switch,
   Modal,
@@ -15,8 +14,9 @@ import { PRESET_DEFINITIONS } from "@/app/Tabs/Sessions/KeyDefinitions";
 import { PresetType, KeyConfig } from "@/types/keyboard";
 import { showToast } from "@/app/utils/toast";
 import KeySelector from "./components/KeySelector";
-import DraggableKeyList from "./components/DraggableKeyList";
-import DraggableRowList from "./components/DraggableRowList";
+import UnifiedDraggableList, { UnifiedListItem } from "./components/UnifiedDraggableList";
+import { renderKeyItem } from "./components/DraggableKeyList";
+import { renderRowItem, useRowExpansion } from "./components/DraggableRowList";
 
 type TabType = "presets" | "topbar" | "fullKeyboard" | "settings";
 type AddKeyMode = "pinned" | "topbar" | "row" | null;
@@ -50,6 +50,9 @@ export default function KeyboardCustomization() {
   const [showKeySelector, setShowKeySelector] = useState(false);
   const [addKeyMode, setAddKeyMode] = useState<AddKeyMode>(null);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
+
+  // For row expansion in full keyboard tab
+  const { expandedRowId, toggleExpand } = useRowExpansion();
 
   // Handle preset selection
   const handlePresetSelect = async (presetId: PresetType) => {
@@ -135,6 +138,142 @@ export default function KeyboardCustomization() {
     }
   };
 
+  // Build data for Top Bar tab
+  const topBarData: UnifiedListItem[] = useMemo(() => {
+    const items: UnifiedListItem[] = [];
+
+    // Pinned Keys Section
+    items.push({
+      type: 'header',
+      id: 'header-pinned',
+      title: 'Pinned Keys',
+      subtitle: 'Your frequently used keys',
+      onAddPress: () => openKeySelector('pinned'),
+      addButtonLabel: '+ Add',
+    });
+
+    config.topBar.pinnedKeys.forEach((key) => {
+      items.push({
+        type: 'draggable-key',
+        id: `pinned-${key.id}`,
+        data: key,
+        section: 'pinned',
+        renderItem: (item, onRemove, drag, isActive) =>
+          renderKeyItem({ item, onRemove, drag, isActive }),
+      });
+    });
+
+    items.push({ type: 'spacer', id: 'spacer-1', height: 20 });
+
+    // Top Bar Keys Section
+    items.push({
+      type: 'header',
+      id: 'header-topbar',
+      title: 'Top Bar Keys',
+      subtitle: 'Keys shown in the top bar',
+      onAddPress: () => openKeySelector('topbar'),
+      addButtonLabel: '+ Add',
+    });
+
+    config.topBar.keys.forEach((key) => {
+      items.push({
+        type: 'draggable-key',
+        id: `topbar-${key.id}`,
+        data: key,
+        section: 'topbar',
+        renderItem: (item, onRemove, drag, isActive) =>
+          renderKeyItem({ item, onRemove, drag, isActive }),
+      });
+    });
+
+    items.push({ type: 'spacer', id: 'spacer-2', height: 20 });
+
+    // Reset Button
+    items.push({
+      type: 'button',
+      id: 'reset-topbar',
+      label: 'Reset Top Bar to Default',
+      variant: 'danger',
+      onPress: () => {
+        setResetType('topbar');
+        setShowResetConfirm(true);
+      },
+    });
+
+    return items;
+  }, [config.topBar.pinnedKeys, config.topBar.keys]);
+
+  // Build data for Full Keyboard tab
+  const fullKeyboardData: UnifiedListItem[] = useMemo(() => {
+    const items: UnifiedListItem[] = [];
+
+    items.push({
+      type: 'header',
+      id: 'header-rows',
+      title: 'Keyboard Rows',
+      subtitle: 'Organize, reorder, and customize keyboard rows',
+    });
+
+    config.fullKeyboard.rows.forEach((row) => {
+      items.push({
+        type: 'draggable-row',
+        id: `row-${row.id}`,
+        data: row,
+        renderItem: (item, drag, isActive) =>
+          renderRowItem({
+            item,
+            drag,
+            isActive,
+            onToggleVisibility: toggleRowVisibility,
+            onRemoveKey: removeKeyFromRow,
+            onReorderKeys: reorderKeysInRow,
+            onAddKeyToRow: (rowId) => openKeySelector('row', rowId),
+            expandedRowId,
+            onToggleExpand: toggleExpand,
+          }),
+      });
+    });
+
+    items.push({ type: 'spacer', id: 'spacer-3', height: 20 });
+
+    items.push({
+      type: 'button',
+      id: 'reset-fullkeyboard',
+      label: 'Reset Full Keyboard to Default',
+      variant: 'danger',
+      onPress: () => {
+        setResetType('fullkeyboard');
+        setShowResetConfirm(true);
+      },
+    });
+
+    return items;
+  }, [config.fullKeyboard.rows, expandedRowId]);
+
+  // Handle drag end for Top Bar
+  const handleTopBarDragEnd = (newData: UnifiedListItem[]) => {
+    // Extract pinned and topbar keys separately
+    const pinnedKeys = newData
+      .filter((item) => item.type === 'draggable-key' && item.section === 'pinned')
+      .map((item) => (item as any).data);
+
+    const topBarKeys = newData
+      .filter((item) => item.type === 'draggable-key' && item.section === 'topbar')
+      .map((item) => (item as any).data);
+
+    reorderPinnedKeys(pinnedKeys);
+    reorderTopBarKeys(topBarKeys);
+  };
+
+  // Handle drag end for Full Keyboard
+  const handleFullKeyboardDragEnd = (newData: UnifiedListItem[]) => {
+    const rows = newData
+      .filter((item) => item.type === 'draggable-row')
+      .map((item) => (item as any).data);
+
+    reorderRows(rows);
+  };
+
   const renderPresets = () => (
     <View className="flex-1 px-4 py-4">
       <Text className="text-white text-lg font-semibold mb-2">Keyboard Presets</Text>
@@ -176,107 +315,29 @@ export default function KeyboardCustomization() {
   );
 
   const renderTopBar = () => (
-    <ScrollView
-      className="flex-1 px-4 py-4"
-      contentContainerStyle={{ paddingBottom: 40 }}
-      nestedScrollEnabled={true}
-    >
-      {/* Pinned Keys Section */}
-      <View className="mb-6">
-        <View className="flex-row items-center justify-between mb-3">
-          <View>
-            <Text className="text-white text-lg font-semibold">Pinned Keys</Text>
-            <Text className="text-gray-400 text-xs mt-0.5">
-              Your frequently used keys
-            </Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => openKeySelector("pinned")}
-            className="bg-green-600 rounded-lg px-4 py-2"
-          >
-            <Text className="text-white text-sm font-semibold">+ Add</Text>
-          </TouchableOpacity>
-        </View>
-
-        <DraggableKeyList
-          keys={config.topBar.pinnedKeys}
-          onReorder={reorderPinnedKeys}
-          onRemove={removePinnedKey}
-          emptyMessage="No keys pinned yet. Tap '+ Add' to pin frequently used keys."
-        />
-      </View>
-
-      {/* Regular Keys Section */}
-      <View className="mb-6">
-        <View className="flex-row items-center justify-between mb-3">
-          <View>
-            <Text className="text-white text-lg font-semibold">Top Bar Keys</Text>
-            <Text className="text-gray-400 text-xs mt-0.5">
-              Keys shown in the top bar
-            </Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => openKeySelector("topbar")}
-            className="bg-green-600 rounded-lg px-4 py-2"
-          >
-            <Text className="text-white text-sm font-semibold">+ Add</Text>
-          </TouchableOpacity>
-        </View>
-
-        <DraggableKeyList
-          keys={config.topBar.keys}
-          onReorder={reorderTopBarKeys}
-          onRemove={removeTopBarKey}
-          emptyMessage="No keys in top bar. Tap '+ Add' to add keys."
-        />
-      </View>
-
-      {/* Reset Button */}
-      <TouchableOpacity
-        onPress={() => {
-          setResetType("topbar");
-          setShowResetConfirm(true);
+    <View className="flex-1 px-4 py-4">
+      <UnifiedDraggableList
+        data={topBarData}
+        onDragEnd={handleTopBarDragEnd}
+        onRemoveKey={(itemId, section) => {
+          const keyId = itemId.replace(`${section}-`, '');
+          if (section === 'pinned') {
+            removePinnedKey(keyId);
+          } else if (section === 'topbar') {
+            removeTopBarKey(keyId);
+          }
         }}
-        className="bg-red-900/20 border border-red-700 rounded-lg p-3"
-      >
-        <Text className="text-red-400 text-center font-semibold">Reset Top Bar to Default</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      />
+    </View>
   );
 
   const renderFullKeyboard = () => (
-    <ScrollView
-      className="flex-1 px-4 py-4"
-      contentContainerStyle={{ paddingBottom: 40 }}
-      nestedScrollEnabled={true}
-    >
-      <View className="mb-4">
-        <Text className="text-white text-lg font-semibold mb-2">Keyboard Rows</Text>
-        <Text className="text-gray-400 text-sm mb-4">
-          Organize, reorder, and customize keyboard rows
-        </Text>
-
-        <DraggableRowList
-          rows={config.fullKeyboard.rows}
-          onReorder={reorderRows}
-          onToggleVisibility={toggleRowVisibility}
-          onRemoveKey={removeKeyFromRow}
-          onReorderKeys={reorderKeysInRow}
-          onAddKeyToRow={(rowId) => openKeySelector("row", rowId)}
-        />
-      </View>
-
-      {/* Reset Button */}
-      <TouchableOpacity
-        onPress={() => {
-          setResetType("fullkeyboard");
-          setShowResetConfirm(true);
-        }}
-        className="mt-4 bg-red-900/20 border border-red-700 rounded-lg p-3"
-      >
-        <Text className="text-red-400 text-center font-semibold">Reset Full Keyboard to Default</Text>
-      </TouchableOpacity>
-    </ScrollView>
+    <View className="flex-1 px-4 py-4">
+      <UnifiedDraggableList
+        data={fullKeyboardData}
+        onDragEnd={handleFullKeyboardDragEnd}
+      />
+    </View>
   );
 
   const renderSettings = () => (
@@ -391,11 +452,7 @@ export default function KeyboardCustomization() {
 
       {/* Tabs */}
       <View className="bg-[#1a1a1a] border-b border-[#303032]">
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingHorizontal: 16 }}
-        >
+        <View className="flex-row px-4">
           {[
             { id: "presets", label: "Presets" },
             { id: "topbar", label: "Top Bar" },
@@ -418,7 +475,7 @@ export default function KeyboardCustomization() {
               </Text>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </View>
       </View>
 
       {/* Content */}
