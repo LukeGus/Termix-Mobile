@@ -83,26 +83,16 @@ jobs:
           if [ "${{ matrix.platform }}" = "android" ]; then
             echo "=== Detecting Android APKs ==="
 
-            # EAS local builds create APKs in temp directory
-            # Search both project directory and EAS temp directories
-            APK_LOCATIONS=(
-              "android/app/build/outputs/apk/release"
-              "/tmp/runner/eas-build-local-nodejs/*/build/android/app/build/outputs/apk/release"
-            )
+            # Search for APK directory using find (handles EAS temp directories)
+            APK_DIR=$(find /tmp/runner/eas-build-local-nodejs -type d -path "*/build/android/app/build/outputs/apk/release" 2>/dev/null | head -1)
 
-            APK_DIR=""
-            for location in "${APK_LOCATIONS[@]}"; do
-              # Use glob expansion to find the actual directory
-              for dir in $location; do
-                if [ -d "$dir" ]; then
-                  APK_DIR="$dir"
-                  echo "✓ Found APK directory: $APK_DIR"
-                  break 2
-                fi
-              done
-            done
+            # Fall back to project directory if not found in temp
+            if [ -z "$APK_DIR" ] && [ -d "android/app/build/outputs/apk/release" ]; then
+              APK_DIR="android/app/build/outputs/apk/release"
+            fi
 
             if [ -n "$APK_DIR" ]; then
+              echo "✓ Found APK directory: $APK_DIR"
               echo "Contents:"
               ls -lh "$APK_DIR"
 
@@ -145,28 +135,21 @@ jobs:
 
               # For production builds, check for AAB (only for submit, not upload)
               if [ "${{ github.event.inputs.action }}" = "submit" ]; then
-                # Search for AAB in both locations
-                AAB_LOCATIONS=(
-                  "android/app/build/outputs/bundle/release"
-                  "/tmp/runner/eas-build-local-nodejs/*/build/android/app/build/outputs/bundle/release"
-                )
+                # Search for AAB using find
+                AAB_FILE=$(find /tmp/runner/eas-build-local-nodejs -type f -path "*/build/android/app/build/outputs/bundle/release/app-release.aab" 2>/dev/null | head -1)
 
-                for location in "${AAB_LOCATIONS[@]}"; do
-                  for dir in $location; do
-                    if [ -f "$dir/app-release.aab" ]; then
-                      echo "Found AAB for submission at: $dir/app-release.aab"
-                      cp "$dir/app-release.aab" "build-artifacts/Termix-Android.aab"
-                      break 2
-                    fi
-                  done
-                done
+                # Fall back to project directory
+                if [ -z "$AAB_FILE" ] && [ -f "android/app/build/outputs/bundle/release/app-release.aab" ]; then
+                  AAB_FILE="android/app/build/outputs/bundle/release/app-release.aab"
+                fi
+
+                if [ -n "$AAB_FILE" ]; then
+                  echo "Found AAB for submission at: $AAB_FILE"
+                  cp "$AAB_FILE" "build-artifacts/Termix-Android.aab"
+                fi
               fi
             else
               echo "✗ APK directory not found in any expected location"
-              echo "Searched locations:"
-              for location in "${APK_LOCATIONS[@]}"; do
-                echo "  - $location"
-              done
             fi
 
             # List final artifacts
