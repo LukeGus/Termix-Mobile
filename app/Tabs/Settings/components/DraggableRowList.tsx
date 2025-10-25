@@ -36,29 +36,47 @@ export default function DraggableRowList({
     return (
       <ScaleDecorator>
         <View
-          className={`bg-[#1a1a1a] border border-[#303032] rounded-lg mb-3 overflow-hidden ${
+          className={`bg-[#1a1a1a] border border-[#303032] rounded-lg mb-3 ${
             isActive ? "opacity-70" : ""
           }`}
+          pointerEvents="box-none"
         >
           {/* Row Header */}
-          <TouchableOpacity
-            onLongPress={drag}
-            disabled={isActive}
-            onPress={() => toggleExpand(item.id)}
-            className="flex-row items-center p-4"
-          >
+          <View className="flex-row items-center p-4" pointerEvents="box-none">
             {/* Drag Handle */}
-            <View className="mr-3">
+            <TouchableOpacity
+              onLongPress={drag}
+              delayLongPress={150}
+              disabled={isActive}
+              className="mr-3 py-1 px-1"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              pointerEvents="auto"
+            >
               <Text className="text-gray-400 text-lg">☰</Text>
-            </View>
+            </TouchableOpacity>
 
-            {/* Row Info */}
-            <View className="flex-1 mr-4">
-              <Text className="text-white text-base font-semibold">{item.label}</Text>
-              <Text className="text-gray-400 text-xs mt-0.5">
-                {item.keys.length} keys • {item.category}
-              </Text>
-            </View>
+            {/* Tappable Row Content */}
+            <TouchableOpacity
+              onPress={() => toggleExpand(item.id)}
+              className="flex-1 flex-row items-center"
+              disabled={isActive}
+              pointerEvents="auto"
+            >
+              {/* Row Info */}
+              <View className="flex-1 mr-4">
+                <Text className="text-white text-base font-semibold">{item.label}</Text>
+                <Text className="text-gray-400 text-xs mt-0.5">
+                  {item.keys.length} keys • {item.category}
+                </Text>
+              </View>
+
+              {/* Expand Indicator */}
+              <View className="ml-3">
+                <Text className="text-gray-400 text-base">
+                  {isExpanded ? "▼" : "▶"}
+                </Text>
+              </View>
+            </TouchableOpacity>
 
             {/* Visibility Toggle */}
             <Switch
@@ -66,20 +84,15 @@ export default function DraggableRowList({
               onValueChange={() => onToggleVisibility(item.id)}
               trackColor={{ false: "#3f3f46", true: "#22C55E" }}
               thumbColor={item.visible ? "#ffffff" : "#9ca3af"}
+              style={{ marginLeft: 12 }}
+              pointerEvents="auto"
             />
-
-            {/* Expand Indicator */}
-            <View className="ml-3">
-              <Text className="text-gray-400 text-base">
-                {isExpanded ? "▼" : "▶"}
-              </Text>
-            </View>
-          </TouchableOpacity>
+          </View>
 
           {/* Expanded Content - Keys in Row */}
           {isExpanded && (
-            <View className="px-4 pb-4 border-t border-[#303032] pt-4">
-              <View className="flex-row items-center justify-between mb-3">
+            <View className="px-4 pb-4 border-t border-[#303032] pt-4" pointerEvents="box-none">
+              <View className="flex-row items-center justify-between mb-3" pointerEvents="box-none">
                 <Text className="text-white text-sm font-semibold">
                   Keys in this row
                 </Text>
@@ -87,6 +100,7 @@ export default function DraggableRowList({
                   <TouchableOpacity
                     onPress={() => onAddKeyToRow(item.id)}
                     className="bg-green-600 rounded px-3 py-1.5"
+                    pointerEvents="auto"
                   >
                     <Text className="text-white text-xs font-semibold">+ Add Key</Text>
                   </TouchableOpacity>
@@ -107,16 +121,19 @@ export default function DraggableRowList({
   };
 
   return (
-    <View>
+    <View style={{ overflow: 'visible' }}>
       <DraggableFlatList
         data={rows}
         onDragEnd={({ data }) => onReorder(data)}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         scrollEnabled={false}
+        activationDistance={20}
+        containerStyle={{ overflow: 'visible' }}
+        dragItemOverflow={true}
       />
       <Text className="text-gray-400 text-xs mt-2 px-1">
-        Long press and drag rows to reorder. Tap to expand and edit keys.
+        Long press the ☰ icon to reorder rows. Tap a row to expand and edit keys.
       </Text>
     </View>
   );

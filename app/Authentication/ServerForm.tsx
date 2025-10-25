@@ -91,11 +91,11 @@ export default function ServerForm() {
 
   return (
     <KeyboardAvoidingView
-      className="flex-1 bg-dark-bg"
+      className="flex-1 bg-[#18181b]"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <View className="flex-1" style={{ paddingTop: insets.top }}>
-        <View className="p-4 bg-dark-bg">
+        <View className="p-4 bg-[#18181b]">
           <Text className="text-white text-2xl font-bold text-center">
             Server Connection
           </Text>
@@ -116,7 +116,7 @@ export default function ServerForm() {
                   <Server size={20} color="#9CA3AF" />
                 </View>
                 <TextInput
-                  className="bg-dark-bg-input rounded-xl text-white border-2 border-dark-border"
+                  className="bg-[#1a1a1a] rounded-xl text-white border border-[#303032]"
                   style={{
                     height: 56,
                     paddingLeft: 48,
@@ -141,7 +141,7 @@ export default function ServerForm() {
               onPress={handleConnect}
               disabled={isLoading}
               className={`px-6 py-4 rounded-xl mt-4 ${
-                isLoading ? "bg-gray-600" : "bg-blue-600"
+                isLoading ? "bg-gray-600" : "bg-green-600"
               }`}
             >
               <Text className="text-white text-center font-semibold text-lg">

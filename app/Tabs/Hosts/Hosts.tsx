@@ -165,7 +165,7 @@ export default function Hosts() {
         className="flex-1 bg-dark-bg px-6 justify-center items-center"
         style={{ paddingTop: insets.top + 24 }}
       >
-        <ActivityIndicator size="large" color="#ffffff" />
+        <ActivityIndicator size="large" color="#22c55e" />
         <Text className="text-white mt-4">Loading hosts...</Text>
       </View>
     );
@@ -187,14 +187,14 @@ export default function Hosts() {
           <TouchableOpacity
             onPress={handleRefresh}
             disabled={refreshing || loading}
-            className={`bg-dark-bg-button p-2 rounded-md border-2 border-dark-border ${
+            className={`bg-[#1a1a1a] p-2 rounded-md border border-[#303032] ${
               refreshing || loading ? "opacity-50" : ""
             }`}
             activeOpacity={0.7}
           >
             <RefreshCw
               size={20}
-              color="white"
+              color="#22c55e"
               style={{
                 transform: [{ rotate: refreshing ? "180deg" : "0deg" }],
               }}
@@ -202,7 +202,7 @@ export default function Hosts() {
           </TouchableOpacity>
         </View>
         <TextInput
-          className="text-white w-full h-autobg-dark-bg-input rounded-md border-2 border-dark-border px-3 py-2"
+          className="text-white w-full h-auto bg-[#1a1a1a] rounded-md border border-[#303032] px-3 py-2"
           placeholder="Search hosts..."
           placeholderTextColor="#9CA3AF"
           value={searchQuery}
@@ -216,8 +216,8 @@ export default function Hosts() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor="#ffffff"
-              colors={["#ffffff"]}
+              tintColor="#22c55e"
+              colors={["#22c55e"]}
               progressBackgroundColor="transparent"
               titleColor="#ffffff"
             />

@@ -176,7 +176,11 @@ export default function KeyboardCustomization() {
   );
 
   const renderTopBar = () => (
-    <ScrollView className="flex-1 px-4 py-4">
+    <ScrollView
+      className="flex-1 px-4 py-4"
+      contentContainerStyle={{ paddingBottom: 40 }}
+      nestedScrollEnabled={true}
+    >
       {/* Pinned Keys Section */}
       <View className="mb-6">
         <View className="flex-row items-center justify-between mb-3">
@@ -241,7 +245,11 @@ export default function KeyboardCustomization() {
   );
 
   const renderFullKeyboard = () => (
-    <ScrollView className="flex-1 px-4 py-4">
+    <ScrollView
+      className="flex-1 px-4 py-4"
+      contentContainerStyle={{ paddingBottom: 40 }}
+      nestedScrollEnabled={true}
+    >
       <View className="mb-4">
         <Text className="text-white text-lg font-semibold mb-2">Keyboard Rows</Text>
         <Text className="text-gray-400 text-sm mb-4">

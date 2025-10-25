@@ -24,22 +24,28 @@ export default function DraggableKeyList({
   const renderItem = ({ item, drag, isActive }: RenderItemParams<KeyConfig>) => {
     return (
       <ScaleDecorator>
-        <TouchableOpacity
-          onLongPress={drag}
-          disabled={isActive}
-          className={`flex-row items-center gap-2 bg-[#27272a] border border-[#3f3f46] rounded-lg p-3 mb-2 ${
+        <View
+          className={`flex-row items-center gap-2 bg-[#1a1a1a] border border-[#303032] rounded-lg p-3 mb-2 ${
             isActive ? "opacity-70" : ""
           }`}
+          pointerEvents="box-none"
         >
           {/* Drag Handle */}
-          <View className="mr-2">
+          <TouchableOpacity
+            onLongPress={drag}
+            delayLongPress={150}
+            disabled={isActive}
+            className="mr-2 py-1 px-1"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            pointerEvents="auto"
+          >
             <Text className="text-gray-400 text-lg">☰</Text>
-          </View>
+          </TouchableOpacity>
 
           {/* Key Preview */}
-          <View className="flex-1">
+          <View className="flex-1" pointerEvents="none">
             <View className="flex-row items-center gap-2">
-              <View className="bg-[#1a1a1a] border border-[#404040] rounded px-3 py-1.5">
+              <View className="bg-[#27272a] border border-[#3f3f46] rounded px-3 py-1.5">
                 <Text className="text-white text-sm font-mono">{item.label}</Text>
               </View>
               <Text className="text-gray-500 text-xs">{item.category}</Text>
@@ -54,11 +60,14 @@ export default function DraggableKeyList({
           {/* Remove Button */}
           <TouchableOpacity
             onPress={() => onRemove(item.id)}
-            className="bg-red-900/30 border border-red-700 rounded-full w-8 h-8 items-center justify-center ml-2"
+            className="bg-red-900/30 border border-red-700 rounded-full w-10 h-10 items-center justify-center ml-2"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={{ lineHeight: 0 }}
+            pointerEvents="auto"
           >
-            <Text className="text-red-400 text-base font-bold">×</Text>
+            <Text className="text-red-400 font-bold" style={{ fontSize: 20, lineHeight: 20 }}>×</Text>
           </TouchableOpacity>
-        </TouchableOpacity>
+        </View>
       </ScaleDecorator>
     );
   };
@@ -72,7 +81,7 @@ export default function DraggableKeyList({
   }
 
   return (
-    <View>
+    <View style={{ overflow: 'visible' }}>
       <DraggableFlatList
         data={keys}
         onDragEnd={({ data }) => onReorder(data)}
@@ -80,9 +89,12 @@ export default function DraggableKeyList({
         renderItem={renderItem}
         scrollEnabled={false}
         horizontal={horizontal}
+        activationDistance={20}
+        containerStyle={{ overflow: 'visible' }}
+        dragItemOverflow={true}
       />
       <Text className="text-gray-400 text-xs mt-2 px-1">
-        Long press and drag to reorder
+        Long press the ☰ icon to reorder
       </Text>
     </View>
   );

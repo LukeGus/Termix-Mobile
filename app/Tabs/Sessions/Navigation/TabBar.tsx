@@ -121,11 +121,11 @@ export default function TabBar({
                 className="flex-row items-center rounded-md"
                 style={{
                   borderWidth: 2,
-                  borderColor: isActive ? "#4a4a4a" : "#303032",
+                  borderColor: isActive ? "#22c55e" : "#303032",
                   backgroundColor: isActive ? "#1a1a1a" : "#1a1a1a",
-                  shadowColor: isActive ? "#000" : "transparent",
+                  shadowColor: isActive ? "#22c55e" : "transparent",
                   shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: isActive ? 0.15 : 0,
+                  shadowOpacity: isActive ? 0.2 : 0,
                   shadowRadius: 4,
                   elevation: isActive ? 3 : 0,
                   minWidth: 120,
@@ -135,7 +135,7 @@ export default function TabBar({
                 <View className="flex-1 px-3 py-2">
                   <Text
                     className={`text-sm font-medium ${
-                      isActive ? "text-white" : "text-gray-400"
+                      isActive ? "text-green-400" : "text-gray-400"
                     }`}
                   >
                     {session.title}
@@ -156,7 +156,7 @@ export default function TabBar({
                     width: 36,
                     height: 44,
                     borderLeftWidth: 2,
-                    borderLeftColor: isActive ? "#4a4a4a" : "#303032",
+                    borderLeftColor: isActive ? "#22c55e" : "#303032",
                   }}
                 >
                   <X

@@ -62,7 +62,7 @@ export default function UpdateRequired() {
   if (isLoading) {
     return (
       <View
-        className="flex-1 bg-dark-bg justify-center items-center"
+        className="flex-1 bg-[#18181b] justify-center items-center"
         style={{ paddingTop: insets.top }}
       >
         <ActivityIndicator size="large" color="#ffffff" />
@@ -74,8 +74,8 @@ export default function UpdateRequired() {
   }
 
   return (
-    <View className="flex-1 bg-dark-bg" style={{ paddingTop: insets.top }}>
-      <View className="flex-row justify-between items-center px-6 py-4 border-b border-dark-border">
+    <View className="flex-1 bg-[#18181b]" style={{ paddingTop: insets.top }}>
+      <View className="flex-row justify-between items-center px-6 py-4 border-b border-[#303032]">
         <View className="flex-row items-center gap-3">
           <AlertTriangle size={24} color="#f59e0b" />
           <Text className="text-white text-xl font-bold">Update Required</Text>
@@ -83,9 +83,9 @@ export default function UpdateRequired() {
       </View>
 
       <View className="flex-1 px-6 py-8">
-        <View className="bg-dark-bg-button rounded-lg p-6 border border-dark-border mb-6">
+        <View className="bg-[#1a1a1a] rounded-lg p-6 border border-[#303032] mb-6">
           <View className="flex-row items-center gap-3 mb-4">
-            <Download size={24} color="#3b82f6" />
+            <Download size={24} color="#22c55e" />
             <Text className="text-white text-lg font-semibold">
               Version Mismatch Detected
             </Text>
@@ -96,7 +96,7 @@ export default function UpdateRequired() {
             work properly until you update to the latest version.
           </Text>
 
-          <View className="bg-dark-bg rounded-md p-4 border border-dark-border">
+          <View className="bg-[#27272a] rounded-md p-4 border border-[#3f3f46]">
             <Text className="text-white font-semibold mb-3">
               Version Information:
             </Text>
@@ -111,7 +111,7 @@ export default function UpdateRequired() {
 
               <View className="flex-row justify-between">
                 <Text className="text-gray-300">Latest Release:</Text>
-                <Text className="text-green-400 font-mono">
+                <Text className="text-green-500 font-mono">
                   {latestRelease?.version || "Unknown"}
                 </Text>
               </View>
@@ -119,7 +119,7 @@ export default function UpdateRequired() {
               {latestRelease?.tagName && (
                 <View className="flex-row justify-between">
                   <Text className="text-gray-300">Release Tag:</Text>
-                  <Text className="text-blue-400 font-mono text-xs">
+                  <Text className="text-green-400 font-mono text-xs">
                     {latestRelease.tagName}
                   </Text>
                 </View>
@@ -132,7 +132,7 @@ export default function UpdateRequired() {
       <View className="px-6 pb-6" style={{ paddingBottom: insets.bottom + 24 }}>
         <TouchableOpacity
           onPress={handleDismiss}
-          className="bg-dark-bg-button border-2 border-dark-border rounded-lg py-4 px-6"
+          className="bg-green-600 rounded-lg py-4 px-6"
           activeOpacity={0.7}
         >
           <Text className="text-white text-center font-semibold text-lg">
