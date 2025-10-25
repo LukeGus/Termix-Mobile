@@ -23,39 +23,40 @@ on:
           - submit
 jobs:
   build:
+    name: build-${{ matrix.platform }}
     runs-on: ${{ matrix.platform == 'ios' && 'macos-26' || 'blacksmith-4vcpu-ubuntu-2404' }}
     strategy:
       matrix:
         platform: ${{ github.event.inputs.platform == 'both' && fromJSON('["ios", "android"]') || fromJSON(format('["{0}"]', github.event.inputs.platform)) }}
         node: [20.x]
     steps:
-      - name: 🏗 Setup repo
+      - name: Setup repo
         uses: actions/checkout@v4
 
-      - name: 🏗 Setup Node
+      - name: Setup Node
         uses: actions/setup-node@v4.0.2
         with:
           node-version: ${{ matrix.node }}
           cache: 'npm'
 
-      - name: 🏗 Setup Expo and EAS
+      - name: Setup Expo and EAS
         uses: expo/expo-github-action@v7
         with:
           token: ${{ secrets.EXPO_TOKEN }}
           expo-version: latest
           eas-version: latest
 
-      - name: 📦 Install dependencies
+      - name: Install dependencies
         run: npm install
 
-      - name: 🔍 Validate EAS configuration
+      - name: Validate EAS configuration
         run: |
           echo "EAS configuration:"
           cat eas.json
           echo "Validating configuration..."
           eas build:configure --platform ${{ matrix.platform }}
 
-      - name: 👷 Build app
+      - name: Build app
         run: |
           # Determine profile based on action
           if [ "${{ github.event.inputs.action }}" = "submit" ]; then
@@ -148,7 +149,7 @@ jobs:
         env:
           EAS_SKIP_AUTO_FINGERPRINT: 1
 
-      - name: 📁 Verify build artifacts
+      - name: Verify build artifacts
         id: detect-artifacts
         run: |
           echo "=== Build Artifacts ==="
@@ -169,7 +170,7 @@ jobs:
 
           echo "artifact_count=$ARTIFACT_COUNT" >> $GITHUB_OUTPUT
 
-      - name: 🚢 Submit to App Store
+      - name: Submit to App Store
         if: ${{ github.event.inputs.action == 'submit' }}
         run: |
           # Get version from app.json
@@ -198,7 +199,7 @@ jobs:
             exit 1
           fi
 
-      - name: 📤 Upload Android APK
+      - name: Upload Android APK
         if: ${{ github.event.inputs.action == 'file' && matrix.platform == 'android' }}
         uses: actions/upload-artifact@v4
         with:
@@ -207,7 +208,7 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
-      - name: 📤 Upload iOS IPA
+      - name: Upload iOS IPA
         if: ${{ github.event.inputs.action == 'file' && matrix.platform == 'ios' }}
         uses: actions/upload-artifact@v4
         with:
@@ -216,7 +217,7 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
-      - name: 🚀 Upload to GitHub Release
+      - name: Upload to GitHub Release
         if: ${{ github.event.inputs.action == 'release' }}
         env:
           GH_TOKEN: ${{ secrets.TERMIX_RELEASE_TOKEN }}

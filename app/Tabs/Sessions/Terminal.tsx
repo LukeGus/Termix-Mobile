@@ -8,10 +8,9 @@ import React, {
 } from "react";
 import { View, Text, ActivityIndicator, Dimensions } from "react-native";
 import { WebView } from "react-native-webview";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getCurrentServerUrl, getCookie } from "../../main-axios";
 import { showToast } from "../../utils/toast";
+import { useTerminalCustomization } from "../../contexts/TerminalCustomizationContext";
 
 interface TerminalProps {
   hostConfig: {
@@ -40,6 +39,7 @@ export type TerminalHandle = {
 export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
   ({ hostConfig, isVisible, title = "Terminal", onClose }, ref) => {
     const webViewRef = useRef<WebView>(null);
+    const { config } = useTerminalCustomization();
     const [webViewKey, setWebViewKey] = useState(0);
     const [screenDimensions, setScreenDimensions] = useState(
       Dimensions.get("window"),
@@ -52,9 +52,6 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
     const [showConnectingOverlay, setShowConnectingOverlay] = useState(true);
     const [htmlContent, setHtmlContent] = useState("");
     const [currentHostId, setCurrentHostId] = useState<number | null>(null);
-    const [zoomScale, setZoomScale] = useState(1.0);
-    const [isPinching, setIsPinching] = useState(false);
-    const baseZoomScaleRef = useRef(1.0);
     const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
       null,
     );
@@ -68,25 +65,6 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
       );
 
       return () => subscription?.remove();
-    }, []);
-
-    // Load saved zoom scale from AsyncStorage on mount
-    useEffect(() => {
-      const loadZoomScale = async () => {
-        try {
-          const savedZoom = await AsyncStorage.getItem("terminalZoomScale");
-          if (savedZoom !== null) {
-            const zoom = parseFloat(savedZoom);
-            if (!isNaN(zoom) && zoom >= 0.5 && zoom <= 3.0) {
-              setZoomScale(zoom);
-              baseZoomScaleRef.current = zoom;
-            }
-          }
-        } catch (error) {
-          // Ignore errors, use default zoom
-        }
-      };
-      loadZoomScale();
     }, []);
 
     const handleConnectionFailure = useCallback(
@@ -146,8 +124,8 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
 </html>`;
       }
 
-      // Apply zoom scale to font size calculation
-      const baseFontSize = Math.max(14, Math.min(20, width / 25)) * zoomScale;
+      // Use font size from context
+      const baseFontSize = config.fontSize;
       const terminalWidth = Math.floor(width / 8);
       const terminalHeight = Math.floor(height / 16);
 
@@ -235,8 +213,8 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
   <script>
     const screenWidth = ${width};
     const screenHeight = ${height};
-    
-    const baseFontSize = Math.max(14, Math.min(20, screenWidth / 25));
+
+    const baseFontSize = ${baseFontSize};
     
     const terminal = new Terminal({
       cursorBlink: false,
@@ -503,7 +481,7 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
 </body>
 </html>
     `;
-    }, [hostConfig, screenDimensions, zoomScale]);
+    }, [hostConfig, screenDimensions, config.fontSize]);
 
     useEffect(() => {
       const updateHtml = async () => {
@@ -615,59 +593,6 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
       };
     }, []);
 
-    // Save zoom scale to AsyncStorage when it changes
-    useEffect(() => {
-      const saveZoomScale = async () => {
-        try {
-          await AsyncStorage.setItem("terminalZoomScale", zoomScale.toString());
-        } catch (error) {
-          // Ignore errors
-        }
-      };
-      saveZoomScale();
-    }, [zoomScale]);
-
-    // Update terminal font size when zoom changes
-    useEffect(() => {
-      if (!webViewRef.current) return;
-
-      const { width } = screenDimensions;
-      const newFontSize = Math.max(14, Math.min(20, width / 25)) * zoomScale;
-
-      // Inject JavaScript to update the terminal font size
-      const updateFontSizeScript = `
-        if (typeof terminal !== 'undefined') {
-          terminal.options.fontSize = ${newFontSize};
-          if (typeof fitAddon !== 'undefined') {
-            fitAddon.fit();
-          }
-        }
-        true;
-      `;
-
-      webViewRef.current.injectJavaScript(updateFontSizeScript);
-    }, [zoomScale, screenDimensions]);
-
-    // Pinch gesture handler for zoom
-    const pinchGesture = Gesture.Pinch()
-      .enabled(true)
-      .onStart(() => {
-        console.log('[Terminal] ✅ Pinch started!');
-        setIsPinching(true);
-      })
-      .onUpdate((event) => {
-        const newScale = baseZoomScaleRef.current * event.scale;
-        const clampedScale = Math.max(0.5, Math.min(3.0, newScale));
-        console.log('[Terminal] 📏 Pinch scale:', clampedScale.toFixed(2));
-        setZoomScale(clampedScale);
-      })
-      .onEnd(() => {
-        console.log('[Terminal] ✅ Pinch ended, final scale:', zoomScale.toFixed(2));
-        baseZoomScaleRef.current = zoomScale;
-        setIsPinching(false);
-      })
-      .runOnJS(true);
-
     return (
         <View
           style={{
@@ -691,69 +616,44 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
               zIndex: isVisible ? 1 : -1,
             }}
           >
-          <GestureDetector gesture={pinchGesture}>
-            <View style={{ flex: 1 }}>
-              <WebView
-                key={`terminal-${hostConfig.id}-${webViewKey}`}
-                ref={webViewRef}
-                source={{ html: htmlContent }}
-                style={{
-                  flex: 1,
-                  width: "100%",
-                  height: "100%",
-                  backgroundColor: "#09090b",
-                  opacity: showConnectingOverlay || isRetrying ? 0 : 1,
-                }}
-                javaScriptEnabled={true}
-                domStorageEnabled={true}
-                startInLoadingState={false}
-                scalesPageToFit={false}
-                allowsInlineMediaPlayback={true}
-                mediaPlaybackRequiresUserAction={false}
-                keyboardDisplayRequiresUserAction={false}
-                onScroll={() => {}}
-                onMessage={handleWebViewMessage}
-                onError={(syntheticEvent) => {
-                  const { nativeEvent } = syntheticEvent;
-                  handleConnectionFailure(
-                    `WebView error: ${nativeEvent.description}`,
-                  );
-                }}
-                onHttpError={(syntheticEvent) => {
-                  const { nativeEvent } = syntheticEvent;
-                  handleConnectionFailure(
-                    `WebView HTTP error: ${nativeEvent.statusCode}`,
-                  );
-                }}
-                scrollEnabled={false}
-                bounces={false}
-                showsHorizontalScrollIndicator={false}
-                showsVerticalScrollIndicator={false}
-                nestedScrollEnabled={false}
-              />
-            </View>
-          </GestureDetector>
-
-          {/* Zoom indicator */}
-          {isPinching && (
-            <View
+            <WebView
+              key={`terminal-${hostConfig.id}-${webViewKey}`}
+              ref={webViewRef}
+              source={{ html: htmlContent }}
               style={{
-                position: "absolute",
-                top: 20,
-                alignSelf: "center",
-                backgroundColor: "rgba(0, 0, 0, 0.8)",
-                paddingHorizontal: 20,
-                paddingVertical: 10,
-                borderRadius: 8,
-                borderWidth: 1,
-                borderColor: "#22C55E",
+                flex: 1,
+                width: "100%",
+                height: "100%",
+                backgroundColor: "#09090b",
+                opacity: showConnectingOverlay || isRetrying ? 0 : 1,
               }}
-            >
-              <Text style={{ color: "#22C55E", fontSize: 16, fontWeight: "bold" }}>
-                Zoom: {(zoomScale * 100).toFixed(0)}%
-              </Text>
-            </View>
-          )}
+              javaScriptEnabled={true}
+              domStorageEnabled={true}
+              startInLoadingState={false}
+              scalesPageToFit={false}
+              allowsInlineMediaPlayback={true}
+              mediaPlaybackRequiresUserAction={false}
+              keyboardDisplayRequiresUserAction={false}
+              onScroll={() => {}}
+              onMessage={handleWebViewMessage}
+              onError={(syntheticEvent) => {
+                const { nativeEvent } = syntheticEvent;
+                handleConnectionFailure(
+                  `WebView error: ${nativeEvent.description}`,
+                );
+              }}
+              onHttpError={(syntheticEvent) => {
+                const { nativeEvent } = syntheticEvent;
+                handleConnectionFailure(
+                  `WebView HTTP error: ${nativeEvent.statusCode}`,
+                );
+              }}
+              scrollEnabled={false}
+              bounces={false}
+              showsHorizontalScrollIndicator={false}
+              showsVerticalScrollIndicator={false}
+              nestedScrollEnabled={false}
+            />
 
           {(showConnectingOverlay || isRetrying) && (
             <View

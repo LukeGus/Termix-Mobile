@@ -8,6 +8,7 @@ import {
   TextInput,
   Pressable,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyConfig, KeyCategory } from "@/types/keyboard";
 import { ALL_KEYS } from "@/app/Tabs/Sessions/KeyDefinitions";
 
@@ -39,6 +40,7 @@ export default function KeySelector({
   excludeKeys = [],
   title = "Add Key",
 }: KeySelectorProps) {
+  const insets = useSafeAreaInsets();
   const [selectedCategory, setSelectedCategory] = useState<KeyCategory | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -85,7 +87,10 @@ export default function KeySelector({
     >
       <View className="flex-1 bg-[#18181b]">
         {/* Header */}
-        <View className="bg-[#1a1a1a] border-b border-[#303032] px-4 py-3">
+        <View
+          className="bg-[#1a1a1a] border-b border-[#303032] px-4"
+          style={{ paddingTop: insets.top + 12, paddingBottom: 12 }}
+        >
           <View className="flex-row items-center justify-between">
             <Text className="text-white text-lg font-semibold">{title}</Text>
             <TouchableOpacity onPress={onClose}>

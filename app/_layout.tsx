@@ -1,6 +1,7 @@
 import { Stack } from "expo-router";
 import { AppProvider, useAppContext } from "./AppContext";
 import { TerminalSessionsProvider } from "./contexts/TerminalSessionsContext";
+import { TerminalCustomizationProvider } from "./contexts/TerminalCustomizationContext";
 import { KeyboardProvider } from "./contexts/KeyboardContext";
 import { KeyboardCustomizationProvider } from "./contexts/KeyboardCustomizationContext";
 import ServerForm from "./Authentication/ServerForm";
@@ -67,25 +68,27 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <AppProvider>
           <TerminalSessionsProvider>
-            <KeyboardProvider>
-              <KeyboardCustomizationProvider>
-                <RootLayoutContent />
-                <Toaster
-                  theme="dark"
-                  position="top-center"
-                  toastOptions={{
-                    style: {
-                      backgroundColor: "#18181b",
-                      borderWidth: 1,
-                      borderColor: "#27272a",
-                    },
-                  }}
-                  richColors={false}
-                  closeButton={true}
-                  duration={4000}
-                />
-              </KeyboardCustomizationProvider>
-            </KeyboardProvider>
+            <TerminalCustomizationProvider>
+              <KeyboardProvider>
+                <KeyboardCustomizationProvider>
+                  <RootLayoutContent />
+                  <Toaster
+                    theme="dark"
+                    position="top-center"
+                    toastOptions={{
+                      style: {
+                        backgroundColor: "#18181b",
+                        borderWidth: 1,
+                        borderColor: "#27272a",
+                      },
+                    }}
+                    richColors={false}
+                    closeButton={true}
+                    duration={4000}
+                  />
+                </KeyboardCustomizationProvider>
+              </KeyboardProvider>
+            </TerminalCustomizationProvider>
           </TerminalSessionsProvider>
         </AppProvider>
       </SafeAreaProvider>

@@ -37,6 +37,23 @@ export default function Settings() {
           Settings
         </Text>
 
+        {/* Terminal Customization */}
+        <View className="mb-6">
+          <Text className="text-white text-lg font-semibold mb-3">Terminal</Text>
+          <TouchableOpacity
+            onPress={() => router.push("/Tabs/Settings/TerminalCustomization" as any)}
+            className="bg-[#1a1a1a] border border-[#303032] px-6 py-4 rounded-lg flex-row items-center justify-between"
+          >
+            <View>
+              <Text className="text-white font-semibold text-base">Customize Terminal</Text>
+              <Text className="text-gray-400 text-sm mt-1">
+                Font size and appearance
+              </Text>
+            </View>
+            <Text className="text-green-500 text-xl">→</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Keyboard Customization */}
         <View className="mb-6">
           <Text className="text-white text-lg font-semibold mb-3">Keyboard</Text>
