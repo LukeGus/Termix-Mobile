@@ -39,20 +39,18 @@ export default function DraggableRowList({
           className={`bg-[#1a1a1a] border border-[#303032] rounded-lg mb-3 ${
             isActive ? "opacity-70" : ""
           }`}
-          pointerEvents="box-none"
         >
           {/* Row Header */}
-          <View className="flex-row items-center p-4" pointerEvents="box-none">
+          <View className="flex-row items-center p-4">
             {/* Drag Handle */}
             <TouchableOpacity
               onLongPress={drag}
-              delayLongPress={150}
+              delayLongPress={250}
               disabled={isActive}
-              className="mr-3 py-1 px-1"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              pointerEvents="auto"
+              className="mr-3 px-2 py-2 -ml-1"
+              activeOpacity={0.6}
             >
-              <Text className="text-gray-400 text-lg">☰</Text>
+              <Text className="text-gray-400 text-xl">☰</Text>
             </TouchableOpacity>
 
             {/* Tappable Row Content */}
@@ -60,7 +58,7 @@ export default function DraggableRowList({
               onPress={() => toggleExpand(item.id)}
               className="flex-1 flex-row items-center"
               disabled={isActive}
-              pointerEvents="auto"
+              activeOpacity={0.6}
             >
               {/* Row Info */}
               <View className="flex-1 mr-4">
@@ -85,14 +83,13 @@ export default function DraggableRowList({
               trackColor={{ false: "#3f3f46", true: "#22C55E" }}
               thumbColor={item.visible ? "#ffffff" : "#9ca3af"}
               style={{ marginLeft: 12 }}
-              pointerEvents="auto"
             />
           </View>
 
           {/* Expanded Content - Keys in Row */}
           {isExpanded && (
-            <View className="px-4 pb-4 border-t border-[#303032] pt-4" pointerEvents="box-none">
-              <View className="flex-row items-center justify-between mb-3" pointerEvents="box-none">
+            <View className="px-4 pb-4 border-t border-[#303032] pt-4">
+              <View className="flex-row items-center justify-between mb-3">
                 <Text className="text-white text-sm font-semibold">
                   Keys in this row
                 </Text>
@@ -100,7 +97,6 @@ export default function DraggableRowList({
                   <TouchableOpacity
                     onPress={() => onAddKeyToRow(item.id)}
                     className="bg-green-600 rounded px-3 py-1.5"
-                    pointerEvents="auto"
                   >
                     <Text className="text-white text-xs font-semibold">+ Add Key</Text>
                   </TouchableOpacity>
@@ -128,7 +124,7 @@ export default function DraggableRowList({
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         scrollEnabled={false}
-        activationDistance={20}
+        activationDistance={5}
         containerStyle={{ overflow: 'visible' }}
         dragItemOverflow={true}
       />

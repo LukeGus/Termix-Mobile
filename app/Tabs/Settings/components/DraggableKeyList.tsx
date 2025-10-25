@@ -28,18 +28,16 @@ export default function DraggableKeyList({
           className={`flex-row items-center gap-2 bg-[#1a1a1a] border border-[#303032] rounded-lg p-3 mb-2 ${
             isActive ? "opacity-70" : ""
           }`}
-          pointerEvents="box-none"
         >
           {/* Drag Handle */}
           <TouchableOpacity
             onLongPress={drag}
-            delayLongPress={150}
+            delayLongPress={250}
             disabled={isActive}
-            className="mr-2 py-1 px-1"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            pointerEvents="auto"
+            className="mr-2 px-2 py-2 -ml-1"
+            activeOpacity={0.6}
           >
-            <Text className="text-gray-400 text-lg">☰</Text>
+            <Text className="text-gray-400 text-xl">☰</Text>
           </TouchableOpacity>
 
           {/* Key Preview */}
@@ -63,7 +61,7 @@ export default function DraggableKeyList({
             className="bg-red-900/30 border border-red-700 rounded-full w-10 h-10 items-center justify-center ml-2"
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             style={{ lineHeight: 0 }}
-            pointerEvents="auto"
+            activeOpacity={0.6}
           >
             <Text className="text-red-400 font-bold" style={{ fontSize: 20, lineHeight: 20 }}>×</Text>
           </TouchableOpacity>
@@ -89,7 +87,7 @@ export default function DraggableKeyList({
         renderItem={renderItem}
         scrollEnabled={false}
         horizontal={horizontal}
-        activationDistance={20}
+        activationDistance={5}
         containerStyle={{ overflow: 'visible' }}
         dragItemOverflow={true}
       />
