@@ -85,8 +85,8 @@ jobs:
 
             if [ -n "$APK_FILE" ]; then
               echo "Found APK in project root: $APK_FILE"
-              cp "$APK_FILE" "build-artifacts/Termix-Android-universal.apk"
-              echo "Copied to build-artifacts/Termix-Android-universal.apk"
+              cp "$APK_FILE" "build-artifacts/Termix-Android-Universal.apk"
+              echo "Copied to build-artifacts/Termix-Android-Universal.apk"
             else
               # Fallback: search in /tmp
               echo "Trying /tmp search..."
@@ -94,7 +94,7 @@ jobs:
 
               if [ -n "$APK_FILE" ]; then
                 echo "Found APK in /tmp: $APK_FILE"
-                cp "$APK_FILE" "build-artifacts/Termix-Android-universal.apk"
+                cp "$APK_FILE" "build-artifacts/Termix-Android-Universal.apk"
               else
                 echo "ERROR: APK not found after build"
                 ls -la . | grep -E '\.apk|build-'
@@ -196,7 +196,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Termix-Android
-          path: build-artifacts/Termix-Android-universal.apk
+          path: build-artifacts/Termix-Android-Universal.apk
           retention-days: 30
           if-no-files-found: error
 
@@ -232,10 +232,10 @@ jobs:
 
           # Upload artifacts to the release
           if [ "${{ matrix.platform }}" = "android" ]; then
-            if [ -f "build-artifacts/Termix-Android-universal.apk" ]; then
-              echo "Uploading Termix-Android-universal.apk..."
+            if [ -f "build-artifacts/Termix-Android-Universal.apk" ]; then
+              echo "Uploading Termix-Android-Universal.apk..."
               gh release upload "$RELEASE_TAG" \
-                "build-artifacts/Termix-Android-universal.apk" \
+                "build-artifacts/Termix-Android-Universal.apk" \
                 --repo Termix-SSH/Termix \
                 --clobber
 
