@@ -72,37 +72,69 @@ jobs:
             --platform=${{ matrix.platform }} \
             --profile=$PROFILE
 
-          # Immediately copy artifacts before EAS cleanup
+          # Immediately copy artifacts after EAS build
           if [ "${{ matrix.platform }}" = "android" ]; then
-            echo "Searching for APK immediately after build..."
-            APK_FILE=$(find /tmp -type f -name "app-release.apk" 2>/dev/null | grep "eas-build-local-nodejs" | head -1)
+            echo "Searching for Android build artifacts..."
+
+            # EAS writes final artifact to project root as build-*.apk
+            APK_FILE=$(find . -maxdepth 1 -type f -name "build-*.apk" 2>/dev/null | head -1)
 
             if [ -n "$APK_FILE" ]; then
-              echo "Found APK: $APK_FILE"
+              echo "Found APK in project root: $APK_FILE"
               cp "$APK_FILE" "build-artifacts/Termix-Android-universal.apk"
               echo "Copied to build-artifacts/Termix-Android-universal.apk"
             else
-              echo "Warning: APK not found immediately after build"
+              # Fallback: search in /tmp
+              echo "Trying /tmp search..."
+              APK_FILE=$(find /tmp -type f -name "app-release.apk" 2>/dev/null | grep "eas-build-local-nodejs" | head -1)
+
+              if [ -n "$APK_FILE" ]; then
+                echo "Found APK in /tmp: $APK_FILE"
+                cp "$APK_FILE" "build-artifacts/Termix-Android-universal.apk"
+              else
+                echo "ERROR: APK not found after build"
+                ls -la . | grep -E '\.apk|build-'
+              fi
             fi
 
-            # Also search for AAB if production build
+            # Search for AAB if production build
             if [ "$PROFILE" = "production" ]; then
-              AAB_FILE=$(find /tmp -type f -name "app-release.aab" 2>/dev/null | grep "eas-build-local-nodejs" | head -1)
+              # Check project root first
+              AAB_FILE=$(find . -maxdepth 1 -type f -name "build-*.aab" 2>/dev/null | head -1)
+
               if [ -n "$AAB_FILE" ]; then
-                echo "Found AAB: $AAB_FILE"
+                echo "Found AAB in project root: $AAB_FILE"
                 cp "$AAB_FILE" "build-artifacts/Termix-Android.aab"
+              else
+                # Fallback: search in /tmp
+                AAB_FILE=$(find /tmp -type f -name "app-release.aab" 2>/dev/null | grep "eas-build-local-nodejs" | head -1)
+                if [ -n "$AAB_FILE" ]; then
+                  echo "Found AAB in /tmp: $AAB_FILE"
+                  cp "$AAB_FILE" "build-artifacts/Termix-Android.aab"
+                fi
               fi
             fi
           elif [ "${{ matrix.platform }}" = "ios" ]; then
-            echo "Searching for IPA immediately after build..."
-            IPA_FILE=$(find . -type f -name "*.ipa" -not -path "*/node_modules/*" 2>/dev/null | head -1)
+            echo "Searching for iOS build artifacts..."
+
+            # Check project root first for build-*.ipa
+            IPA_FILE=$(find . -maxdepth 1 -type f -name "build-*.ipa" 2>/dev/null | head -1)
 
             if [ -n "$IPA_FILE" ]; then
-              echo "Found IPA: $IPA_FILE"
+              echo "Found IPA in project root: $IPA_FILE"
               cp "$IPA_FILE" "build-artifacts/Termix-iOS.ipa"
               echo "Copied to build-artifacts/Termix-iOS.ipa"
             else
-              echo "Warning: IPA not found immediately after build"
+              # Fallback: search for any .ipa
+              IPA_FILE=$(find . -type f -name "*.ipa" -not -path "*/node_modules/*" 2>/dev/null | head -1)
+
+              if [ -n "$IPA_FILE" ]; then
+                echo "Found IPA: $IPA_FILE"
+                cp "$IPA_FILE" "build-artifacts/Termix-iOS.ipa"
+              else
+                echo "ERROR: IPA not found after build"
+                ls -la . | grep -E '\.ipa|build-'
+              fi
             fi
           fi
         env:
