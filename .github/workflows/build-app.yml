@@ -70,6 +70,10 @@ jobs:
           # Create artifacts directory before build
           mkdir -p build-artifacts
 
+          # Get version from app.json
+          VERSION=$(node -p "require('./app.json').expo.version")
+          echo "App version: $VERSION"
+
           eas build --local \
             --non-interactive \
             --clear-cache \
@@ -85,8 +89,8 @@ jobs:
 
             if [ -n "$APK_FILE" ]; then
               echo "Found APK in project root: $APK_FILE"
-              cp "$APK_FILE" "build-artifacts/Termix-Android-Universal.apk"
-              echo "Copied to build-artifacts/Termix-Android-Universal.apk"
+              cp "$APK_FILE" "build-artifacts/termix_android_universal_${VERSION}.apk"
+              echo "Copied to build-artifacts/termix_android_universal_${VERSION}.apk"
             else
               # Fallback: search in /tmp
               echo "Trying /tmp search..."
@@ -94,7 +98,7 @@ jobs:
 
               if [ -n "$APK_FILE" ]; then
                 echo "Found APK in /tmp: $APK_FILE"
-                cp "$APK_FILE" "build-artifacts/Termix-Android-Universal.apk"
+                cp "$APK_FILE" "build-artifacts/termix_android_universal_${VERSION}.apk"
               else
                 echo "ERROR: APK not found after build"
                 ls -la . | grep -E '\.apk|build-'
@@ -108,13 +112,13 @@ jobs:
 
               if [ -n "$AAB_FILE" ]; then
                 echo "Found AAB in project root: $AAB_FILE"
-                cp "$AAB_FILE" "build-artifacts/Termix-Android.aab"
+                cp "$AAB_FILE" "build-artifacts/termix_android_${VERSION}.aab"
               else
                 # Fallback: search in /tmp
                 AAB_FILE=$(find /tmp -type f -name "app-release.aab" 2>/dev/null | grep "eas-build-local-nodejs" | head -1)
                 if [ -n "$AAB_FILE" ]; then
                   echo "Found AAB in /tmp: $AAB_FILE"
-                  cp "$AAB_FILE" "build-artifacts/Termix-Android.aab"
+                  cp "$AAB_FILE" "build-artifacts/termix_android_${VERSION}.aab"
                 fi
               fi
             fi
@@ -126,15 +130,15 @@ jobs:
 
             if [ -n "$IPA_FILE" ]; then
               echo "Found IPA in project root: $IPA_FILE"
-              cp "$IPA_FILE" "build-artifacts/Termix-iOS.ipa"
-              echo "Copied to build-artifacts/Termix-iOS.ipa"
+              cp "$IPA_FILE" "build-artifacts/termix_ios_${VERSION}.ipa"
+              echo "Copied to build-artifacts/termix_ios_${VERSION}.ipa"
             else
               # Fallback: search for any .ipa
               IPA_FILE=$(find . -type f -name "*.ipa" -not -path "*/node_modules/*" 2>/dev/null | head -1)
 
               if [ -n "$IPA_FILE" ]; then
                 echo "Found IPA: $IPA_FILE"
-                cp "$IPA_FILE" "build-artifacts/Termix-iOS.ipa"
+                cp "$IPA_FILE" "build-artifacts/termix_ios_${VERSION}.ipa"
               else
                 echo "ERROR: IPA not found after build"
                 ls -la . | grep -E '\.ipa|build-'
@@ -168,11 +172,14 @@ jobs:
       - name: 🚢 Submit to App Store
         if: ${{ github.event.inputs.action == 'submit' }}
         run: |
+          # Get version from app.json
+          VERSION=$(node -p "require('./app.json').expo.version")
+
           if [ "${{ matrix.platform }}" = "android" ]; then
             # For Android production submission, use AAB (required by Google Play)
-            if [ -f "build-artifacts/Termix-Android.aab" ]; then
-              BUILD_FILE="build-artifacts/Termix-Android.aab"
-              echo "Using AAB for Play Store submission"
+            BUILD_FILE="build-artifacts/termix_android_${VERSION}.aab"
+            if [ -f "$BUILD_FILE" ]; then
+              echo "Using AAB for Play Store submission: $BUILD_FILE"
             else
               echo "ERROR: AAB not found for production submission"
               echo "Play Store requires AAB format for submissions"
@@ -180,7 +187,7 @@ jobs:
             fi
           else
             # For iOS, use the IPA file
-            BUILD_FILE="build-artifacts/Termix-iOS.ipa"
+            BUILD_FILE="build-artifacts/termix_ios_${VERSION}.ipa"
           fi
 
           if [ -n "$BUILD_FILE" ] && [ -f "$BUILD_FILE" ]; then
@@ -195,8 +202,8 @@ jobs:
         if: ${{ github.event.inputs.action == 'file' && matrix.platform == 'android' }}
         uses: actions/upload-artifact@v4
         with:
-          name: Termix-Android
-          path: build-artifacts/Termix-Android-Universal.apk
+          name: termix_android
+          path: build-artifacts/termix_android_universal_*.apk
           retention-days: 30
           if-no-files-found: error
 
@@ -204,8 +211,8 @@ jobs:
         if: ${{ github.event.inputs.action == 'file' && matrix.platform == 'ios' }}
         uses: actions/upload-artifact@v4
         with:
-          name: Termix-iOS
-          path: build-artifacts/Termix-iOS.ipa
+          name: termix_ios
+          path: build-artifacts/termix_ios_*.ipa
           retention-days: 30
           if-no-files-found: error
 
@@ -214,6 +221,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.TERMIX_RELEASE_TOKEN }}
         run: |
+          # Get version from app.json
+          VERSION=$(node -p "require('./app.json').expo.version")
+
           # Get the latest release from Termix-SSH/Termix
           echo "Fetching latest release from Termix-SSH/Termix..."
           LATEST_RELEASE=$(gh release list --repo Termix-SSH/Termix --limit 1 --json tagName,name,isLatest -q '.[0]')
@@ -232,29 +242,31 @@ jobs:
 
           # Upload artifacts to the release
           if [ "${{ matrix.platform }}" = "android" ]; then
-            if [ -f "build-artifacts/Termix-Android-Universal.apk" ]; then
-              echo "Uploading Termix-Android-Universal.apk..."
+            APK_FILE="build-artifacts/termix_android_universal_${VERSION}.apk"
+            if [ -f "$APK_FILE" ]; then
+              echo "Uploading $APK_FILE..."
               gh release upload "$RELEASE_TAG" \
-                "build-artifacts/Termix-Android-Universal.apk" \
+                "$APK_FILE" \
                 --repo Termix-SSH/Termix \
                 --clobber
 
               echo "✓ Android APK uploaded successfully"
             else
-              echo "ERROR: Android APK not found"
+              echo "ERROR: Android APK not found: $APK_FILE"
               exit 1
             fi
           elif [ "${{ matrix.platform }}" = "ios" ]; then
-            if [ -f "build-artifacts/Termix-iOS.ipa" ]; then
-              echo "Uploading Termix-iOS.ipa..."
+            IPA_FILE="build-artifacts/termix_ios_${VERSION}.ipa"
+            if [ -f "$IPA_FILE" ]; then
+              echo "Uploading $IPA_FILE..."
               gh release upload "$RELEASE_TAG" \
-                "build-artifacts/Termix-iOS.ipa" \
+                "$IPA_FILE" \
                 --repo Termix-SSH/Termix \
                 --clobber
 
               echo "✓ iOS IPA uploaded successfully"
             else
-              echo "ERROR: iOS IPA not found"
+              echo "ERROR: iOS IPA not found: $IPA_FILE"
               exit 1
             fi
           fi
