@@ -79,27 +79,47 @@ jobs:
           # Create a directory to collect all artifacts
           mkdir -p build-artifacts
 
-          # Find and copy all APK/AAB files
+          # Find and rename Android files
           if [ "${{ matrix.platform }}" = "android" ]; then
             echo "Searching for Android build files..."
-            find android/app/build/outputs -type f \( -name "*.apk" -o -name "*.aab" \) 2>/dev/null | while read file; do
-              echo "Found: $file"
-              cp "$file" build-artifacts/
+
+            # Search in all common output directories
+            echo "Checking android/app/build/outputs/apk..."
+            find android/app/build/outputs/apk -type f -name "*.apk" 2>/dev/null || echo "No APKs in apk directory"
+
+            echo "Checking android/app/build/outputs/bundle..."
+            find android/app/build/outputs/bundle -type f -name "*.aab" 2>/dev/null || echo "No AABs in bundle directory"
+
+            # Copy APKs with simplified names (they should already be named correctly from build.gradle)
+            find android/app/build/outputs/apk -type f -name "*.apk" 2>/dev/null | while read file; do
+              filename=$(basename "$file")
+              echo "Found APK: $file -> build-artifacts/$filename"
+              cp "$file" "build-artifacts/$filename"
+            done
+
+            # Copy AAB files
+            find android/app/build/outputs/bundle -type f -name "*.aab" 2>/dev/null | while read file; do
+              echo "Found AAB: $file"
+              cp "$file" "build-artifacts/Termix-Android.aab"
             done
 
             # List all found Android build files
             echo "=== Android Build Artifacts ==="
-            ls -lh build-artifacts/*.apk 2>/dev/null || echo "No APK files found"
-            ls -lh build-artifacts/*.aab 2>/dev/null || echo "No AAB files found"
+            ls -lh build-artifacts/ 2>/dev/null || echo "No build files found"
           fi
 
-          # Find and copy all IPA files
+          # Find and rename iOS IPA
           if [ "${{ matrix.platform }}" = "ios" ]; then
             echo "Searching for iOS IPA files..."
-            find . -type f -name "*.ipa" -not -path "*/node_modules/*" 2>/dev/null | while read file; do
-              echo "Found: $file"
-              cp "$file" build-artifacts/
-            done
+            IPA_FILE=$(find . -type f -name "*.ipa" -not -path "*/node_modules/*" 2>/dev/null | head -1)
+
+            if [ -n "$IPA_FILE" ]; then
+              echo "Found IPA: $IPA_FILE"
+              cp "$IPA_FILE" "build-artifacts/Termix-iOS.ipa"
+              echo "Renamed to: Termix-iOS.ipa"
+            else
+              echo "No IPA file found"
+            fi
 
             echo "=== iOS Build Artifacts ==="
             ls -lh build-artifacts/*.ipa 2>/dev/null || echo "No IPA files found"
@@ -115,22 +135,19 @@ jobs:
         run: |
           if [ "${{ matrix.platform }}" = "android" ]; then
             # For Android production submission, use AAB (App Bundle)
-            BUILD_FILE=$(find build-artifacts -name "*.aab" | head -1)
-
-            # Fallback to APK if AAB not found (shouldn't happen in production)
-            if [ -z "$BUILD_FILE" ]; then
-              BUILD_FILE=$(find build-artifacts -name "*arm64-v8a*.apk" | head -1)
-            fi
-
-            if [ -z "$BUILD_FILE" ]; then
-              BUILD_FILE=$(find build-artifacts -name "*.apk" | head -1)
+            if [ -f "build-artifacts/Termix-Android.aab" ]; then
+              BUILD_FILE="build-artifacts/Termix-Android.aab"
+            elif [ -f "build-artifacts/Termix-Android-arm64-v8a.apk" ]; then
+              BUILD_FILE="build-artifacts/Termix-Android-arm64-v8a.apk"
+            else
+              BUILD_FILE=$(find build-artifacts -name "Termix-Android*.apk" | head -1)
             fi
           else
             # For iOS, use the IPA file
-            BUILD_FILE=$(find build-artifacts -name "*.ipa" | head -1)
+            BUILD_FILE="build-artifacts/Termix-iOS.ipa"
           fi
 
-          if [ -n "$BUILD_FILE" ]; then
+          if [ -n "$BUILD_FILE" ] && [ -f "$BUILD_FILE" ]; then
             echo "Submitting file: $BUILD_FILE"
             eas submit -p ${{ matrix.platform }} --profile production --path "$BUILD_FILE"
           else
@@ -142,8 +159,8 @@ jobs:
         if: ${{ github.event.inputs.action == 'file' && matrix.platform == 'android' }}
         uses: actions/upload-artifact@v4
         with:
-          name: android-preview-arm64-v8a
-          path: build-artifacts/*arm64-v8a*.apk
+          name: Termix-Android-arm64-v8a
+          path: build-artifacts/Termix-Android-arm64-v8a.apk
           retention-days: 30
           if-no-files-found: warn
 
@@ -151,8 +168,8 @@ jobs:
         if: ${{ github.event.inputs.action == 'file' && matrix.platform == 'android' }}
         uses: actions/upload-artifact@v4
         with:
-          name: android-preview-armeabi-v7a
-          path: build-artifacts/*armeabi-v7a*.apk
+          name: Termix-Android-armeabi-v7a
+          path: build-artifacts/Termix-Android-armeabi-v7a.apk
           retention-days: 30
           if-no-files-found: warn
 
@@ -160,8 +177,8 @@ jobs:
         if: ${{ github.event.inputs.action == 'file' && matrix.platform == 'android' }}
         uses: actions/upload-artifact@v4
         with:
-          name: android-preview-x86_64
-          path: build-artifacts/*x86_64*.apk
+          name: Termix-Android-x86_64
+          path: build-artifacts/Termix-Android-x86_64.apk
           retention-days: 30
           if-no-files-found: warn
 
@@ -169,7 +186,7 @@ jobs:
         if: ${{ github.event.inputs.action == 'file' && matrix.platform == 'ios' }}
         uses: actions/upload-artifact@v4
         with:
-          name: ios-preview-ipa
-          path: build-artifacts/*.ipa
+          name: Termix-iOS
+          path: build-artifacts/Termix-iOS.ipa
           retention-days: 30
           if-no-files-found: warn
