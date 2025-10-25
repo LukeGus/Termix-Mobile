@@ -63,120 +63,70 @@ jobs:
           echo "Building for platform: ${{ matrix.platform }}"
           echo "Using profile: $PROFILE"
 
+          # Create artifacts directory before build
+          mkdir -p build-artifacts
+
           eas build --local \
             --non-interactive \
             --clear-cache \
             --platform=${{ matrix.platform }} \
             --profile=$PROFILE
-        env:
-          EAS_SKIP_AUTO_FINGERPRINT: 1
 
-      - name: 📁 Detect and catalog build artifacts
-        id: detect-artifacts
-        run: |
-          echo "Searching for build artifacts..."
-
-          # Create a directory to collect all artifacts
-          mkdir -p build-artifacts
-
-          # Find and rename Android files
+          # Immediately copy artifacts before EAS cleanup
           if [ "${{ matrix.platform }}" = "android" ]; then
-            echo "=== Detecting Android APKs ==="
+            echo "Searching for APK immediately after build..."
+            APK_FILE=$(find /tmp -type f -name "app-release.apk" 2>/dev/null | grep "eas-build-local-nodejs" | head -1)
 
-            # Search for APK directory using find (handles EAS temp directories)
-            APK_DIR=$(find /tmp/runner/eas-build-local-nodejs -type d -path "*/build/android/app/build/outputs/apk/release" 2>/dev/null | head -1)
-
-            # Fall back to project directory if not found in temp
-            if [ -z "$APK_DIR" ] && [ -d "android/app/build/outputs/apk/release" ]; then
-              APK_DIR="android/app/build/outputs/apk/release"
-            fi
-
-            if [ -n "$APK_DIR" ]; then
-              echo "✓ Found APK directory: $APK_DIR"
-              echo "Contents:"
-              ls -lh "$APK_DIR"
-
-              # Check for custom-named split APKs (Termix-Android-{abi}.apk)
-              if ls "$APK_DIR"/Termix-Android-*.apk 2>/dev/null | grep -q .; then
-                echo "Found custom-named split APKs!"
-                for apk in "$APK_DIR"/Termix-Android-*.apk; do
-                  filename=$(basename "$apk")
-                  echo "Copying: $apk -> build-artifacts/$filename"
-                  cp "$apk" "build-artifacts/$filename"
-                done
-              # Check for standard Gradle split APKs (app-{abi}-release.apk or app-universal-release.apk)
-              elif ls "$APK_DIR"/app-*-release.apk 2>/dev/null | grep -q .; then
-                echo "Found standard split APKs!"
-                for apk in "$APK_DIR"/app-*-release.apk; do
-                  filename=$(basename "$apk")
-
-                  # Extract architecture from filename
-                  if [[ "$filename" =~ app-([^-]+)-release\.apk ]]; then
-                    arch="${BASH_REMATCH[1]}"
-
-                    # Skip universal if we have architecture-specific ones
-                    if [ "$arch" = "universal" ]; then
-                      echo "Skipping universal APK (using architecture-specific ones)"
-                      continue
-                    fi
-
-                    new_name="Termix-Android-${arch}.apk"
-                    echo "Copying split APK: $apk -> build-artifacts/$new_name"
-                    cp "$apk" "build-artifacts/$new_name"
-                  fi
-                done
-              # Check for single universal APK (app-release.apk)
-              elif [ -f "$APK_DIR/app-release.apk" ]; then
-                echo "Found universal APK (no splits generated)"
-                cp "$APK_DIR/app-release.apk" "build-artifacts/Termix-Android-universal.apk"
-              else
-                echo "No APKs found in $APK_DIR"
-              fi
-
-              # For production builds, check for AAB (only for submit, not upload)
-              if [ "${{ github.event.inputs.action }}" = "submit" ]; then
-                # Search for AAB using find
-                AAB_FILE=$(find /tmp/runner/eas-build-local-nodejs -type f -path "*/build/android/app/build/outputs/bundle/release/app-release.aab" 2>/dev/null | head -1)
-
-                # Fall back to project directory
-                if [ -z "$AAB_FILE" ] && [ -f "android/app/build/outputs/bundle/release/app-release.aab" ]; then
-                  AAB_FILE="android/app/build/outputs/bundle/release/app-release.aab"
-                fi
-
-                if [ -n "$AAB_FILE" ]; then
-                  echo "Found AAB for submission at: $AAB_FILE"
-                  cp "$AAB_FILE" "build-artifacts/Termix-Android.aab"
-                fi
-              fi
+            if [ -n "$APK_FILE" ]; then
+              echo "Found APK: $APK_FILE"
+              cp "$APK_FILE" "build-artifacts/Termix-Android-universal.apk"
+              echo "Copied to build-artifacts/Termix-Android-universal.apk"
             else
-              echo "✗ APK directory not found in any expected location"
+              echo "Warning: APK not found immediately after build"
             fi
 
-            # List final artifacts
-            echo "=== Final Build Artifacts ==="
-            ls -lh build-artifacts/ 2>/dev/null || echo "No artifacts found"
-          fi
-
-          # Find and rename iOS IPA
-          if [ "${{ matrix.platform }}" = "ios" ]; then
-            echo "Searching for iOS IPA files..."
+            # Also search for AAB if production build
+            if [ "$PROFILE" = "production" ]; then
+              AAB_FILE=$(find /tmp -type f -name "app-release.aab" 2>/dev/null | grep "eas-build-local-nodejs" | head -1)
+              if [ -n "$AAB_FILE" ]; then
+                echo "Found AAB: $AAB_FILE"
+                cp "$AAB_FILE" "build-artifacts/Termix-Android.aab"
+              fi
+            fi
+          elif [ "${{ matrix.platform }}" = "ios" ]; then
+            echo "Searching for IPA immediately after build..."
             IPA_FILE=$(find . -type f -name "*.ipa" -not -path "*/node_modules/*" 2>/dev/null | head -1)
 
             if [ -n "$IPA_FILE" ]; then
               echo "Found IPA: $IPA_FILE"
               cp "$IPA_FILE" "build-artifacts/Termix-iOS.ipa"
-              echo "Renamed to: Termix-iOS.ipa"
+              echo "Copied to build-artifacts/Termix-iOS.ipa"
             else
-              echo "No IPA file found"
+              echo "Warning: IPA not found immediately after build"
             fi
+          fi
+        env:
+          EAS_SKIP_AUTO_FINGERPRINT: 1
 
-            echo "=== iOS Build Artifacts ==="
-            ls -lh build-artifacts/*.ipa 2>/dev/null || echo "No IPA files found"
+      - name: 📁 Verify build artifacts
+        id: detect-artifacts
+        run: |
+          echo "=== Build Artifacts ==="
+
+          if [ -d "build-artifacts" ]; then
+            echo "Contents of build-artifacts/:"
+            ls -lh build-artifacts/ 2>/dev/null || echo "Directory exists but is empty"
+
+            # Count artifacts
+            ARTIFACT_COUNT=$(ls -1 build-artifacts/ 2>/dev/null | wc -l)
+            echo ""
+            echo "Total artifacts: $ARTIFACT_COUNT"
+          else
+            echo "Warning: build-artifacts directory not found"
+            mkdir -p build-artifacts
+            ARTIFACT_COUNT=0
           fi
 
-          # Count total artifacts
-          ARTIFACT_COUNT=$(ls -1 build-artifacts/ 2>/dev/null | wc -l)
-          echo "Total artifacts found: $ARTIFACT_COUNT"
           echo "artifact_count=$ARTIFACT_COUNT" >> $GITHUB_OUTPUT
 
       - name: 🚢 Submit to App Store
@@ -205,32 +155,14 @@ jobs:
             exit 1
           fi
 
-      - name: 📤 Upload arm64-v8a APK
+      - name: 📤 Upload Android APK
         if: ${{ github.event.inputs.action == 'file' && matrix.platform == 'android' }}
         uses: actions/upload-artifact@v4
         with:
-          name: Termix-Android-arm64-v8a
-          path: build-artifacts/Termix-Android-arm64-v8a.apk
+          name: Termix-Android
+          path: build-artifacts/Termix-Android-universal.apk
           retention-days: 30
-          if-no-files-found: warn
-
-      - name: 📤 Upload armeabi-v7a APK
-        if: ${{ github.event.inputs.action == 'file' && matrix.platform == 'android' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: Termix-Android-armeabi-v7a
-          path: build-artifacts/Termix-Android-armeabi-v7a.apk
-          retention-days: 30
-          if-no-files-found: warn
-
-      - name: 📤 Upload x86_64 APK
-        if: ${{ github.event.inputs.action == 'file' && matrix.platform == 'android' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: Termix-Android-x86_64
-          path: build-artifacts/Termix-Android-x86_64.apk
-          retention-days: 30
-          if-no-files-found: warn
+          if-no-files-found: error
 
       - name: 📤 Upload iOS IPA
         if: ${{ github.event.inputs.action == 'file' && matrix.platform == 'ios' }}
@@ -239,4 +171,4 @@ jobs:
           name: Termix-iOS
           path: build-artifacts/Termix-iOS.ipa
           retention-days: 30
-          if-no-files-found: warn
+          if-no-files-found: error
