@@ -83,11 +83,26 @@ jobs:
           if [ "${{ matrix.platform }}" = "android" ]; then
             echo "=== Detecting Android APKs ==="
 
-            # EAS creates APKs in android/app/build/outputs/apk/release/
-            APK_DIR="android/app/build/outputs/apk/release"
+            # EAS local builds create APKs in temp directory
+            # Search both project directory and EAS temp directories
+            APK_LOCATIONS=(
+              "android/app/build/outputs/apk/release"
+              "/tmp/runner/eas-build-local-nodejs/*/build/android/app/build/outputs/apk/release"
+            )
 
-            if [ -d "$APK_DIR" ]; then
-              echo "✓ Found APK directory: $APK_DIR"
+            APK_DIR=""
+            for location in "${APK_LOCATIONS[@]}"; do
+              # Use glob expansion to find the actual directory
+              for dir in $location; do
+                if [ -d "$dir" ]; then
+                  APK_DIR="$dir"
+                  echo "✓ Found APK directory: $APK_DIR"
+                  break 2
+                fi
+              done
+            done
+
+            if [ -n "$APK_DIR" ]; then
               echo "Contents:"
               ls -lh "$APK_DIR"
 
@@ -130,14 +145,28 @@ jobs:
 
               # For production builds, check for AAB (only for submit, not upload)
               if [ "${{ github.event.inputs.action }}" = "submit" ]; then
-                AAB_DIR="android/app/build/outputs/bundle/release"
-                if [ -f "$AAB_DIR/app-release.aab" ]; then
-                  echo "Found AAB for submission"
-                  cp "$AAB_DIR/app-release.aab" "build-artifacts/Termix-Android.aab"
-                fi
+                # Search for AAB in both locations
+                AAB_LOCATIONS=(
+                  "android/app/build/outputs/bundle/release"
+                  "/tmp/runner/eas-build-local-nodejs/*/build/android/app/build/outputs/bundle/release"
+                )
+
+                for location in "${AAB_LOCATIONS[@]}"; do
+                  for dir in $location; do
+                    if [ -f "$dir/app-release.aab" ]; then
+                      echo "Found AAB for submission at: $dir/app-release.aab"
+                      cp "$dir/app-release.aab" "build-artifacts/Termix-Android.aab"
+                      break 2
+                    fi
+                  done
+                done
               fi
             else
-              echo "✗ APK directory not found: $APK_DIR"
+              echo "✗ APK directory not found in any expected location"
+              echo "Searched locations:"
+              for location in "${APK_LOCATIONS[@]}"; do
+                echo "  - $location"
+              done
             fi
 
             # List final artifacts
