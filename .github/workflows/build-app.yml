@@ -13,6 +13,7 @@ on:
         type: choice
         description: What to do with the built app
         options:
+          - release
           - submit
           - file
           - none
@@ -204,3 +205,56 @@ jobs:
           path: build-artifacts/Termix-iOS.ipa
           retention-days: 30
           if-no-files-found: error
+
+      - name: 🚀 Upload to GitHub Release
+        if: ${{ github.event.inputs.action == 'release' }}
+        env:
+          GH_TOKEN: ${{ secrets.TERMIX_RELEASE_TOKEN }}
+        run: |
+          # Get the latest release from Termix-SSH/Termix
+          echo "Fetching latest release from Termix-SSH/Termix..."
+          LATEST_RELEASE=$(gh release list --repo Termix-SSH/Termix --limit 1 --json tagName,name,url -q '.[0]')
+
+          if [ -z "$LATEST_RELEASE" ]; then
+            echo "ERROR: No releases found in Termix-SSH/Termix"
+            exit 1
+          fi
+
+          RELEASE_TAG=$(echo "$LATEST_RELEASE" | jq -r '.tagName')
+          RELEASE_NAME=$(echo "$LATEST_RELEASE" | jq -r '.name')
+          RELEASE_URL=$(echo "$LATEST_RELEASE" | jq -r '.url')
+
+          echo "Latest release: $RELEASE_NAME ($RELEASE_TAG)"
+          echo "Release URL: $RELEASE_URL"
+
+          # Upload artifacts to the release
+          if [ "${{ matrix.platform }}" = "android" ]; then
+            if [ -f "build-artifacts/Termix-Android-universal.apk" ]; then
+              echo "Uploading Termix-Android-universal.apk..."
+              gh release upload "$RELEASE_TAG" \
+                "build-artifacts/Termix-Android-universal.apk" \
+                --repo Termix-SSH/Termix \
+                --clobber
+
+              echo "✓ Android APK uploaded successfully"
+            else
+              echo "ERROR: Android APK not found"
+              exit 1
+            fi
+          elif [ "${{ matrix.platform }}" = "ios" ]; then
+            if [ -f "build-artifacts/Termix-iOS.ipa" ]; then
+              echo "Uploading Termix-iOS.ipa..."
+              gh release upload "$RELEASE_TAG" \
+                "build-artifacts/Termix-iOS.ipa" \
+                --repo Termix-SSH/Termix \
+                --clobber
+
+              echo "✓ iOS IPA uploaded successfully"
+            else
+              echo "ERROR: iOS IPA not found"
+              exit 1
+            fi
+          fi
+
+          echo ""
+          echo "Build uploaded to release: $RELEASE_URL"
