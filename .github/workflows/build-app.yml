@@ -81,31 +81,63 @@ jobs:
 
           # Find and rename Android files
           if [ "${{ matrix.platform }}" = "android" ]; then
-            echo "Searching for Android build files..."
+            echo "=== Debugging Android Build Output ==="
 
-            # Search in all common output directories
-            echo "Checking android/app/build/outputs/apk..."
-            find android/app/build/outputs/apk -type f -name "*.apk" 2>/dev/null || echo "No APKs in apk directory"
+            # Check if android/app/build exists
+            if [ -d "android/app/build" ]; then
+              echo "✓ android/app/build directory exists"
+              echo "Directory structure:"
+              ls -la android/app/build/ || echo "Cannot list build directory"
 
-            echo "Checking android/app/build/outputs/bundle..."
-            find android/app/build/outputs/bundle -type f -name "*.aab" 2>/dev/null || echo "No AABs in bundle directory"
+              if [ -d "android/app/build/outputs" ]; then
+                echo "✓ android/app/build/outputs exists"
+                echo "Outputs structure:"
+                ls -la android/app/build/outputs/ || echo "Cannot list outputs"
 
-            # Copy APKs with simplified names (they should already be named correctly from build.gradle)
-            find android/app/build/outputs/apk -type f -name "*.apk" 2>/dev/null | while read file; do
+                # Search for ALL APK files recursively
+                echo "Searching for ALL .apk files recursively in android/app/build/outputs..."
+                find android/app/build/outputs -name "*.apk" -type f 2>/dev/null | while read file; do
+                  echo "Found APK: $file"
+                  ls -lh "$file"
+                done
+
+                # Search for ALL AAB files recursively
+                echo "Searching for ALL .aab files recursively in android/app/build/outputs..."
+                find android/app/build/outputs -name "*.aab" -type f 2>/dev/null | while read file; do
+                  echo "Found AAB: $file"
+                  ls -lh "$file"
+                done
+              else
+                echo "✗ android/app/build/outputs does NOT exist"
+              fi
+            else
+              echo "✗ android/app/build directory does NOT exist"
+            fi
+
+            # Also search the entire workspace for APKs (last resort)
+            echo "Searching entire workspace for .apk files..."
+            find . -name "*.apk" -type f -not -path "*/node_modules/*" -not -path "*/.gradle/*" 2>/dev/null | head -20
+
+            echo "=== Copying Android Build Files ==="
+            # Copy all APK files found
+            APK_COUNT=0
+            find android/app/build/outputs -name "*.apk" -type f 2>/dev/null | while read file; do
               filename=$(basename "$file")
-              echo "Found APK: $file -> build-artifacts/$filename"
+              echo "Copying: $file -> build-artifacts/$filename"
               cp "$file" "build-artifacts/$filename"
+              APK_COUNT=$((APK_COUNT + 1))
             done
+            echo "Copied $APK_COUNT APK files"
 
             # Copy AAB files
-            find android/app/build/outputs/bundle -type f -name "*.aab" 2>/dev/null | while read file; do
-              echo "Found AAB: $file"
+            find android/app/build/outputs -name "*.aab" -type f 2>/dev/null | while read file; do
+              echo "Copying AAB: $file -> build-artifacts/Termix-Android.aab"
               cp "$file" "build-artifacts/Termix-Android.aab"
             done
 
-            # List all found Android build files
-            echo "=== Android Build Artifacts ==="
-            ls -lh build-artifacts/ 2>/dev/null || echo "No build files found"
+            # List what we actually got
+            echo "=== Final Build Artifacts Directory ==="
+            ls -lh build-artifacts/ 2>/dev/null || echo "build-artifacts is empty or doesn't exist"
           fi
 
           # Find and rename iOS IPA
