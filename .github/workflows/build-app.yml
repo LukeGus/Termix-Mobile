@@ -213,7 +213,7 @@ jobs:
         run: |
           # Get the latest release from Termix-SSH/Termix
           echo "Fetching latest release from Termix-SSH/Termix..."
-          LATEST_RELEASE=$(gh release list --repo Termix-SSH/Termix --limit 1 --json tagName,name,url -q '.[0]')
+          LATEST_RELEASE=$(gh release list --repo Termix-SSH/Termix --limit 1 --json tagName,name,isLatest -q '.[0]')
 
           if [ -z "$LATEST_RELEASE" ]; then
             echo "ERROR: No releases found in Termix-SSH/Termix"
@@ -222,7 +222,7 @@ jobs:
 
           RELEASE_TAG=$(echo "$LATEST_RELEASE" | jq -r '.tagName')
           RELEASE_NAME=$(echo "$LATEST_RELEASE" | jq -r '.name')
-          RELEASE_URL=$(echo "$LATEST_RELEASE" | jq -r '.url')
+          RELEASE_URL="https://github.com/Termix-SSH/Termix/releases/tag/$RELEASE_TAG"
 
           echo "Latest release: $RELEASE_NAME ($RELEASE_TAG)"
           echo "Release URL: $RELEASE_URL"
