@@ -2,6 +2,7 @@ import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAppContext } from "@/app/AppContext";
+import { useTerminalSessions } from "@/app/contexts/TerminalSessionsContext";
 import { clearAuth, clearServerConfig } from "@/app/main-axios";
 
 export default function Settings() {
@@ -13,11 +14,14 @@ export default function Settings() {
     setSelectedServer,
     selectedServer,
   } = useAppContext();
+  const { clearAllSessions } = useTerminalSessions();
   const insets = useSafeAreaInsets();
 
   const handleLogout = async () => {
     try {
       await clearAuth();
+
+      clearAllSessions();
 
       setAuthenticated(false);
       setShowLoginForm(true);

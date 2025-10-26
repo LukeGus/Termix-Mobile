@@ -4,9 +4,11 @@ import React, {
   useState,
   ReactNode,
   useCallback,
+  useEffect,
 } from "react";
 import { SSHHost } from "@/types";
 import { router } from "expo-router";
+import { useAppContext } from "@/app/AppContext";
 
 export interface TerminalSession {
   id: string;
@@ -22,6 +24,7 @@ interface TerminalSessionsContextType {
   addSession: (host: SSHHost) => string;
   removeSession: (sessionId: string) => void;
   setActiveSession: (sessionId: string) => void;
+  clearAllSessions: () => void;
   navigateToSessions: (host?: SSHHost) => void;
   isCustomKeyboardVisible: boolean;
   toggleCustomKeyboard: () => void;
@@ -50,6 +53,7 @@ interface TerminalSessionsProviderProps {
 export const TerminalSessionsProvider: React.FC<
   TerminalSessionsProviderProps
 > = ({ children }) => {
+  const { isAuthenticated } = useAppContext();
   const [sessions, setSessions] = useState<TerminalSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isCustomKeyboardVisible, setIsCustomKeyboardVisible] = useState(false);
@@ -169,6 +173,18 @@ export const TerminalSessionsProvider: React.FC<
     setIsCustomKeyboardVisible((prev) => !prev);
   }, []);
 
+  const clearAllSessions = useCallback(() => {
+    setSessions([]);
+    setActiveSessionId(null);
+    setIsCustomKeyboardVisible(false);
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      clearAllSessions();
+    }
+  }, [isAuthenticated, clearAllSessions]);
+
   return (
     <TerminalSessionsContext.Provider
       value={{
@@ -177,6 +193,7 @@ export const TerminalSessionsProvider: React.FC<
         addSession,
         removeSession,
         setActiveSession,
+        clearAllSessions,
         navigateToSessions,
         isCustomKeyboardVisible,
         toggleCustomKeyboard,
