@@ -15,7 +15,7 @@
       "bundleIdentifier": "com.karmaa.termix",
       "icon": {
         "dark": "./assets/images/ios-dark.png",
-        "light": "./assets/images/ios-light.png",
+        "light": "./assets/images/icon.png",
         "tinted": "./assets/images/ios-tinted.png"
       },
       "infoPlist": {
