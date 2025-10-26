@@ -6,6 +6,9 @@ import {
   TouchableOpacity,
   Modal,
   Pressable,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -26,6 +29,12 @@ export default function TerminalCustomization() {
   const insets = useSafeAreaInsets();
   const { config, updateFontSize, resetToDefault } = useTerminalCustomization();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [customFontSize, setCustomFontSize] = useState("");
+  const [showCustomInput, setShowCustomInput] = useState(false);
+
+  const isCustomFontSize = !FONT_SIZE_OPTIONS.some(
+    (option) => option.value === config.fontSize
+  );
 
   const handleFontSizeChange = async (fontSize: number) => {
     try {
@@ -43,6 +52,22 @@ export default function TerminalCustomization() {
       setShowResetConfirm(false);
     } catch (error) {
       showToast.error("Failed to reset settings");
+    }
+  };
+
+  const handleCustomFontSize = async () => {
+    const fontSize = parseInt(customFontSize);
+    if (isNaN(fontSize) || fontSize <= 0) {
+      showToast.error("Please enter a valid font size");
+      return;
+    }
+    try {
+      await updateFontSize(fontSize);
+      showToast.success(`Font size updated to ${fontSize}px`);
+      setShowCustomInput(false);
+      setCustomFontSize("");
+    } catch (error) {
+      showToast.error("Failed to update font size");
     }
   };
 
@@ -117,6 +142,39 @@ export default function TerminalCustomization() {
                 </View>
               </TouchableOpacity>
             ))}
+
+            <TouchableOpacity
+              onPress={() => setShowCustomInput(true)}
+              className={`p-4 rounded-lg border ${
+                isCustomFontSize
+                  ? "bg-green-900/20 border-green-500"
+                  : "bg-[#1a1a1a] border-[#303032]"
+              }`}
+            >
+              <View className="flex-row items-center justify-between">
+                <View>
+                  <Text
+                    className={`text-base font-semibold ${
+                      isCustomFontSize ? "text-green-400" : "text-white"
+                    }`}
+                  >
+                    Custom
+                  </Text>
+                  <Text className="text-gray-400 text-xs mt-0.5">
+                    {isCustomFontSize
+                      ? `${config.fontSize}px base size`
+                      : "Enter any custom size"}
+                  </Text>
+                </View>
+                {isCustomFontSize && (
+                  <View className="bg-green-500 rounded-full px-2 py-1">
+                    <Text className="text-white text-xs font-semibold">
+                      ACTIVE
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -129,6 +187,77 @@ export default function TerminalCustomization() {
           </Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <Modal
+        visible={showCustomInput}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowCustomInput(false);
+          setCustomFontSize("");
+        }}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          className="flex-1"
+        >
+          <Pressable
+            className="flex-1 bg-black/50 justify-center items-center"
+            onPress={() => {
+              setShowCustomInput(false);
+              setCustomFontSize("");
+            }}
+          >
+            <Pressable className="bg-[#1a1a1a] rounded-lg p-6 mx-8 border border-[#303032] w-80">
+              <Text className="text-white text-lg font-semibold mb-2">
+                Custom Font Size
+              </Text>
+              <Text className="text-gray-400 text-sm mb-4">
+                Enter your preferred font size for the terminal.
+              </Text>
+              <TextInput
+                value={customFontSize}
+                onChangeText={setCustomFontSize}
+                placeholder="e.g., 15"
+                placeholderTextColor="#6b7280"
+                keyboardType="number-pad"
+                autoFocus
+                style={{
+                  backgroundColor: "#27272a",
+                  borderWidth: 1,
+                  borderColor: "#3f3f46",
+                  borderRadius: 8,
+                  padding: 12,
+                  color: "#ffffff",
+                  fontSize: 16,
+                  textAlignVertical: "center",
+                }}
+              />
+              <View className="flex-row gap-3 mt-4">
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowCustomInput(false);
+                    setCustomFontSize("");
+                  }}
+                  className="flex-1 bg-[#27272a] border border-[#3f3f46] rounded-lg p-3"
+                >
+                  <Text className="text-white text-center font-semibold">
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleCustomFontSize}
+                  className="flex-1 bg-green-600 rounded-lg p-3"
+                >
+                  <Text className="text-white text-center font-semibold">
+                    Apply
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </Pressable>
+          </Pressable>
+        </KeyboardAvoidingView>
+      </Modal>
 
       <Modal
         visible={showResetConfirm}
