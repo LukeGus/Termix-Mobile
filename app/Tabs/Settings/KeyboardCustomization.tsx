@@ -14,11 +14,7 @@ import { PRESET_DEFINITIONS } from "@/app/Tabs/Sessions/KeyDefinitions";
 import { PresetType, KeyConfig } from "@/types/keyboard";
 import { showToast } from "@/app/utils/toast";
 import KeySelector from "./components/KeySelector";
-import DraggableFlatList, {
-  ScaleDecorator,
-  NestableScrollContainer,
-  NestableDraggableFlatList,
-} from "react-native-draggable-flatlist";
+import UnifiedDraggableList, { UnifiedListItem } from "./components/UnifiedDraggableList";
 import { renderKeyItem } from "./components/DraggableKeyList";
 import { renderRowItem, useRowExpansion } from "./components/DraggableRowList";
 
@@ -56,9 +52,142 @@ export default function KeyboardCustomization() {
   const [showKeySelector, setShowKeySelector] = useState(false);
   const [addKeyMode, setAddKeyMode] = useState<AddKeyMode>(null);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
-  const [dragKey, setDragKey] = useState(0);
 
   const { expandedRowId, toggleExpand } = useRowExpansion();
+
+  const topBarData: UnifiedListItem[] = useMemo(() => {
+    const items: UnifiedListItem[] = [];
+
+    items.push({
+      type: 'header',
+      id: 'header-pinned',
+      title: 'Pinned Keys',
+      subtitle: 'Your frequently used keys',
+      onAddPress: () => openKeySelector('pinned'),
+      addButtonLabel: '+ Add',
+    });
+
+    config.topBar.pinnedKeys.forEach((key) => {
+      items.push({
+        type: 'draggable-key',
+        id: `pinned-${key.id}`,
+        data: key,
+        section: 'pinned',
+        renderItem: (item, onRemove, drag, isActive) =>
+          renderKeyItem({ item, onRemove, drag, isActive }),
+      });
+    });
+
+    items.push({ type: 'spacer', id: 'spacer-1', height: 20 });
+
+    items.push({
+      type: 'header',
+      id: 'header-topbar',
+      title: 'Top Bar Keys',
+      subtitle: 'Keys shown in the top bar',
+      onAddPress: () => openKeySelector('topbar'),
+      addButtonLabel: '+ Add',
+    });
+
+    config.topBar.keys.forEach((key) => {
+      items.push({
+        type: 'draggable-key',
+        id: `topbar-${key.id}`,
+        data: key,
+        section: 'topbar',
+        renderItem: (item, onRemove, drag, isActive) =>
+          renderKeyItem({ item, onRemove, drag, isActive }),
+      });
+    });
+
+    items.push({ type: 'spacer', id: 'spacer-2', height: 20 });
+
+    items.push({
+      type: 'button',
+      id: 'reset-topbar',
+      label: 'Reset Top Bar to Default',
+      variant: 'danger',
+      onPress: () => {
+        setResetType('topbar');
+        setShowResetConfirm(true);
+      },
+    });
+
+    return items;
+  }, [config.topBar.pinnedKeys, config.topBar.keys]);
+
+  const fullKeyboardData: UnifiedListItem[] = useMemo(() => {
+    const items: UnifiedListItem[] = [];
+
+    items.push({
+      type: 'header',
+      id: 'header-rows',
+      title: 'Keyboard Rows',
+      subtitle: 'Organize, reorder, and customize keyboard rows',
+    });
+
+    config.fullKeyboard.rows.forEach((row) => {
+      items.push({
+        type: 'draggable-row',
+        id: `row-${row.id}`,
+        data: row,
+        renderItem: (item, drag, isActive) =>
+          renderRowItem({
+            item,
+            drag,
+            isActive,
+            onToggleVisibility: toggleRowVisibility,
+            onRemoveKey: removeKeyFromRow,
+            onReorderKeys: reorderKeysInRow,
+            onAddKeyToRow: (rowId) => openKeySelector('row', rowId),
+            expandedRowId,
+            onToggleExpand: toggleExpand,
+          }),
+      });
+
+      if (expandedRowId === row.id) {
+        items.push({
+          type: 'row-keys-header',
+          id: `keys-header-${row.id}`,
+          rowId: row.id,
+          onAddPress: () => openKeySelector('row', row.id),
+        });
+
+        row.keys.forEach((key) => {
+          items.push({
+            type: 'draggable-key',
+            id: `row-${row.id}-key-${key.id}`,
+            data: key,
+            section: 'row',
+            rowId: row.id,
+            renderItem: (item, onRemove, drag, isActive) =>
+              renderKeyItem({ item, onRemove, drag, isActive }),
+          });
+        });
+
+        items.push({
+          type: 'spacer',
+          id: `row-close-${row.id}`,
+          height: 12,
+        });
+      }
+    });
+
+    items.push({ type: 'spacer', id: 'spacer-3', height: 20 });
+
+    items.push({
+      type: 'button',
+      id: 'reset-fullkeyboard',
+      label: 'Reset Full Keyboard to Default',
+      variant: 'danger',
+      onPress: () => {
+        setResetType('fullkeyboard');
+        setShowResetConfirm(true);
+      },
+    });
+
+    return items;
+  }, [config.fullKeyboard.rows, expandedRowId]);
 
   const handlePresetSelect = async (presetId: PresetType) => {
     try {
@@ -188,216 +317,64 @@ export default function KeyboardCustomization() {
   );
 
   const renderTopBar = () => (
-    <NestableScrollContainer
-      className="flex-1 px-4 py-4"
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingBottom: 40 }}
-    >
-      <View className="mb-3">
-        <View className="flex-row items-center justify-between">
-          <View className="flex-1">
-            <Text className="text-white text-lg font-semibold">
-              Pinned Keys
-            </Text>
-            <Text className="text-gray-400 text-xs mt-0.5">
-              Your frequently used keys
-            </Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => openKeySelector("pinned")}
-            className="bg-green-600 rounded-lg px-4 py-2"
-          >
-            <Text className="text-white text-sm font-semibold">+ Add</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+    <View className="flex-1 px-4 py-4">
+      <UnifiedDraggableList
+        data={topBarData}
+        onDragEnd={(newData) => {
+          const pinnedKeys = newData
+            .filter((item) => item.type === 'draggable-key' && item.section === 'pinned')
+            .map((item) => (item as any).data);
 
-      <NestableDraggableFlatList
-        key={`pinned-${dragKey}`}
-        data={config.topBar.pinnedKeys}
-        onDragEnd={({ data }) => {
-          reorderPinnedKeys(data);
-          setDragKey((k) => k + 1);
+          const topBarKeys = newData
+            .filter((item) => item.type === 'draggable-key' && item.section === 'topbar')
+            .map((item) => (item as any).data);
+
+          reorderPinnedKeys(pinnedKeys);
+          reorderTopBarKeys(topBarKeys);
         }}
-        keyExtractor={(item) => item.id}
-        activationDistance={10}
-        renderItem={({ item, drag, isActive }) => (
-          <ScaleDecorator>
-            <View style={{ opacity: isActive ? 0.5 : 1 }}>
-              {renderKeyItem({
-                item,
-                onRemove: () => removePinnedKey(item.id),
-                drag,
-                isActive,
-              })}
-            </View>
-          </ScaleDecorator>
-        )}
+        onRemoveKey={(itemId, section) => {
+          const keyId = itemId.replace(`${section}-`, '');
+          if (section === 'pinned') {
+            removePinnedKey(keyId);
+          } else if (section === 'topbar') {
+            removeTopBarKey(keyId);
+          }
+        }}
       />
-
-      <View style={{ height: 20 }} />
-
-      <View className="mb-3">
-        <View className="flex-row items-center justify-between">
-          <View className="flex-1">
-            <Text className="text-white text-lg font-semibold">
-              Top Bar Keys
-            </Text>
-            <Text className="text-gray-400 text-xs mt-0.5">
-              Keys shown in the top bar
-            </Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => openKeySelector("topbar")}
-            className="bg-green-600 rounded-lg px-4 py-2"
-          >
-            <Text className="text-white text-sm font-semibold">+ Add</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <NestableDraggableFlatList
-        key={`topbar-${dragKey}`}
-        data={config.topBar.keys}
-        onDragEnd={({ data }) => {
-          reorderTopBarKeys(data);
-          setDragKey((k) => k + 1);
-        }}
-        keyExtractor={(item) => item.id}
-        activationDistance={10}
-        renderItem={({ item, drag, isActive }) => (
-          <ScaleDecorator>
-            <View style={{ opacity: isActive ? 0.5 : 1 }}>
-              {renderKeyItem({
-                item,
-                onRemove: () => removeTopBarKey(item.id),
-                drag,
-                isActive,
-              })}
-            </View>
-          </ScaleDecorator>
-        )}
-      />
-
-      <View style={{ height: 20 }} />
-
-      <TouchableOpacity
-        onPress={() => {
-          setResetType("topbar");
-          setShowResetConfirm(true);
-        }}
-        className="bg-red-900/20 border border-red-700 rounded-lg p-3 mb-3"
-      >
-        <Text className="text-red-400 text-center font-semibold">
-          Reset Top Bar to Default
-        </Text>
-      </TouchableOpacity>
-    </NestableScrollContainer>
+    </View>
   );
 
   const renderFullKeyboard = () => (
-    <NestableScrollContainer
-      className="flex-1 px-4 py-4"
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingBottom: 40 }}
-    >
-      <View className="mb-3">
-        <Text className="text-white text-lg font-semibold">Keyboard Rows</Text>
-        <Text className="text-gray-400 text-xs mt-0.5">
-          Organize, reorder, and customize keyboard rows
-        </Text>
-      </View>
+    <View className="flex-1 px-4 py-4">
+      <UnifiedDraggableList
+        data={fullKeyboardData}
+        onDragEnd={(newData) => {
+          const rows = newData
+            .filter((item) => item.type === 'draggable-row')
+            .map((item) => (item as any).data);
 
-      <NestableDraggableFlatList
-        data={config.fullKeyboard.rows}
-        onDragEnd={({ data }) => reorderRows(data)}
-        keyExtractor={(item) => item.id}
-        activationDistance={10}
-        renderItem={({ item: row, drag, isActive }) => (
-          <View>
-            <ScaleDecorator>
-              <View style={{ opacity: isActive ? 0.5 : 1 }}>
-                {renderRowItem({
-                  item: row,
-                  drag,
-                  isActive,
-                  onToggleVisibility: toggleRowVisibility,
-                  onRemoveKey: removeKeyFromRow,
-                  onReorderKeys: reorderKeysInRow,
-                  onAddKeyToRow: (rowId) => openKeySelector("row", rowId),
-                  expandedRowId,
-                  onToggleExpand: toggleExpand,
-                })}
-              </View>
-            </ScaleDecorator>
+          reorderRows(rows);
 
-            {expandedRowId === row.id && (
-              <View className="bg-[#1a1a1a] border-l border-r border-[#303032] -mt-px">
-                <View className="px-4 pb-2 pt-4 border-t border-[#303032]">
-                  <View className="flex-row items-center justify-between mb-2">
-                    <Text className="text-white text-sm font-semibold">
-                      Keys in this row
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => openKeySelector("row", row.id)}
-                      className="bg-green-600 rounded px-3 py-1.5"
-                    >
-                      <Text className="text-white text-xs font-semibold">
-                        + Add Key
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
+          if (expandedRowId) {
+            const rowKeys = newData
+              .filter((item) => item.type === 'draggable-key' && (item as any).rowId === expandedRowId)
+              .map((item) => (item as any).data);
 
-                <View className="px-4">
-                  <NestableDraggableFlatList
-                    data={row.keys}
-                    onDragEnd={({ data }) => reorderKeysInRow(row.id, data)}
-                    keyExtractor={(item) => item.id}
-                    activationDistance={10}
-                    renderItem={({
-                      item: key,
-                      drag: keyDrag,
-                      isActive: keyActive,
-                    }) => (
-                      <ScaleDecorator>
-                        <View style={{ opacity: keyActive ? 0.5 : 1 }}>
-                          {renderKeyItem({
-                            item: key,
-                            onRemove: () => removeKeyFromRow(row.id, key.id),
-                            drag: keyDrag,
-                            isActive: keyActive,
-                          })}
-                        </View>
-                      </ScaleDecorator>
-                    )}
-                  />
-                </View>
-
-                <View
-                  className="bg-[#1a1a1a] border-b border-l border-r border-[#303032] rounded-b-lg mb-3"
-                  style={{ height: 12 }}
-                />
-              </View>
-            )}
-          </View>
-        )}
-      />
-
-      <View style={{ height: 20 }} />
-
-      <TouchableOpacity
-        onPress={() => {
-          setResetType("fullkeyboard");
-          setShowResetConfirm(true);
+            reorderKeysInRow(expandedRowId, rowKeys);
+          }
         }}
-        className="bg-red-900/20 border border-red-700 rounded-lg p-3 mb-3"
-      >
-        <Text className="text-red-400 text-center font-semibold">
-          Reset Full Keyboard to Default
-        </Text>
-      </TouchableOpacity>
-    </NestableScrollContainer>
+        onRemoveKey={(itemId, section) => {
+          if (section === 'row') {
+            const match = itemId.match(/^row-(.+)-key-(.+)$/);
+            if (match) {
+              const rowId = match[1];
+              const keyId = match[2];
+              removeKeyFromRow(rowId, keyId);
+            }
+          }
+        }}
+      />
+    </View>
   );
 
   const renderSettings = () => (
