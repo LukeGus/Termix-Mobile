@@ -52,6 +52,7 @@ export default function KeyboardCustomization() {
   const [showKeySelector, setShowKeySelector] = useState(false);
   const [addKeyMode, setAddKeyMode] = useState<AddKeyMode>(null);
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
+  const [listResetKey, setListResetKey] = useState(0);
 
   const { expandedRowId, toggleExpand } = useRowExpansion();
 
@@ -316,11 +317,57 @@ export default function KeyboardCustomization() {
     </View>
   );
 
+  const validateTopBarDrag = (newData: UnifiedListItem[]): boolean => {
+    const pinnedHeaderIndex = newData.findIndex(
+      (item) => item.type === 'header' && item.id === 'header-pinned'
+    );
+    const topbarHeaderIndex = newData.findIndex(
+      (item) => item.type === 'header' && item.id === 'header-topbar'
+    );
+    const resetButtonIndex = newData.findIndex(
+      (item) => item.type === 'button' && item.id === 'reset-topbar'
+    );
+
+    for (let i = 0; i <= pinnedHeaderIndex; i++) {
+      const item = newData[i];
+      if (item.type === 'draggable-key') {
+        return false;
+      }
+    }
+
+    for (let i = 0; i < newData.length; i++) {
+      const item = newData[i];
+      if (item.type === 'draggable-key' && item.section === 'pinned') {
+        if (i <= pinnedHeaderIndex || i >= topbarHeaderIndex) {
+          return false;
+        }
+      }
+    }
+
+    for (let i = 0; i < newData.length; i++) {
+      const item = newData[i];
+      if (item.type === 'draggable-key' && item.section === 'topbar') {
+        if (i <= topbarHeaderIndex || i >= resetButtonIndex) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  };
+
   const renderTopBar = () => (
     <View className="flex-1 px-4 py-4">
       <UnifiedDraggableList
+        key={`topbar-${listResetKey}`}
         data={topBarData}
         onDragEnd={(newData) => {
+          if (!validateTopBarDrag(newData)) {
+            showToast.error('Cannot move items between sections');
+            setListResetKey(prev => prev + 1);
+            return;
+          }
+
           const pinnedKeys = newData
             .filter((item) => item.type === 'draggable-key' && item.section === 'pinned')
             .map((item) => (item as any).data);
@@ -344,11 +391,79 @@ export default function KeyboardCustomization() {
     </View>
   );
 
+  const validateFullKeyboardDrag = (newData: UnifiedListItem[]): boolean => {
+    const mainHeaderIndex = newData.findIndex(
+      (item) => item.type === 'header' && item.id === 'header-rows'
+    );
+
+    const resetButtonIndex = newData.findIndex(
+      (item) => item.type === 'button' && item.id === 'reset-fullkeyboard'
+    );
+
+    for (let i = 0; i <= mainHeaderIndex; i++) {
+      const item = newData[i];
+      if (item.type === 'draggable-key' || item.type === 'draggable-row') {
+        return false;
+      }
+    }
+
+    for (let i = resetButtonIndex; i < newData.length; i++) {
+      const item = newData[i];
+      if (item.type === 'draggable-key' || item.type === 'draggable-row') {
+        return false;
+      }
+    }
+
+    if (!expandedRowId) {
+      return true;
+    }
+
+    const rowKeysHeaderIndex = newData.findIndex(
+      (item) => item.type === 'row-keys-header' && (item as any).rowId === expandedRowId
+    );
+
+    const rowCloseIndex = newData.findIndex(
+      (item) => item.type === 'spacer' && item.id === `row-close-${expandedRowId}`
+    );
+
+    if (rowKeysHeaderIndex === -1 || rowCloseIndex === -1) {
+      return true;
+    }
+
+    for (let i = 0; i < newData.length; i++) {
+      const item = newData[i];
+      if (item.type === 'draggable-key' && (item as any).rowId === expandedRowId) {
+        if (i <= rowKeysHeaderIndex || i >= rowCloseIndex) {
+          return false;
+        }
+      }
+    }
+
+    for (let i = rowKeysHeaderIndex + 1; i < rowCloseIndex; i++) {
+      const item = newData[i];
+      if (item.type === 'draggable-key' && (item as any).rowId !== expandedRowId) {
+        return false;
+      }
+      if (item.type === 'draggable-row') {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const renderFullKeyboard = () => (
     <View className="flex-1 px-4 py-4">
       <UnifiedDraggableList
+        key={`fullkeyboard-${listResetKey}-${expandedRowId || 'none'}`}
         data={fullKeyboardData}
         onDragEnd={(newData) => {
+          if (!validateFullKeyboardDrag(newData)) {
+            showToast.error('Cannot move items between sections');
+            setListResetKey(prev => prev + 1);
+            return;
+          }
+
           const rows = newData
             .filter((item) => item.type === 'draggable-row')
             .map((item) => (item as any).data);
