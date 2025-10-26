@@ -5,10 +5,12 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
+  Keyboard,
 } from "react-native";
-import { X, ArrowLeft, Plus, Minus } from "lucide-react-native";
+import { X, ArrowLeft, Plus, Minus, ChevronDown, ChevronUp } from "lucide-react-native";
 import { TerminalSession } from "@/app/contexts/TerminalSessionsContext";
 import { useRouter } from "expo-router";
+import { useKeyboard } from "@/app/contexts/KeyboardContext";
 
 interface TabBarProps {
   sessions: TerminalSession[];
@@ -19,6 +21,9 @@ interface TabBarProps {
   onToggleKeyboard?: () => void;
   isCustomKeyboardVisible: boolean;
   hiddenInputRef: React.RefObject<TextInput | null>;
+  onHideKeyboard?: () => void;
+  onShowKeyboard?: () => void;
+  keyboardIntentionallyHiddenRef: React.MutableRefObject<boolean>;
 }
 
 export default function TabBar({
@@ -30,8 +35,26 @@ export default function TabBar({
   onToggleKeyboard,
   isCustomKeyboardVisible,
   hiddenInputRef,
+  onHideKeyboard,
+  onShowKeyboard,
+  keyboardIntentionallyHiddenRef,
 }: TabBarProps) {
   const router = useRouter();
+  const { isKeyboardVisible } = useKeyboard();
+
+  const handleToggleSystemKeyboard = () => {
+    if (keyboardIntentionallyHiddenRef.current) {
+      onShowKeyboard?.();
+      setTimeout(() => {
+        hiddenInputRef.current?.focus();
+      }, 50);
+    } else {
+      onHideKeyboard?.();
+      setTimeout(() => {
+        Keyboard.dismiss();
+      }, 50);
+    }
+  };
 
   if (sessions.length === 0) {
     return null;
@@ -48,10 +71,16 @@ export default function TabBar({
       }}
       onStartShouldSetResponder={() => true}
       onResponderGrant={() => {
-        hiddenInputRef.current?.focus();
+        if (!keyboardIntentionallyHiddenRef.current) {
+          hiddenInputRef.current?.focus();
+        }
       }}
       onResponderTerminationRequest={() => false}
-      onTouchEndCapture={() => hiddenInputRef.current?.focus()}
+      onTouchEndCapture={() => {
+        if (!keyboardIntentionallyHiddenRef.current) {
+          hiddenInputRef.current?.focus();
+        }
+      }}
       focusable={false}
     >
       <View
@@ -63,9 +92,17 @@ export default function TabBar({
         }}
       >
         <TouchableOpacity
-          onPressIn={() => hiddenInputRef.current?.focus()}
+          onPressIn={() => {
+            if (!keyboardIntentionallyHiddenRef.current) {
+              hiddenInputRef.current?.focus();
+            }
+          }}
           onPress={() => router.navigate("/hosts" as any)}
-          onPressOut={() => hiddenInputRef.current?.focus()}
+          onPressOut={() => {
+            if (!keyboardIntentionallyHiddenRef.current) {
+              hiddenInputRef.current?.focus();
+            }
+          }}
           focusable={false}
           className="items-center justify-center rounded-md"
           activeOpacity={0.7}
@@ -86,37 +123,49 @@ export default function TabBar({
           <ArrowLeft size={20} color="#ffffff" />
         </TouchableOpacity>
 
-        <ScrollView
-          horizontal
-          keyboardShouldPersistTaps="always"
-          showsHorizontalScrollIndicator={false}
-          showsVerticalScrollIndicator={false}
-          focusable={false}
-          style={{ flex: 1 }}
-          contentContainerStyle={{
-            paddingVertical: 8,
-            gap: 6,
-            alignItems: "center",
-          }}
-          className="flex-row"
-          scrollEnabled={true}
-          directionalLockEnabled={true}
-          nestedScrollEnabled={false}
-          alwaysBounceVertical={false}
-          bounces={false}
-          bouncesZoom={false}
-          scrollEventThrottle={16}
-          removeClippedSubviews={false}
-        >
+        <View style={{ flex: 1, justifyContent: "center" }}>
+          <ScrollView
+            horizontal
+            keyboardShouldPersistTaps="always"
+            showsHorizontalScrollIndicator={false}
+            showsVerticalScrollIndicator={false}
+            focusable={false}
+            contentContainerStyle={{
+              paddingHorizontal: 0,
+              gap: 6,
+              alignItems: "center",
+            }}
+            className="flex-row"
+            scrollEnabled={true}
+            directionalLockEnabled={true}
+            nestedScrollEnabled={false}
+            alwaysBounceVertical={false}
+            alwaysBounceHorizontal={false}
+            bounces={false}
+            bouncesZoom={false}
+            scrollEventThrottle={16}
+            removeClippedSubviews={false}
+            overScrollMode="never"
+            disableIntervalMomentum={true}
+            pagingEnabled={false}
+          >
           {sessions.map((session) => {
             const isActive = session.id === activeSessionId;
 
             return (
               <TouchableOpacity
                 key={session.id}
-                onPressIn={() => hiddenInputRef.current?.focus()}
+                onPressIn={() => {
+                  if (!keyboardIntentionallyHiddenRef.current) {
+                    hiddenInputRef.current?.focus();
+                  }
+                }}
                 onPress={() => onTabPress(session.id)}
-                onPressOut={() => hiddenInputRef.current?.focus()}
+                onPressOut={() => {
+                  if (!keyboardIntentionallyHiddenRef.current) {
+                    hiddenInputRef.current?.focus();
+                  }
+                }}
                 focusable={false}
                 className="flex-row items-center rounded-md"
                 style={{
@@ -143,12 +192,20 @@ export default function TabBar({
                 </View>
 
                 <TouchableOpacity
-                  onPressIn={() => hiddenInputRef.current?.focus()}
+                  onPressIn={() => {
+                    if (!keyboardIntentionallyHiddenRef.current) {
+                      hiddenInputRef.current?.focus();
+                    }
+                  }}
                   onPress={(e) => {
                     e.stopPropagation();
                     onTabClose(session.id);
                   }}
-                  onPressOut={() => hiddenInputRef.current?.focus()}
+                  onPressOut={() => {
+                    if (!keyboardIntentionallyHiddenRef.current) {
+                      hiddenInputRef.current?.focus();
+                    }
+                  }}
                   focusable={false}
                   className="items-center justify-center"
                   activeOpacity={0.7}
@@ -168,12 +225,49 @@ export default function TabBar({
               </TouchableOpacity>
             );
           })}
-        </ScrollView>
+          </ScrollView>
+        </View>
+
+        {!isCustomKeyboardVisible && (isKeyboardVisible || keyboardIntentionallyHiddenRef.current) && (
+          <TouchableOpacity
+            onPress={handleToggleSystemKeyboard}
+            focusable={false}
+            className="items-center justify-center rounded-md"
+            activeOpacity={0.7}
+            style={{
+              width: 44,
+              height: 44,
+              borderWidth: 2,
+              borderColor: "#303032",
+              backgroundColor: "#2a2a2a",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+              elevation: 2,
+              marginLeft: 8,
+            }}
+          >
+            {keyboardIntentionallyHiddenRef.current ? (
+              <ChevronUp size={20} color="#ffffff" />
+            ) : (
+              <ChevronDown size={20} color="#ffffff" />
+            )}
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity
-          onPressIn={() => hiddenInputRef.current?.focus()}
+          onPressIn={() => {
+            if (!keyboardIntentionallyHiddenRef.current) {
+              hiddenInputRef.current?.focus();
+            }
+          }}
           onPress={() => onToggleKeyboard?.()}
-          onPressOut={() => hiddenInputRef.current?.focus()}
+          onPressOut={() => {
+            if (!keyboardIntentionallyHiddenRef.current) {
+              hiddenInputRef.current?.focus();
+            }
+          }}
           focusable={false}
           className="items-center justify-center rounded-md"
           activeOpacity={0.7}

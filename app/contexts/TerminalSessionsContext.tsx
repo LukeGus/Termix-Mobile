@@ -5,6 +5,7 @@ import React, {
   ReactNode,
   useCallback,
   useEffect,
+  useRef,
 } from "react";
 import { SSHHost } from "@/types";
 import { router } from "expo-router";
@@ -30,6 +31,8 @@ interface TerminalSessionsContextType {
   toggleCustomKeyboard: () => void;
   lastKeyboardHeight: number;
   setLastKeyboardHeight: (height: number) => void;
+  keyboardIntentionallyHiddenRef: React.MutableRefObject<boolean>;
+  setKeyboardIntentionallyHidden: (hidden: boolean) => void;
 }
 
 const TerminalSessionsContext = createContext<
@@ -58,6 +61,8 @@ export const TerminalSessionsProvider: React.FC<
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [isCustomKeyboardVisible, setIsCustomKeyboardVisible] = useState(false);
   const [lastKeyboardHeight, setLastKeyboardHeight] = useState(300);
+  const keyboardIntentionallyHiddenRef = useRef(false);
+  const [, forceUpdate] = useState({});
 
   const addSession = useCallback((host: SSHHost): string => {
     setSessions((prev) => {
@@ -173,10 +178,16 @@ export const TerminalSessionsProvider: React.FC<
     setIsCustomKeyboardVisible((prev) => !prev);
   }, []);
 
+  const setKeyboardIntentionallyHidden = useCallback((hidden: boolean) => {
+    keyboardIntentionallyHiddenRef.current = hidden;
+    forceUpdate({});
+  }, []);
+
   const clearAllSessions = useCallback(() => {
     setSessions([]);
     setActiveSessionId(null);
     setIsCustomKeyboardVisible(false);
+    keyboardIntentionallyHiddenRef.current = false;
   }, []);
 
   useEffect(() => {
@@ -199,6 +210,8 @@ export const TerminalSessionsProvider: React.FC<
         toggleCustomKeyboard,
         lastKeyboardHeight,
         setLastKeyboardHeight,
+        keyboardIntentionallyHiddenRef,
+        setKeyboardIntentionallyHidden,
       }}
     >
       {children}

@@ -33,19 +33,22 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(true);
   const [source, setSource] = useState<WebViewSource>({ uri: "" });
   const [webViewKey, setWebViewKey] = useState(() => String(Date.now()));
+  const [hasNavigated, setHasNavigated] = useState(false);
+  const [shouldClearCookies, setShouldClearCookies] = useState(true);
 
   useEffect(() => {
-    const clearPersistedData = async () => {
-      try {
-        await AsyncStorage.removeItem("jwt");
-
-        setWebViewKey(String(Date.now()));
-      } catch (error) {
-        console.error("[LoginForm] Error clearing persisted data:", error);
+    const clearPersistedDataOnce = async () => {
+      if (!hasNavigated) {
+        try {
+          await AsyncStorage.removeItem("jwt");
+          setWebViewKey(String(Date.now()));
+        } catch (error) {
+          console.error("[LoginForm] Error clearing persisted data:", error);
+        }
       }
     };
 
-    clearPersistedData();
+    clearPersistedDataOnce();
   }, []);
 
   useEffect(() => {
@@ -71,6 +74,7 @@ export default function LoginForm() {
   const handleNavigationStateChange = (navState: WebViewNavigation) => {
     setCanGoBack(navState.canGoBack);
     setLoading(navState.loading);
+    setHasNavigated(true);
     if (!navState.loading) {
       setUrl(navState.url);
     }
@@ -148,6 +152,32 @@ export default function LoginForm() {
 
   const injectedJavaScript = `
     (function() {
+      const isOIDCCallback = window.location.href.includes('/oidc/callback') ||
+                            window.location.href.includes('?success=') ||
+                            window.location.href.includes('?error=');
+
+      if (!isOIDCCallback) {
+        try {
+          if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem('jwt');
+          }
+          if (typeof sessionStorage !== 'undefined') {
+            sessionStorage.removeItem('jwt');
+          }
+
+          const cookies = document.cookie.split(";");
+          cookies.forEach(function(c) {
+            const cookieName = c.split("=")[0].trim();
+            if (cookieName === 'jwt') {
+              document.cookie = cookieName + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;";
+              document.cookie = cookieName + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;domain=" + window.location.hostname;
+            }
+          });
+        } catch(e) {
+          console.error('[LoginForm] Error clearing JWT on page load:', e);
+        }
+      }
+
       const style = document.createElement('style');
       style.textContent = \`
         button:has-text("Install Mobile App"),
@@ -196,14 +226,25 @@ export default function LoginForm() {
 
       let hasNotified = false;
       let lastCheckedToken = null;
+      let initialCheckComplete = false;
 
       const notifyAuth = (token, source) => {
         if (hasNotified || !token || token === lastCheckedToken) {
           return;
         }
 
-        hasNotified = true;
-        lastCheckedToken = token;
+        if (isOIDCCallback) {
+          hasNotified = true;
+          lastCheckedToken = token;
+        }
+        else if (initialCheckComplete) {
+          hasNotified = true;
+          lastCheckedToken = token;
+        } else {
+          return;
+        }
+
+        if (!hasNotified) return;
 
         try {
           localStorage.setItem('jwt', token);
@@ -290,6 +331,10 @@ export default function LoginForm() {
 
       checkAuth();
 
+      setTimeout(() => {
+        initialCheckComplete = true;
+      }, 1000);
+
       document.addEventListener('visibilitychange', () => {
         if (!document.hidden && !hasNotified) {
           checkAuth();
@@ -345,34 +390,15 @@ export default function LoginForm() {
         injectedJavaScriptBeforeContentLoaded={`
           document.body.style.backgroundColor = '#18181b';
           document.documentElement.style.backgroundColor = '#18181b';
-
-          if (typeof document !== 'undefined') {
-            try {
-              const cookies = document.cookie.split(";");
-              cookies.forEach(function(c) {
-                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-              });
-            } catch(e) {}
-          }
-          try {
-            if (typeof localStorage !== 'undefined') {
-              localStorage.removeItem('jwt');
-            }
-          } catch(e) {}
-          try {
-            if (typeof sessionStorage !== 'undefined') {
-              sessionStorage.removeItem('jwt');
-            }
-          } catch(e) {}
         `}
-        incognito={true}
+        incognito={false}
         cacheEnabled={false}
         cacheMode="LOAD_NO_CACHE"
         javaScriptEnabled={true}
         domStorageEnabled={true}
         startInLoadingState={true}
         sharedCookiesEnabled={false}
-        thirdPartyCookiesEnabled={false}
+        thirdPartyCookiesEnabled={true}
         opaque={false}
         {...(Platform.OS === "android" && {
           mixedContentMode: "always",

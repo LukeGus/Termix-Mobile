@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { Keyboard } from "react-native";
+import { Keyboard, Platform } from "react-native";
 
 interface KeyboardContextType {
   keyboardHeight: number;
@@ -18,23 +18,39 @@ export const KeyboardProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillChangeFrame" : "keyboardDidShow";
+
+    const keyboardShowListener = Keyboard.addListener(
+      showEvent,
+      (e) => {
+        const newHeight = e.endCoordinates.height;
+        if (newHeight > 0) {
+          setKeyboardHeight(newHeight);
+          setIsKeyboardVisible(true);
+        }
+      },
+    );
+
     const keyboardDidShowListener = Keyboard.addListener(
       "keyboardDidShow",
       (e) => {
-        setKeyboardHeight(e.endCoordinates.height);
-        setIsKeyboardVisible(true);
+        const newHeight = e.endCoordinates.height;
+        if (newHeight > 0) {
+          setKeyboardHeight(newHeight);
+          setIsKeyboardVisible(true);
+        }
       },
     );
 
     const keyboardDidHideListener = Keyboard.addListener(
       "keyboardDidHide",
       () => {
-        setKeyboardHeight(0);
         setIsKeyboardVisible(false);
       },
     );
 
     return () => {
+      keyboardShowListener?.remove();
       keyboardDidShowListener?.remove();
       keyboardDidHideListener?.remove();
     };

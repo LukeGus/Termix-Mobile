@@ -9,12 +9,14 @@ interface KeyboardBarProps {
   terminalRef: React.RefObject<TerminalHandle | null>;
   isVisible: boolean;
   onModifierChange?: (modifiers: { ctrl: boolean; alt: boolean }) => void;
+  isKeyboardIntentionallyHidden?: boolean;
 }
 
 export default function KeyboardBar({
   terminalRef,
   isVisible,
   onModifierChange,
+  isKeyboardIntentionallyHidden = false,
 }: KeyboardBarProps) {
   const { config } = useKeyboardCustomization();
   const [ctrlPressed, setCtrlPressed] = useState(false);
@@ -114,7 +116,7 @@ export default function KeyboardBar({
   const hasPinnedKeys = pinnedKeys.length > 0;
 
   return (
-    <View style={styles.keyboardBar}>
+    <View style={[styles.keyboardBar, isKeyboardIntentionallyHidden && { paddingBottom: 16 }]}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
