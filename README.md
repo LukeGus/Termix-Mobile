@@ -44,11 +44,11 @@ channel, however, response times may be longer.
 # Show-off
 
 <p align="center">
-  <img src="./repo-images/Image 1.png" width="170" alt="Termix Demo 1"/>
-  <img src="./repo-images/Image 2.png" width="170" alt="Termix Demo 2"/>
-  <img src="./repo-images/Image 3.png" width="170" alt="Termix Demo 3"/>
-  <img src="./repo-images/Image 4.png" width="170" alt="Termix Demo 4"/>
-  <img src="./repo-images/Image 5.png" width="170" alt="Termix Demo 5"/>
+  <img src="./repo-images/Image 1.png" width="160" alt="Termix Demo 1"/>
+  <img src="./repo-images/Image 2.png" width="160" alt="Termix Demo 2"/>
+  <img src="./repo-images/Image 3.png" width="160" alt="Termix Demo 3"/>
+  <img src="./repo-images/Image 4.png" width="160" alt="Termix Demo 4"/>
+  <img src="./repo-images/Image 5.png" width="160" alt="Termix Demo 5"/>
 </p>
 
 # License
