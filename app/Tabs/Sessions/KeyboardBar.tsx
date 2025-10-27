@@ -124,18 +124,8 @@ export default function KeyboardBar({
   const { pinnedKeys, keys } = config.topBar;
   const hasPinnedKeys = pinnedKeys.length > 0;
 
-  const containerStyle = [
-    styles.keyboardBar,
-    isKeyboardIntentionallyHidden && { paddingBottom: 16 },
-    Platform.OS === "android" &&
-      isKeyboardVisible &&
-      keyboardHeight > 0 && {
-        marginBottom: keyboardHeight,
-      },
-  ];
-
   return (
-    <View style={containerStyle}>
+    <View style={[styles.keyboardBar, isKeyboardIntentionallyHidden && { paddingBottom: 16 }]}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -152,7 +142,7 @@ export default function KeyboardBar({
         {keys.map((key, index) => renderKey(key, index))}
       </ScrollView>
 
-      {config.settings.showHints && (
+      {config.settings.showHints && !isKeyboardIntentionallyHidden && (
         <View style={styles.hintContainer}>
           <Text style={styles.hintText}>Customize in Settings</Text>
         </View>

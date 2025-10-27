@@ -9,12 +9,14 @@ interface CustomKeyboardProps {
   terminalRef: React.RefObject<TerminalHandle | null>;
   isVisible: boolean;
   keyboardHeight: number;
+  isKeyboardIntentionallyHidden?: boolean;
 }
 
 export default function CustomKeyboard({
   terminalRef,
   isVisible,
   keyboardHeight,
+  isKeyboardIntentionallyHidden = false,
 }: CustomKeyboardProps) {
   const { config } = useKeyboardCustomization();
 
@@ -168,7 +170,7 @@ export default function CustomKeyboard({
           </View>
         ))}
 
-        {config.settings.showHints && (
+        {config.settings.showHints && !isKeyboardIntentionallyHidden && (
           <View style={styles.hintContainer}>
             <Text style={styles.hintText}>Customize in Settings</Text>
           </View>

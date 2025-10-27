@@ -121,12 +121,7 @@ export default function Sessions() {
       const backHandler = BackHandler.addEventListener(
         "hardwareBackPress",
         () => {
-          if (isKeyboardVisible && !keyboardIntentionallyHiddenRef.current) {
-            setKeyboardIntentionallyHidden(true);
-            Keyboard.dismiss();
-            return true;
-          }
-          return false;
+          return true;
         },
       );
 
@@ -134,12 +129,7 @@ export default function Sessions() {
         backHandler.remove();
       };
     }
-  }, [
-    sessions.length,
-    isKeyboardVisible,
-    keyboardIntentionallyHiddenRef,
-    setKeyboardIntentionallyHidden,
-  ]);
+  }, [sessions.length]);
 
   useEffect(() => {
     if (
@@ -510,6 +500,7 @@ export default function Sessions() {
             }
             isVisible={isCustomKeyboardVisible}
             keyboardHeight={lastKeyboardHeight}
+            isKeyboardIntentionallyHidden={keyboardIntentionallyHiddenRef.current}
           />
         </View>
       )}
