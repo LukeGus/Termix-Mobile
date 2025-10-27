@@ -7,7 +7,14 @@ import {
   TextInput,
   Keyboard,
 } from "react-native";
-import { X, ArrowLeft, Plus, Minus, ChevronDown, ChevronUp } from "lucide-react-native";
+import {
+  X,
+  ArrowLeft,
+  Plus,
+  Minus,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react-native";
 import { TerminalSession } from "@/app/contexts/TerminalSessionsContext";
 import { useRouter } from "expo-router";
 import { useKeyboard } from "@/app/contexts/KeyboardContext";
@@ -149,112 +156,113 @@ export default function TabBar({
             disableIntervalMomentum={true}
             pagingEnabled={false}
           >
-          {sessions.map((session) => {
-            const isActive = session.id === activeSessionId;
+            {sessions.map((session) => {
+              const isActive = session.id === activeSessionId;
 
-            return (
-              <TouchableOpacity
-                key={session.id}
-                onPressIn={() => {
-                  if (!keyboardIntentionallyHiddenRef.current) {
-                    hiddenInputRef.current?.focus();
-                  }
-                }}
-                onPress={() => onTabPress(session.id)}
-                onPressOut={() => {
-                  if (!keyboardIntentionallyHiddenRef.current) {
-                    hiddenInputRef.current?.focus();
-                  }
-                }}
-                focusable={false}
-                className="flex-row items-center rounded-md"
-                style={{
-                  borderWidth: 2,
-                  borderColor: isActive ? "#22c55e" : "#303032",
-                  backgroundColor: isActive ? "#1a1a1a" : "#1a1a1a",
-                  shadowColor: isActive ? "#22c55e" : "transparent",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: isActive ? 0.2 : 0,
-                  shadowRadius: 4,
-                  elevation: isActive ? 3 : 0,
-                  minWidth: 120,
-                  height: 44,
-                }}
-              >
-                <View className="flex-1 px-3 py-2">
-                  <Text
-                    className={`text-sm font-medium ${
-                      isActive ? "text-green-400" : "text-gray-400"
-                    }`}
-                  >
-                    {session.title}
-                  </Text>
-                </View>
-
+              return (
                 <TouchableOpacity
+                  key={session.id}
                   onPressIn={() => {
                     if (!keyboardIntentionallyHiddenRef.current) {
                       hiddenInputRef.current?.focus();
                     }
                   }}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    onTabClose(session.id);
-                  }}
+                  onPress={() => onTabPress(session.id)}
                   onPressOut={() => {
                     if (!keyboardIntentionallyHiddenRef.current) {
                       hiddenInputRef.current?.focus();
                     }
                   }}
                   focusable={false}
-                  className="items-center justify-center"
-                  activeOpacity={0.7}
+                  className="flex-row items-center rounded-md"
                   style={{
-                    width: 36,
+                    borderWidth: 2,
+                    borderColor: isActive ? "#22c55e" : "#303032",
+                    backgroundColor: isActive ? "#1a1a1a" : "#1a1a1a",
+                    shadowColor: isActive ? "#22c55e" : "transparent",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: isActive ? 0.2 : 0,
+                    shadowRadius: 4,
+                    elevation: isActive ? 3 : 0,
+                    minWidth: 120,
                     height: 44,
-                    borderLeftWidth: 2,
-                    borderLeftColor: isActive ? "#22c55e" : "#303032",
                   }}
                 >
-                  <X
-                    size={16}
-                    color={isActive ? "#ffffff" : "#9CA3AF"}
-                    strokeWidth={2}
-                  />
+                  <View className="flex-1 px-3 py-2">
+                    <Text
+                      className={`text-sm font-medium ${
+                        isActive ? "text-green-400" : "text-gray-400"
+                      }`}
+                    >
+                      {session.title}
+                    </Text>
+                  </View>
+
+                  <TouchableOpacity
+                    onPressIn={() => {
+                      if (!keyboardIntentionallyHiddenRef.current) {
+                        hiddenInputRef.current?.focus();
+                      }
+                    }}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      onTabClose(session.id);
+                    }}
+                    onPressOut={() => {
+                      if (!keyboardIntentionallyHiddenRef.current) {
+                        hiddenInputRef.current?.focus();
+                      }
+                    }}
+                    focusable={false}
+                    className="items-center justify-center"
+                    activeOpacity={0.7}
+                    style={{
+                      width: 36,
+                      height: 44,
+                      borderLeftWidth: 2,
+                      borderLeftColor: isActive ? "#22c55e" : "#303032",
+                    }}
+                  >
+                    <X
+                      size={16}
+                      color={isActive ? "#ffffff" : "#9CA3AF"}
+                      strokeWidth={2}
+                    />
+                  </TouchableOpacity>
                 </TouchableOpacity>
-              </TouchableOpacity>
-            );
-          })}
+              );
+            })}
           </ScrollView>
         </View>
 
-        {!isCustomKeyboardVisible && (isKeyboardVisible || keyboardIntentionallyHiddenRef.current) && (
-          <TouchableOpacity
-            onPress={handleToggleSystemKeyboard}
-            focusable={false}
-            className="items-center justify-center rounded-md"
-            activeOpacity={0.7}
-            style={{
-              width: 44,
-              height: 44,
-              borderWidth: 2,
-              borderColor: "#303032",
-              backgroundColor: "#2a2a2a",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 4,
-              elevation: 2,
-              marginLeft: 8,
-            }}
-          >
-            {keyboardIntentionallyHiddenRef.current ? (
-              <ChevronUp size={20} color="#ffffff" />
-            ) : (
-              <ChevronDown size={20} color="#ffffff" />
-            )}
-          </TouchableOpacity>
-        )}
+        {!isCustomKeyboardVisible &&
+          (isKeyboardVisible || keyboardIntentionallyHiddenRef.current) && (
+            <TouchableOpacity
+              onPress={handleToggleSystemKeyboard}
+              focusable={false}
+              className="items-center justify-center rounded-md"
+              activeOpacity={0.7}
+              style={{
+                width: 44,
+                height: 44,
+                borderWidth: 2,
+                borderColor: "#303032",
+                backgroundColor: "#2a2a2a",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                elevation: 2,
+                marginLeft: 8,
+              }}
+            >
+              {keyboardIntentionallyHiddenRef.current ? (
+                <ChevronUp size={20} color="#ffffff" />
+              ) : (
+                <ChevronDown size={20} color="#ffffff" />
+              )}
+            </TouchableOpacity>
+          )}
 
         <TouchableOpacity
           onPressIn={() => {

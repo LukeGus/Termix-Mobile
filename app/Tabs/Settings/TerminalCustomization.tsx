@@ -33,7 +33,7 @@ export default function TerminalCustomization() {
   const [showCustomInput, setShowCustomInput] = useState(false);
 
   const isCustomFontSize = !FONT_SIZE_OPTIONS.some(
-    (option) => option.value === config.fontSize
+    (option) => option.value === config.fontSize,
   );
 
   const handleFontSizeChange = async (fontSize: number) => {

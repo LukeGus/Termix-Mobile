@@ -14,7 +14,9 @@ import { PRESET_DEFINITIONS } from "@/app/Tabs/Sessions/KeyDefinitions";
 import { PresetType, KeyConfig } from "@/types/keyboard";
 import { showToast } from "@/app/utils/toast";
 import KeySelector from "./components/KeySelector";
-import UnifiedDraggableList, { UnifiedListItem } from "./components/UnifiedDraggableList";
+import UnifiedDraggableList, {
+  UnifiedListItem,
+} from "./components/UnifiedDraggableList";
 import { renderKeyItem } from "./components/DraggableKeyList";
 import { renderRowItem, useRowExpansion } from "./components/DraggableRowList";
 
@@ -60,56 +62,56 @@ export default function KeyboardCustomization() {
     const items: UnifiedListItem[] = [];
 
     items.push({
-      type: 'header',
-      id: 'header-pinned',
-      title: 'Pinned Keys',
-      subtitle: 'Your frequently used keys',
-      onAddPress: () => openKeySelector('pinned'),
-      addButtonLabel: '+ Add',
+      type: "header",
+      id: "header-pinned",
+      title: "Pinned Keys",
+      subtitle: "Your frequently used keys",
+      onAddPress: () => openKeySelector("pinned"),
+      addButtonLabel: "+ Add",
     });
 
     config.topBar.pinnedKeys.forEach((key) => {
       items.push({
-        type: 'draggable-key',
+        type: "draggable-key",
         id: `pinned-${key.id}`,
         data: key,
-        section: 'pinned',
+        section: "pinned",
         renderItem: (item, onRemove, drag, isActive) =>
           renderKeyItem({ item, onRemove, drag, isActive }),
       });
     });
 
-    items.push({ type: 'spacer', id: 'spacer-1', height: 20 });
+    items.push({ type: "spacer", id: "spacer-1", height: 20 });
 
     items.push({
-      type: 'header',
-      id: 'header-topbar',
-      title: 'Top Bar Keys',
-      subtitle: 'Keys shown in the top bar',
-      onAddPress: () => openKeySelector('topbar'),
-      addButtonLabel: '+ Add',
+      type: "header",
+      id: "header-topbar",
+      title: "Top Bar Keys",
+      subtitle: "Keys shown in the top bar",
+      onAddPress: () => openKeySelector("topbar"),
+      addButtonLabel: "+ Add",
     });
 
     config.topBar.keys.forEach((key) => {
       items.push({
-        type: 'draggable-key',
+        type: "draggable-key",
         id: `topbar-${key.id}`,
         data: key,
-        section: 'topbar',
+        section: "topbar",
         renderItem: (item, onRemove, drag, isActive) =>
           renderKeyItem({ item, onRemove, drag, isActive }),
       });
     });
 
-    items.push({ type: 'spacer', id: 'spacer-2', height: 20 });
+    items.push({ type: "spacer", id: "spacer-2", height: 20 });
 
     items.push({
-      type: 'button',
-      id: 'reset-topbar',
-      label: 'Reset Top Bar to Default',
-      variant: 'danger',
+      type: "button",
+      id: "reset-topbar",
+      label: "Reset Top Bar to Default",
+      variant: "danger",
       onPress: () => {
-        setResetType('topbar');
+        setResetType("topbar");
         setShowResetConfirm(true);
       },
     });
@@ -121,15 +123,15 @@ export default function KeyboardCustomization() {
     const items: UnifiedListItem[] = [];
 
     items.push({
-      type: 'header',
-      id: 'header-rows',
-      title: 'Keyboard Rows',
-      subtitle: 'Organize, reorder, and customize keyboard rows',
+      type: "header",
+      id: "header-rows",
+      title: "Keyboard Rows",
+      subtitle: "Organize, reorder, and customize keyboard rows",
     });
 
     config.fullKeyboard.rows.forEach((row) => {
       items.push({
-        type: 'draggable-row',
+        type: "draggable-row",
         id: `row-${row.id}`,
         data: row,
         renderItem: (item, drag, isActive) =>
@@ -140,7 +142,7 @@ export default function KeyboardCustomization() {
             onToggleVisibility: toggleRowVisibility,
             onRemoveKey: removeKeyFromRow,
             onReorderKeys: reorderKeysInRow,
-            onAddKeyToRow: (rowId) => openKeySelector('row', rowId),
+            onAddKeyToRow: (rowId) => openKeySelector("row", rowId),
             expandedRowId,
             onToggleExpand: toggleExpand,
           }),
@@ -148,18 +150,18 @@ export default function KeyboardCustomization() {
 
       if (expandedRowId === row.id) {
         items.push({
-          type: 'row-keys-header',
+          type: "row-keys-header",
           id: `keys-header-${row.id}`,
           rowId: row.id,
-          onAddPress: () => openKeySelector('row', row.id),
+          onAddPress: () => openKeySelector("row", row.id),
         });
 
         row.keys.forEach((key) => {
           items.push({
-            type: 'draggable-key',
+            type: "draggable-key",
             id: `row-${row.id}-key-${key.id}`,
             data: key,
-            section: 'row',
+            section: "row",
             rowId: row.id,
             renderItem: (item, onRemove, drag, isActive) =>
               renderKeyItem({ item, onRemove, drag, isActive }),
@@ -167,22 +169,22 @@ export default function KeyboardCustomization() {
         });
 
         items.push({
-          type: 'spacer',
+          type: "spacer",
           id: `row-close-${row.id}`,
           height: 12,
         });
       }
     });
 
-    items.push({ type: 'spacer', id: 'spacer-3', height: 20 });
+    items.push({ type: "spacer", id: "spacer-3", height: 20 });
 
     items.push({
-      type: 'button',
-      id: 'reset-fullkeyboard',
-      label: 'Reset Full Keyboard to Default',
-      variant: 'danger',
+      type: "button",
+      id: "reset-fullkeyboard",
+      label: "Reset Full Keyboard to Default",
+      variant: "danger",
       onPress: () => {
-        setResetType('fullkeyboard');
+        setResetType("fullkeyboard");
         setShowResetConfirm(true);
       },
     });
@@ -319,25 +321,25 @@ export default function KeyboardCustomization() {
 
   const validateTopBarDrag = (newData: UnifiedListItem[]): boolean => {
     const pinnedHeaderIndex = newData.findIndex(
-      (item) => item.type === 'header' && item.id === 'header-pinned'
+      (item) => item.type === "header" && item.id === "header-pinned",
     );
     const topbarHeaderIndex = newData.findIndex(
-      (item) => item.type === 'header' && item.id === 'header-topbar'
+      (item) => item.type === "header" && item.id === "header-topbar",
     );
     const resetButtonIndex = newData.findIndex(
-      (item) => item.type === 'button' && item.id === 'reset-topbar'
+      (item) => item.type === "button" && item.id === "reset-topbar",
     );
 
     for (let i = 0; i <= pinnedHeaderIndex; i++) {
       const item = newData[i];
-      if (item.type === 'draggable-key') {
+      if (item.type === "draggable-key") {
         return false;
       }
     }
 
     for (let i = 0; i < newData.length; i++) {
       const item = newData[i];
-      if (item.type === 'draggable-key' && item.section === 'pinned') {
+      if (item.type === "draggable-key" && item.section === "pinned") {
         if (i <= pinnedHeaderIndex || i >= topbarHeaderIndex) {
           return false;
         }
@@ -346,7 +348,7 @@ export default function KeyboardCustomization() {
 
     for (let i = 0; i < newData.length; i++) {
       const item = newData[i];
-      if (item.type === 'draggable-key' && item.section === 'topbar') {
+      if (item.type === "draggable-key" && item.section === "topbar") {
         if (i <= topbarHeaderIndex || i >= resetButtonIndex) {
           return false;
         }
@@ -363,27 +365,33 @@ export default function KeyboardCustomization() {
         data={topBarData}
         onDragEnd={(newData) => {
           if (!validateTopBarDrag(newData)) {
-            showToast.error('Cannot move items between sections');
-            setListResetKey(prev => prev + 1);
+            showToast.error("Cannot move items between sections");
+            setListResetKey((prev) => prev + 1);
             return;
           }
 
           const pinnedKeys = newData
-            .filter((item) => item.type === 'draggable-key' && item.section === 'pinned')
+            .filter(
+              (item) =>
+                item.type === "draggable-key" && item.section === "pinned",
+            )
             .map((item) => (item as any).data);
 
           const topBarKeys = newData
-            .filter((item) => item.type === 'draggable-key' && item.section === 'topbar')
+            .filter(
+              (item) =>
+                item.type === "draggable-key" && item.section === "topbar",
+            )
             .map((item) => (item as any).data);
 
           reorderPinnedKeys(pinnedKeys);
           reorderTopBarKeys(topBarKeys);
         }}
         onRemoveKey={(itemId, section) => {
-          const keyId = itemId.replace(`${section}-`, '');
-          if (section === 'pinned') {
+          const keyId = itemId.replace(`${section}-`, "");
+          if (section === "pinned") {
             removePinnedKey(keyId);
-          } else if (section === 'topbar') {
+          } else if (section === "topbar") {
             removeTopBarKey(keyId);
           }
         }}
@@ -393,23 +401,23 @@ export default function KeyboardCustomization() {
 
   const validateFullKeyboardDrag = (newData: UnifiedListItem[]): boolean => {
     const mainHeaderIndex = newData.findIndex(
-      (item) => item.type === 'header' && item.id === 'header-rows'
+      (item) => item.type === "header" && item.id === "header-rows",
     );
 
     const resetButtonIndex = newData.findIndex(
-      (item) => item.type === 'button' && item.id === 'reset-fullkeyboard'
+      (item) => item.type === "button" && item.id === "reset-fullkeyboard",
     );
 
     for (let i = 0; i <= mainHeaderIndex; i++) {
       const item = newData[i];
-      if (item.type === 'draggable-key' || item.type === 'draggable-row') {
+      if (item.type === "draggable-key" || item.type === "draggable-row") {
         return false;
       }
     }
 
     for (let i = resetButtonIndex; i < newData.length; i++) {
       const item = newData[i];
-      if (item.type === 'draggable-key' || item.type === 'draggable-row') {
+      if (item.type === "draggable-key" || item.type === "draggable-row") {
         return false;
       }
     }
@@ -419,11 +427,14 @@ export default function KeyboardCustomization() {
     }
 
     const rowKeysHeaderIndex = newData.findIndex(
-      (item) => item.type === 'row-keys-header' && (item as any).rowId === expandedRowId
+      (item) =>
+        item.type === "row-keys-header" &&
+        (item as any).rowId === expandedRowId,
     );
 
     const rowCloseIndex = newData.findIndex(
-      (item) => item.type === 'spacer' && item.id === `row-close-${expandedRowId}`
+      (item) =>
+        item.type === "spacer" && item.id === `row-close-${expandedRowId}`,
     );
 
     if (rowKeysHeaderIndex === -1 || rowCloseIndex === -1) {
@@ -432,7 +443,10 @@ export default function KeyboardCustomization() {
 
     for (let i = 0; i < newData.length; i++) {
       const item = newData[i];
-      if (item.type === 'draggable-key' && (item as any).rowId === expandedRowId) {
+      if (
+        item.type === "draggable-key" &&
+        (item as any).rowId === expandedRowId
+      ) {
         if (i <= rowKeysHeaderIndex || i >= rowCloseIndex) {
           return false;
         }
@@ -441,10 +455,13 @@ export default function KeyboardCustomization() {
 
     for (let i = rowKeysHeaderIndex + 1; i < rowCloseIndex; i++) {
       const item = newData[i];
-      if (item.type === 'draggable-key' && (item as any).rowId !== expandedRowId) {
+      if (
+        item.type === "draggable-key" &&
+        (item as any).rowId !== expandedRowId
+      ) {
         return false;
       }
-      if (item.type === 'draggable-row') {
+      if (item.type === "draggable-row") {
         return false;
       }
     }
@@ -455,31 +472,35 @@ export default function KeyboardCustomization() {
   const renderFullKeyboard = () => (
     <View className="flex-1 px-4 py-4">
       <UnifiedDraggableList
-        key={`fullkeyboard-${listResetKey}-${expandedRowId || 'none'}`}
+        key={`fullkeyboard-${listResetKey}-${expandedRowId || "none"}`}
         data={fullKeyboardData}
         onDragEnd={(newData) => {
           if (!validateFullKeyboardDrag(newData)) {
-            showToast.error('Cannot move items between sections');
-            setListResetKey(prev => prev + 1);
+            showToast.error("Cannot move items between sections");
+            setListResetKey((prev) => prev + 1);
             return;
           }
 
           const rows = newData
-            .filter((item) => item.type === 'draggable-row')
+            .filter((item) => item.type === "draggable-row")
             .map((item) => (item as any).data);
 
           reorderRows(rows);
 
           if (expandedRowId) {
             const rowKeys = newData
-              .filter((item) => item.type === 'draggable-key' && (item as any).rowId === expandedRowId)
+              .filter(
+                (item) =>
+                  item.type === "draggable-key" &&
+                  (item as any).rowId === expandedRowId,
+              )
               .map((item) => (item as any).data);
 
             reorderKeysInRow(expandedRowId, rowKeys);
           }
         }}
         onRemoveKey={(itemId, section) => {
-          if (section === 'row') {
+          if (section === "row") {
             const match = itemId.match(/^row-(.+)-key-(.+)$/);
             if (match) {
               const rowId = match[1];

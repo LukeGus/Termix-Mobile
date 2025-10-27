@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { View, ScrollView, StyleSheet, Text, Clipboard } from "react-native";
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  Text,
+  Clipboard,
+  Platform,
+} from "react-native";
 import { TerminalHandle } from "./Terminal";
 import KeyboardKey from "./KeyboardKey";
 import { useKeyboardCustomization } from "@/app/contexts/KeyboardCustomizationContext";
 import { KeyConfig } from "@/types/keyboard";
+import { useKeyboard } from "@/app/contexts/KeyboardContext";
 
 interface KeyboardBarProps {
   terminalRef: React.RefObject<TerminalHandle | null>;
@@ -19,6 +27,7 @@ export default function KeyboardBar({
   isKeyboardIntentionallyHidden = false,
 }: KeyboardBarProps) {
   const { config } = useKeyboardCustomization();
+  const { keyboardHeight, isKeyboardVisible } = useKeyboard();
   const [ctrlPressed, setCtrlPressed] = useState(false);
   const [altPressed, setAltPressed] = useState(false);
 
@@ -115,8 +124,18 @@ export default function KeyboardBar({
   const { pinnedKeys, keys } = config.topBar;
   const hasPinnedKeys = pinnedKeys.length > 0;
 
+  const containerStyle = [
+    styles.keyboardBar,
+    isKeyboardIntentionallyHidden && { paddingBottom: 16 },
+    Platform.OS === "android" &&
+      isKeyboardVisible &&
+      keyboardHeight > 0 && {
+        marginBottom: keyboardHeight,
+      },
+  ];
+
   return (
-    <View style={[styles.keyboardBar, isKeyboardIntentionallyHidden && { paddingBottom: 16 }]}>
+    <View style={containerStyle}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
