@@ -178,7 +178,7 @@ function createApiInstance(
       );
     }
 
-A    config.headers["User-Agent"] = "Termix-Mobile";
+    config.headers["User-Agent"] = "Termix-Mobile";
 
     return config;
   });
