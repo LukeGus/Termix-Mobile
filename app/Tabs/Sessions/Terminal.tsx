@@ -48,7 +48,6 @@ export type TerminalHandle = {
 export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
   ({ hostConfig, isVisible, title = "Terminal", onClose }, ref) => {
     const webViewRef = useRef<WebView>(null);
-    const hiddenInputRef = useRef<TextInput>(null);
     const { config } = useTerminalCustomization();
     const [webViewKey, setWebViewKey] = useState(0);
     const [screenDimensions, setScreenDimensions] = useState(
@@ -315,7 +314,7 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
     }
 
     const terminalElement = document.getElementById('terminal');
-    ['touchstart','touchend','touchmove','mousedown','mouseup','click','dblclick','contextmenu'].forEach(function(ev){
+    ['touchstart','touchend','mousedown','mouseup','click','dblclick','contextmenu'].forEach(function(ev){
       terminalElement.addEventListener(ev, function(e){
         e.preventDefault();
         e.stopPropagation();
@@ -603,11 +602,7 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
       };
     }, []);
 
-    const handleTerminalPress = useCallback(() => {
-      if (Platform.OS === "android") {
-        hiddenInputRef.current?.focus();
-      }
-    }, []);
+
 
     return (
       <View
@@ -632,7 +627,6 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
             zIndex: isVisible ? 1 : -1,
           }}
         >
-          <TouchableWithoutFeedback onPress={handleTerminalPress}>
             <View style={{ flex: 1 }}>
               <WebView
                 key={`terminal-${hostConfig.id}-${webViewKey}`}
@@ -672,23 +666,7 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
                 showsVerticalScrollIndicator={false}
                 nestedScrollEnabled={false}
               />
-              {Platform.OS === "android" && (
-                <TextInput
-                  ref={hiddenInputRef}
-                  style={{
-                    position: "absolute",
-                    width: 1,
-                    height: 1,
-                    opacity: 0,
-                    top: -1000,
-                  }}
-                  autoFocus={false}
-                  showSoftInputOnFocus={true}
-                  caretHidden={true}
-                />
-              )}
             </View>
-          </TouchableWithoutFeedback>
 
           {(showConnectingOverlay || isRetrying) && (
             <View

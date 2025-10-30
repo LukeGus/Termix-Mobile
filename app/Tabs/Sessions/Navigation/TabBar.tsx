@@ -57,9 +57,7 @@ export default function TabBar({
       }, 50);
     } else {
       onHideKeyboard?.();
-      setTimeout(() => {
-        Keyboard.dismiss();
-      }, 50);
+      Keyboard.dismiss();
     }
   };
 
@@ -76,18 +74,6 @@ export default function TabBar({
         minHeight: 60,
         maxHeight: 60,
       }}
-      onStartShouldSetResponder={() => true}
-      onResponderGrant={() => {
-        if (!keyboardIntentionallyHiddenRef.current) {
-          hiddenInputRef.current?.focus();
-        }
-      }}
-      onResponderTerminationRequest={() => false}
-      onTouchEndCapture={() => {
-        if (!keyboardIntentionallyHiddenRef.current) {
-          hiddenInputRef.current?.focus();
-        }
-      }}
       focusable={false}
     >
       <View
@@ -99,17 +85,7 @@ export default function TabBar({
         }}
       >
         <TouchableOpacity
-          onPressIn={() => {
-            if (!keyboardIntentionallyHiddenRef.current) {
-              hiddenInputRef.current?.focus();
-            }
-          }}
           onPress={() => router.navigate("/hosts" as any)}
-          onPressOut={() => {
-            if (!keyboardIntentionallyHiddenRef.current) {
-              hiddenInputRef.current?.focus();
-            }
-          }}
           focusable={false}
           className="items-center justify-center rounded-md"
           activeOpacity={0.7}
@@ -162,17 +138,7 @@ export default function TabBar({
               return (
                 <TouchableOpacity
                   key={session.id}
-                  onPressIn={() => {
-                    if (!keyboardIntentionallyHiddenRef.current) {
-                      hiddenInputRef.current?.focus();
-                    }
-                  }}
                   onPress={() => onTabPress(session.id)}
-                  onPressOut={() => {
-                    if (!keyboardIntentionallyHiddenRef.current) {
-                      hiddenInputRef.current?.focus();
-                    }
-                  }}
                   focusable={false}
                   className="flex-row items-center rounded-md"
                   style={{
@@ -199,19 +165,9 @@ export default function TabBar({
                   </View>
 
                   <TouchableOpacity
-                    onPressIn={() => {
-                      if (!keyboardIntentionallyHiddenRef.current) {
-                        hiddenInputRef.current?.focus();
-                      }
-                    }}
                     onPress={(e) => {
                       e.stopPropagation();
                       onTabClose(session.id);
-                    }}
-                    onPressOut={() => {
-                      if (!keyboardIntentionallyHiddenRef.current) {
-                        hiddenInputRef.current?.focus();
-                      }
                     }}
                     focusable={false}
                     className="items-center justify-center"
@@ -235,8 +191,7 @@ export default function TabBar({
           </ScrollView>
         </View>
 
-        {!isCustomKeyboardVisible &&
-          (isKeyboardVisible || keyboardIntentionallyHiddenRef.current) && (
+        {!isCustomKeyboardVisible && (
             <TouchableOpacity
               onPress={handleToggleSystemKeyboard}
               focusable={false}
@@ -265,17 +220,7 @@ export default function TabBar({
           )}
 
         <TouchableOpacity
-          onPressIn={() => {
-            if (!keyboardIntentionallyHiddenRef.current) {
-              hiddenInputRef.current?.focus();
-            }
-          }}
           onPress={() => onToggleKeyboard?.()}
-          onPressOut={() => {
-            if (!keyboardIntentionallyHiddenRef.current) {
-              hiddenInputRef.current?.focus();
-            }
-          }}
           focusable={false}
           className="items-center justify-center rounded-md"
           activeOpacity={0.7}

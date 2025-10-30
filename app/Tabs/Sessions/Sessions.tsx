@@ -117,36 +117,18 @@ export default function Sessions() {
     };
   }, [sessions.length, isCustomKeyboardVisible, activeSessionId]);
 
-  useEffect(() => {
-    const keyboardDidHideListener = Keyboard.addListener(
-      "keyboardDidHide",
-      () => {
-        if (
-          sessions.length > 0 &&
-          !isCustomKeyboardVisible &&
-          !keyboardIntentionallyHiddenRef.current
-        ) {
-          setTimeout(() => {
-            hiddenInputRef.current?.focus();
-          }, 50);
-        }
-      },
-    );
 
-    return () => {
-      keyboardDidHideListener?.remove();
-    };
-  }, [
-    sessions.length,
-    isCustomKeyboardVisible,
-    keyboardIntentionallyHiddenRef,
-  ]);
 
   useEffect(() => {
     if (Platform.OS === "android" && sessions.length > 0) {
       const backHandler = BackHandler.addEventListener(
         "hardwareBackPress",
         () => {
+          if (isKeyboardVisible) {
+            setKeyboardIntentionallyHidden(true);
+            Keyboard.dismiss();
+            return true;
+          }
           return true;
         },
       );
@@ -155,7 +137,7 @@ export default function Sessions() {
         backHandler.remove();
       };
     }
-  }, [sessions.length]);
+  }, [sessions.length, isKeyboardVisible]);
 
   useEffect(() => {
     if (
@@ -185,23 +167,12 @@ export default function Sessions() {
           ? terminalRefs.current[activeSessionId]
           : null;
         activeRef?.current?.fit();
-
-        if (
-          sessions.length > 0 &&
-          !isCustomKeyboardVisible &&
-          !keyboardIntentionallyHiddenRef.current
-        ) {
-          hiddenInputRef.current?.focus();
-        }
       }, 300);
     });
 
     return () => subscription?.remove();
   }, [
-    activeSessionId,
-    sessions.length,
-    isCustomKeyboardVisible,
-    keyboardIntentionallyHiddenRef,
+    activeSessionId
   ]);
 
   useEffect(() => {
@@ -459,7 +430,7 @@ export default function Sessions() {
             left: 0,
             right: 0,
             height: keyboardIntentionallyHiddenRef.current ? 66 : 50,
-            zIndex: 999,
+            zIndex: 1003,
           }}
         >
           <KeyboardBar
@@ -490,7 +461,7 @@ export default function Sessions() {
           left: 0,
           right: 0,
           height: 60,
-          zIndex: 1000,
+          zIndex: 1004,
         }}
       >
         <TabBar
@@ -531,45 +502,7 @@ export default function Sessions() {
         </View>
       )}
 
-      {sessions.length > 0 &&
-        !isCustomKeyboardVisible &&
-        !keyboardIntentionallyHiddenRef.current &&
-        !isKeyboardVisible && (
-          <Pressable
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height:
-                keyboardHeight > 0
-                  ? keyboardHeight
-                  : Math.max(80, screenDimensions.height * 0.1),
-              backgroundColor: "#09090b",
-              justifyContent: "center",
-              alignItems: "center",
-              borderTopWidth: 1,
-              borderTopColor: "#303032",
-              zIndex: 1000,
-            }}
-            onPress={() => {
-              setKeyboardIntentionallyHidden(false);
-              hiddenInputRef.current?.focus();
-            }}
-          >
-            <Text
-              style={{
-                color: "#9CA3AF",
-                fontSize: Math.min(14, screenDimensions.width / 30),
-                textAlign: "center",
-                fontWeight: "500",
-                paddingHorizontal: 20,
-              }}
-            >
-              Tap anywhere to bring back the keyboard
-            </Text>
-          </Pressable>
-        )}
+
 
       {sessions.length > 0 && !isCustomKeyboardVisible && (
         <TextInput
@@ -657,28 +590,7 @@ export default function Sessions() {
           onFocus={() => {
             setKeyboardIntentionallyHidden(false);
           }}
-          onBlur={() => {
-            setTimeout(() => {
-              if (
-                sessions.length > 0 &&
-                !isCustomKeyboardVisible &&
-                !keyboardIntentionallyHiddenRef.current
-              ) {
-                hiddenInputRef.current?.focus();
-              }
-            }, 100);
-          }}
-          onSubmitEditing={() => {
-            setTimeout(() => {
-              if (
-                sessions.length > 0 &&
-                !isCustomKeyboardVisible &&
-                !keyboardIntentionallyHiddenRef.current
-              ) {
-                hiddenInputRef.current?.focus();
-              }
-            }, 100);
-          }}
+
         />
       )}
     </View>
