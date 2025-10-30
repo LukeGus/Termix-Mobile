@@ -178,7 +178,7 @@ function createApiInstance(
       );
     }
 
-    config.headers["User-Agent"] = "Termix-Mobile/1.0.0";
+A    config.headers["User-Agent"] = "Termix-Mobile";
 
     return config;
   });
@@ -1990,7 +1990,7 @@ export async function getFoldersWithStats(): Promise<any> {
         method: "GET",
         headers: {
           Accept: "application/json",
-          "User-Agent": "Termix-Mobile/1.1.0",
+          "User-Agent": "Termix-Mobile",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       });

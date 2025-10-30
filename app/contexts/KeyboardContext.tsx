@@ -28,53 +28,33 @@ export const KeyboardProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const showEvent =
       Platform.OS === "ios" ? "keyboardWillChangeFrame" : "keyboardDidShow";
+    const hideEvent =
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
 
     const keyboardShowListener = Keyboard.addListener(showEvent, (e) => {
-      const screenHeight = Dimensions.get("window").height;
+      const screenHeight = Dimensions.get("screen").height;
       const keyboardTop = e.endCoordinates.screenY;
-      const newHeight = Platform.OS === "android" ? screenHeight - keyboardTop : e.endCoordinates.height;
+      let newHeight = 0;
+      if (Platform.OS === 'android') {
+        newHeight = screenHeight - keyboardTop;
+      } else {
+        newHeight = e.endCoordinates.height;
+      }
+
       if (newHeight > 0) {
         setKeyboardHeight(newHeight);
         setIsKeyboardVisible(true);
       }
     });
 
-    const keyboardDidShowListener = Keyboard.addListener(
-      "keyboardDidShow",
-      (e) => {
-        const screenHeight = Dimensions.get("window").height;
-        const keyboardTop = e.endCoordinates.screenY;
-        const newHeight = Platform.OS === "android" ? screenHeight - keyboardTop : e.endCoordinates.height;
-        if (newHeight > 0) {
-          setKeyboardHeight(newHeight);
-          setIsKeyboardVisible(true);
-        }
-      },
-    );
-
-    const keyboardWillHideListener = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      () => {
-        setIsKeyboardVisible(false);
-        if (Platform.OS === "ios") {
-          setKeyboardHeight(0);
-        }
-      },
-    );
-
-    const keyboardDidHideListener = Keyboard.addListener(
-      "keyboardDidHide",
-      () => {
-        setIsKeyboardVisible(false);
-        setKeyboardHeight(0);
-      },
-    );
+    const keyboardHideListener = Keyboard.addListener(hideEvent, () => {
+      setIsKeyboardVisible(false);
+      setKeyboardHeight(0);
+    });
 
     return () => {
       keyboardShowListener?.remove();
-      keyboardDidShowListener?.remove();
-      keyboardWillHideListener?.remove();
-      keyboardDidHideListener?.remove();
+      keyboardHideListener?.remove();
     };
   }, []);
 
