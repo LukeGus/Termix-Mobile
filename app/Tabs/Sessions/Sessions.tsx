@@ -13,6 +13,7 @@ import {
   Pressable,
   Dimensions,
   BackHandler,
+  AppState,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
@@ -52,6 +53,7 @@ export default function Sessions() {
   const [screenDimensions, setScreenDimensions] = useState(
     Dimensions.get("window"),
   );
+  const [keyboardType, setKeyboardType] = useState<any>('default');
 
   useEffect(() => {
     const map: Record<string, React.RefObject<TerminalHandle>> = {
@@ -90,6 +92,30 @@ export default function Sessions() {
       keyboardIntentionallyHiddenRef,
     ]),
   );
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active") {
+        if (
+          sessions.length > 0 &&
+          !isCustomKeyboardVisible &&
+          !keyboardIntentionallyHiddenRef.current
+        ) {
+          setTimeout(() => {
+            setKeyboardType('email-address');
+            setTimeout(() => {
+                setKeyboardType('default');
+                hiddenInputRef.current?.focus();
+            }, 100);
+          }, 250);
+        }
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [sessions.length, isCustomKeyboardVisible, activeSessionId]);
 
   useEffect(() => {
     const keyboardDidHideListener = Keyboard.addListener(
@@ -562,7 +588,7 @@ export default function Sessions() {
           pointerEvents="none"
           autoFocus={false}
           showSoftInputOnFocus={true}
-          keyboardType="default"
+          keyboardType={keyboardType}
           returnKeyType="default"
           blurOnSubmit={false}
           editable={true}
