@@ -141,12 +141,6 @@ export default function KeyboardBar({
 
         {keys.map((key, index) => renderKey(key, index))}
       </ScrollView>
-
-      {config.settings.showHints && !isKeyboardIntentionallyHidden && (
-        <View style={styles.hintContainer}>
-          <Text style={styles.hintText}>Customize in Settings</Text>
-        </View>
-      )}
     </View>
   );
 }

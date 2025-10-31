@@ -1,4 +1,4 @@
-name: Build App
+name: Build and Push App
 on:
   workflow_dispatch:
     inputs:
@@ -121,8 +121,8 @@ jobs:
 
             if [ -n "$IPA_FILE" ]; then
               echo "Found IPA in project root: $IPA_FILE"
-              cp "$IPA_FILE" "build-artifacts/termix_ios_${VERSION}.ipa"
-              echo "Copied to build-artifacts/termix_ios_${VERSION}.ipa"
+              cp "$IPA_FILE" "build-artifacts/termix_ios_universal_${VERSION}.ipa"
+              echo "Copied to build-artifacts/termix_ios_universal_${VERSION}.ipa"
             else
               IPA_FILE=$(find . -type f -name "*.ipa" -not -path "*/node_modules/*" 2>/dev/null | head -1)
 
@@ -173,7 +173,7 @@ jobs:
               exit 1
             fi
           else
-            BUILD_FILE="build-artifacts/termix_ios_${VERSION}.ipa"
+            BUILD_FILE="build-artifacts/termix_ios_universal_${VERSION}.ipa"
           fi
 
           if [ -n "$BUILD_FILE" ] && [ -f "$BUILD_FILE" ]; then
@@ -197,8 +197,8 @@ jobs:
         if: ${{ github.event.inputs.action == 'file' && matrix.platform == 'ios' }}
         uses: actions/upload-artifact@v4
         with:
-          name: termix_ios
-          path: build-artifacts/termix_ios_*.ipa
+          name: termix_ios_universal
+          path: build-artifacts/termix_ios_universal_*.ipa
           retention-days: 30
           if-no-files-found: error
 
@@ -239,7 +239,7 @@ jobs:
               exit 1
             fi
           elif [ "${{ matrix.platform }}" = "ios" ]; then
-            IPA_FILE="build-artifacts/termix_ios_${VERSION}.ipa"
+            IPA_FILE="build-artifacts/termix_ios_universal_${VERSION}.ipa"
             if [ -f "$IPA_FILE" ]; then
               echo "Uploading $IPA_FILE..."
               gh release upload "$RELEASE_TAG" \
