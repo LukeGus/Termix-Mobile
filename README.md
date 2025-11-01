@@ -27,8 +27,8 @@ See [Projects](https://github.com/orgs/Termix-SSH/projects/2) for all planned fe
 
 # Features
 
-- **SSH Terminal Access** - SSH terminal with multi-session support
-- **Advanced Keyboard Features** - Switch between two keyboard modes: the system keyboard and a custom terminal keyboard that is optimized for terminal use. The custom keyboard provides function keys (F1-F12), nav keys, and all the basic terminal shortcuts. Along with modifier key support (Ctrl, Alt) for all your terminal commands and built-in shortcuts such as Ctrl+C, Ctrl+D, Ctrl+Z, and Ctrl+L for invoking common actions quickly.
+- **SSH Terminal** - SSH terminal with multi-session support
+- **Advanced Keyboard - Switch between two keyboard modes: the system keyboard and a custom terminal keyboard that is optimized for terminal use. The custom keyboard is completely configurable to your preferences.
 - **Server Configuration** - Easily connect to your existing Termix server via IP/Domain. It has support for reverse proxy access login pages, logging in with OIDC, and, of course, regular username/password logins.
 
 # Installation

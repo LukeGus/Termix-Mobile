@@ -1,46 +1,27 @@
-const { withAndroidManifest, withDangerousMod } = require('@expo/config-plugins');
+const {withAndroidManifest, withDangerousMod} = require('@expo/config-plugins');
 const path = require('path');
 const fs = require('fs');
 
-/**
- * Expo config plugin to ensure network security config is properly set up
- * This allows the app to trust user-installed CA certificates (for self-signed certs)
- */
 const withNetworkSecurityConfig = (config) => {
-  // Add network security config reference to AndroidManifest
-  config = withAndroidManifest(config, async (config) => {
-    const mainApplication = config.modResults.manifest.application[0];
+    config = withAndroidManifest(config, async (config) => {
+        const mainApplication = config.modResults.manifest.application[0];
 
-    // Set network security config attribute
-    mainApplication.$['android:networkSecurityConfig'] = '@xml/network_security_config';
+        mainApplication.$['android:networkSecurityConfig'] = '@xml/network_security_config';
 
-    return config;
-  });
+        return config;
+    });
 
-  // Ensure the network security config file exists in the correct location
-  config = withDangerousMod(config, [
-    'android',
-    async (config) => {
-      const projectRoot = config.modRequest.projectRoot;
-      const resXmlPath = path.join(
-        projectRoot,
-        'android',
-        'app',
-        'src',
-        'main',
-        'res',
-        'xml'
-      );
+    config = withDangerousMod(config, ['android', async (config) => {
+        const projectRoot = config.modRequest.projectRoot;
+        const resXmlPath = path.join(projectRoot, 'android', 'app', 'src', 'main', 'res', 'xml');
 
-      // Create xml directory if it doesn't exist
-      if (!fs.existsSync(resXmlPath)) {
-        fs.mkdirSync(resXmlPath, { recursive: true });
-      }
+        if (!fs.existsSync(resXmlPath)) {
+            fs.mkdirSync(resXmlPath, {recursive: true});
+        }
 
-      const networkSecurityConfigPath = path.join(resXmlPath, 'network_security_config.xml');
+        const networkSecurityConfigPath = path.join(resXmlPath, 'network_security_config.xml');
 
-      // Create network security config file with user certificate trust
-      const networkSecurityConfig = `<?xml version="1.0" encoding="utf-8"?>
+        const networkSecurityConfig = `<?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
     <!-- Allow cleartext traffic for all domains (for local development and IP addresses) -->
     <!-- Trust both system certificates AND user-installed certificates (for self-signed certs) -->
@@ -66,14 +47,12 @@ const withNetworkSecurityConfig = (config) => {
 </network-security-config>
 `;
 
-      // Write the network security config file
-      fs.writeFileSync(networkSecurityConfigPath, networkSecurityConfig);
+        fs.writeFileSync(networkSecurityConfigPath, networkSecurityConfig);
 
-      return config;
-    },
-  ]);
+        return config;
+    },]);
 
-  return config;
+    return config;
 };
 
 module.exports = withNetworkSecurityConfig;
