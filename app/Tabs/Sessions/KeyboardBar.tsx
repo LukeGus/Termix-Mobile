@@ -125,7 +125,12 @@ export default function KeyboardBar({
   const hasPinnedKeys = pinnedKeys.length > 0;
 
   return (
-    <View style={[styles.keyboardBar, isKeyboardIntentionallyHidden && { paddingBottom: 16 }]}>
+    <View
+      style={[
+        styles.keyboardBar,
+        isKeyboardIntentionallyHidden && { paddingBottom: 16 },
+      ]}
+    >
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

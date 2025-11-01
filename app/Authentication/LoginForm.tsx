@@ -327,13 +327,26 @@ export default function LoginForm() {
         if (checkAuth()) {
           clearInterval(intervalId);
         }
-      }, 300);
+      }, 500);
 
       checkAuth();
 
       setTimeout(() => {
         initialCheckComplete = true;
       }, 1000);
+
+      window.addEventListener('message', (event) => {
+        try {
+          if (event.data && typeof event.data === 'object') {
+            const data = event.data;
+            if (data.type === 'AUTH_SUCCESS' && data.token && data.source === 'explicit') {
+              notifyAuth(data.token, 'explicit-message');
+            }
+          }
+        } catch (e) {
+          console.error('[WebView] Error processing message event:', e);
+        }
+      });
 
       document.addEventListener('visibilitychange', () => {
         if (!document.hidden && !hasNotified) {

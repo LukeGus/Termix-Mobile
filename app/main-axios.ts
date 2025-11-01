@@ -23,6 +23,7 @@ import {
 } from "../lib/frontend-logger";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import platform from "expo-modules-core/src/Platform";
 
 interface FileManagerOperation {
   name: string;
@@ -177,8 +178,13 @@ function createApiInstance(
         context,
       );
     }
-
-    config.headers["User-Agent"] = "Termix-Mobile";
+    if (platform.OS === "android") {
+      config.headers["User-Agent"] = "Termix-Mobile/Android";
+    } else if (platform.OS === "ios") {
+      config.headers["User-Agent"] = "Termix-Mobile/iOS";
+    } else {
+      config.headers["User-Agent"] = `Termix-Mobile/${platform.OS}`;
+    }
 
     return config;
   });
@@ -1393,6 +1399,18 @@ export async function loginUser(
       }
     }
     handleApiError(error, "login user");
+  }
+}
+
+export async function logoutUser(): Promise<{
+  success: boolean;
+  message: string;
+}> {
+  try {
+    const response = await authApi.post("/users/logout");
+    return response.data;
+  } catch (error) {
+    handleApiError(error, "logout user");
   }
 }
 

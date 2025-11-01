@@ -35,7 +35,7 @@ export const KeyboardProvider: React.FC<{ children: React.ReactNode }> = ({
       const screenHeight = Dimensions.get("screen").height;
       const keyboardTop = e.endCoordinates.screenY;
       let newHeight = 0;
-      if (Platform.OS === 'android') {
+      if (Platform.OS === "android") {
         newHeight = screenHeight - keyboardTop;
       } else {
         newHeight = e.endCoordinates.height;

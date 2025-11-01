@@ -602,8 +602,6 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
       };
     }, []);
 
-
-
     return (
       <View
         style={{
@@ -627,46 +625,46 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
             zIndex: isVisible ? 1 : -1,
           }}
         >
-            <View style={{ flex: 1 }}>
-              <WebView
-                key={`terminal-${hostConfig.id}-${webViewKey}`}
-                ref={webViewRef}
-                source={{ html: htmlContent }}
-                style={{
-                  flex: 1,
-                  width: "100%",
-                  height: "100%",
-                  backgroundColor: "#09090b",
-                  opacity: showConnectingOverlay || isRetrying ? 0 : 1,
-                }}
-                javaScriptEnabled={true}
-                domStorageEnabled={true}
-                startInLoadingState={false}
-                scalesPageToFit={false}
-                allowsInlineMediaPlayback={true}
-                mediaPlaybackRequiresUserAction={false}
-                keyboardDisplayRequiresUserAction={false}
-                onScroll={() => {}}
-                onMessage={handleWebViewMessage}
-                onError={(syntheticEvent) => {
-                  const { nativeEvent } = syntheticEvent;
-                  handleConnectionFailure(
-                    `WebView error: ${nativeEvent.description}`,
-                  );
-                }}
-                onHttpError={(syntheticEvent) => {
-                  const { nativeEvent } = syntheticEvent;
-                  handleConnectionFailure(
-                    `WebView HTTP error: ${nativeEvent.statusCode}`,
-                  );
-                }}
-                scrollEnabled={false}
-                bounces={false}
-                showsHorizontalScrollIndicator={false}
-                showsVerticalScrollIndicator={false}
-                nestedScrollEnabled={false}
-              />
-            </View>
+          <View style={{ flex: 1 }}>
+            <WebView
+              key={`terminal-${hostConfig.id}-${webViewKey}`}
+              ref={webViewRef}
+              source={{ html: htmlContent }}
+              style={{
+                flex: 1,
+                width: "100%",
+                height: "100%",
+                backgroundColor: "#09090b",
+                opacity: showConnectingOverlay || isRetrying ? 0 : 1,
+              }}
+              javaScriptEnabled={true}
+              domStorageEnabled={true}
+              startInLoadingState={false}
+              scalesPageToFit={false}
+              allowsInlineMediaPlayback={true}
+              mediaPlaybackRequiresUserAction={false}
+              keyboardDisplayRequiresUserAction={false}
+              onScroll={() => {}}
+              onMessage={handleWebViewMessage}
+              onError={(syntheticEvent) => {
+                const { nativeEvent } = syntheticEvent;
+                handleConnectionFailure(
+                  `WebView error: ${nativeEvent.description}`,
+                );
+              }}
+              onHttpError={(syntheticEvent) => {
+                const { nativeEvent } = syntheticEvent;
+                handleConnectionFailure(
+                  `WebView HTTP error: ${nativeEvent.statusCode}`,
+                );
+              }}
+              scrollEnabled={false}
+              bounces={false}
+              showsHorizontalScrollIndicator={false}
+              showsVerticalScrollIndicator={false}
+              nestedScrollEnabled={false}
+            />
+          </View>
 
           {(showConnectingOverlay || isRetrying) && (
             <View

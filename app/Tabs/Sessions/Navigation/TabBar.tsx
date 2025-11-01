@@ -192,32 +192,32 @@ export default function TabBar({
         </View>
 
         {!isCustomKeyboardVisible && (
-            <TouchableOpacity
-              onPress={handleToggleSystemKeyboard}
-              focusable={false}
-              className="items-center justify-center rounded-md"
-              activeOpacity={0.7}
-              style={{
-                width: 44,
-                height: 44,
-                borderWidth: 2,
-                borderColor: "#303032",
-                backgroundColor: "#2a2a2a",
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-                elevation: 2,
-                marginLeft: 8,
-              }}
-            >
-              {keyboardIntentionallyHiddenRef.current ? (
-                <ChevronUp size={20} color="#ffffff" />
-              ) : (
-                <ChevronDown size={20} color="#ffffff" />
-              )}
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            onPress={handleToggleSystemKeyboard}
+            focusable={false}
+            className="items-center justify-center rounded-md"
+            activeOpacity={0.7}
+            style={{
+              width: 44,
+              height: 44,
+              borderWidth: 2,
+              borderColor: "#303032",
+              backgroundColor: "#2a2a2a",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+              elevation: 2,
+              marginLeft: 8,
+            }}
+          >
+            {keyboardIntentionallyHiddenRef.current ? (
+              <ChevronUp size={20} color="#ffffff" />
+            ) : (
+              <ChevronDown size={20} color="#ffffff" />
+            )}
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity
           onPress={() => onToggleKeyboard?.()}

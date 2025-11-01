@@ -3,7 +3,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAppContext } from "@/app/AppContext";
 import { useTerminalSessions } from "@/app/contexts/TerminalSessionsContext";
-import { clearAuth, clearServerConfig } from "@/app/main-axios";
+import { clearAuth, clearServerConfig, logoutUser } from "@/app/main-axios";
 
 export default function Settings() {
   const router = useRouter();
@@ -19,6 +19,8 @@ export default function Settings() {
 
   const handleLogout = async () => {
     try {
+      await logoutUser();
+
       await clearAuth();
 
       clearAllSessions();

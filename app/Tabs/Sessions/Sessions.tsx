@@ -53,7 +53,7 @@ export default function Sessions() {
   const [screenDimensions, setScreenDimensions] = useState(
     Dimensions.get("window"),
   );
-  const [keyboardType, setKeyboardType] = useState<any>('default');
+  const [keyboardType, setKeyboardType] = useState<any>("default");
 
   useEffect(() => {
     const map: Record<string, React.RefObject<TerminalHandle>> = {
@@ -102,10 +102,10 @@ export default function Sessions() {
           !keyboardIntentionallyHiddenRef.current
         ) {
           setTimeout(() => {
-            setKeyboardType('email-address');
+            setKeyboardType("email-address");
             setTimeout(() => {
-                setKeyboardType('default');
-                hiddenInputRef.current?.focus();
+              setKeyboardType("default");
+              hiddenInputRef.current?.focus();
             }, 100);
           }, 250);
         }
@@ -116,8 +116,6 @@ export default function Sessions() {
       subscription.remove();
     };
   }, [sessions.length, isCustomKeyboardVisible, activeSessionId]);
-
-
 
   useEffect(() => {
     if (Platform.OS === "android" && sessions.length > 0) {
@@ -171,9 +169,7 @@ export default function Sessions() {
     });
 
     return () => subscription?.remove();
-  }, [
-    activeSessionId
-  ]);
+  }, [activeSessionId]);
 
   useEffect(() => {
     if (keyboardHeight > 0) {
@@ -497,12 +493,12 @@ export default function Sessions() {
             }
             isVisible={isCustomKeyboardVisible}
             keyboardHeight={lastKeyboardHeight}
-            isKeyboardIntentionallyHidden={keyboardIntentionallyHiddenRef.current}
+            isKeyboardIntentionallyHidden={
+              keyboardIntentionallyHiddenRef.current
+            }
           />
         </View>
       )}
-
-
 
       {sessions.length > 0 && !isCustomKeyboardVisible && (
         <TextInput
@@ -590,7 +586,6 @@ export default function Sessions() {
           onFocus={() => {
             setKeyboardIntentionallyHidden(false);
           }}
-
         />
       )}
     </View>
